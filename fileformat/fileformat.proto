@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+message Body {
+	Meta meta = 1;
+	repeated Feature feature = 2;
+}
+
+message Meta {
+	repeated Tag tags = 1;
+}
+
+message Feature {
+	enum GeomType {
+		POINT = 0;
+		LINE = 1;
+		POLYGON = 2;
+	}
+	enum GeomSerialization {
+		WKB = 0;
+	}
+	GeomType geomtype = 1;
+	GeomSerialization geomserial = 2;
+	bytes geom = 3;
+
+	// geometry bbox
+	double left = 4;
+	double right = 5;
+	double top = 6;
+	double bottom = 7;
+
+	repeated Tag tags = 8;
+}
+
+message Tag {
+	enum ValueType {
+		STRING = 0;
+	}
+	string key = 1;
+	bytes value = 2;
+	ValueType type = 3;
+}
