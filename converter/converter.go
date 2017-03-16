@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	geom "github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/geojson"
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
@@ -62,9 +63,11 @@ func (g *geoJSONFeature) WKB() []byte {
 	return buf
 }
 
-type Feature interface {
+type WKBable interface {
 	WKB() []byte
 }
+
+type GeoJSONable geom.T
 
 func main() {
 	source := flag.String("src", "geo.geojson", "")
@@ -94,12 +97,22 @@ func main() {
 
 		// for now write a block for every feature
 		for _, feat := range gj.Features {
-			writeBlock(out, []Feature{&feat})
+			writeBlock(out, []WKBable{&feat})
 		}
 	} else {
 		log.Println("Decoding .unnamed, writing geojson")
 		readFileHeader(f)
-		// readBlocks()
+		var gjfc geojson.FeatureCollection
+		for _, f := range readBlocks(f) {
+			gjfc.Features = append(gjfc.Features, &geojson.Feature{
+				Geometry: f,
+			})
+		}
+		buf, err := gjfc.MarshalJSON()
+		if err != nil {
+			log.Fatal(err)
+		}
+		out.Write(buf)
 	}
 }
 
@@ -111,7 +124,7 @@ func writeFileHeader(w io.Writer) {
 	binary.Write(w, binary.LittleEndian, uint32(version))
 }
 
-func writeBlock(w io.Writer, fs []Feature) {
+func writeBlock(w io.Writer, fs []WKBable) {
 	blockBody := &fileformat.Body{}
 	for _, f := range fs {
 		blockBody.Feature = append(blockBody.Feature, &fileformat.Feature{
@@ -153,4 +166,54 @@ func readFileHeader(r io.Reader) {
 	if vers > version {
 		log.Fatal("invalid file version")
 	}
+}
+
+func readBlocks(r io.Reader) []GeoJSONable {
+	var fs []GeoJSONable
+	for {
+		var (
+			blockLength uint32
+			flags       uint16
+			compression uint8
+			messageType uint8
+		)
+		if err := binary.Read(r, binary.LittleEndian, &blockLength); err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		}
+		if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
+			log.Fatal(err)
+		}
+		if err := binary.Read(r, binary.LittleEndian, &compression); err != nil {
+			if compression != 0 {
+				log.Fatal("compression is not supported")
+			}
+		}
+		if err := binary.Read(r, binary.LittleEndian, &messageType); err != nil {
+			if messageType != 0 {
+				log.Fatal("message type is not supported")
+			}
+		}
+
+		var (
+			buf       = make([]byte, blockLength)
+			blockBody fileformat.Body
+		)
+		if _, err := r.Read(buf); err != nil {
+			log.Fatal(err)
+		}
+		if err := proto.Unmarshal(buf, &blockBody); err != nil {
+			log.Fatal(err)
+		}
+		for _, f := range blockBody.GetFeature() {
+			geom, err := wkb.Unmarshal(f.Geom)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fs = append(fs, geom)
+		}
+	}
+	return fs
 }
