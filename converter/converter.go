@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/thomersch/grandine/fileformat"
+	"github.com/thomersch/grandine/converter/fileformat"
 
 	"github.com/golang/protobuf/proto"
 	geom "github.com/twpayne/go-geom"
