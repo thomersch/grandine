@@ -1,0 +1,54 @@
+package fileformat
+
+import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+)
+
+var vtypers map[string]valueTyper
+
+func init() {
+	vtypers = map[string]valueTyper{
+		"string": func(s interface{}) ([]byte, Tag_ValueType, error) {
+			return []byte(s.(string)), Tag_STRING, nil
+		},
+		"float64": func(f interface{}) ([]byte, Tag_ValueType, error) {
+			var (
+				v   float64
+				buf bytes.Buffer
+			)
+			err := binary.Write(&buf, binary.LittleEndian, v)
+			return buf.Bytes(), Tag_DOUBLE, err
+		},
+	}
+}
+
+type valueTyper func(interface{}) ([]byte, Tag_ValueType, error)
+
+func ValueType(i interface{}) ([]byte, Tag_ValueType, error) {
+	t := fmt.Sprintf("%T", i)
+	vt, ok := vtypers[t]
+	if !ok {
+		return nil, Tag_STRING, fmt.Errorf("unknown type: %s", t)
+	}
+	return vt(i)
+}
+
+// KeyValue retrieves key and value from a Tag.
+func KeyValue(t *Tag) (string, interface{}, error) {
+	switch t.GetType() {
+	case Tag_STRING:
+		return t.Key, string(t.GetValue()), nil
+	case Tag_DOUBLE:
+		var (
+			buf = bytes.NewBuffer(t.GetValue())
+			f   float64
+		)
+		err := binary.Read(buf, binary.LittleEndian, &f)
+		return t.Key, f, err
+	default:
+		// TODO
+		return t.Key, nil, nil
+	}
+}
