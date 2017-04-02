@@ -11,9 +11,10 @@ message Meta {
 
 message Feature {
 	enum GeomType {
-		POINT = 0;
-		LINE = 1;
-		POLYGON = 2;
+		UNKNOWN = 0;
+		POINT = 1;
+		LINE = 2;
+		POLYGON = 3;
 	}
 	enum GeomSerialization {
 		WKB = 0;
@@ -34,6 +35,8 @@ message Feature {
 message Tag {
 	enum ValueType {
 		STRING = 0;
+		INT = 1;
+		DOUBLE = 2;
 	}
 	string key = 1;
 	bytes value = 2;

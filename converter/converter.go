@@ -28,9 +28,9 @@ type GeoJSON struct {
 }
 
 type geoJSONFeature struct {
-	Type       string
-	Properties map[string]string
-	Geometry   struct {
+	Type     string
+	Props    map[string]interface{} `json:"properties"`
+	Geometry struct {
 		Type        string
 		Coordinates [][][2]float64
 	}
@@ -63,11 +63,19 @@ func (g *geoJSONFeature) WKB() []byte {
 	return buf
 }
 
-type WKBable interface {
-	WKB() []byte
+func (g *geoJSONFeature) Properties() map[string]interface{} {
+	return g.Props
 }
 
-type GeoJSONable geom.T
+type WKBable interface {
+	WKB() []byte
+	Properties() map[string]interface{}
+}
+
+type GeoJSONable interface {
+	Geom() geom.T
+	Properties() map[string]interface{}
+}
 
 func main() {
 	source := flag.String("src", "geo.geojson", "")
@@ -103,9 +111,10 @@ func main() {
 		log.Println("Decoding .unnamed, writing geojson")
 		readFileHeader(f)
 		var gjfc geojson.FeatureCollection
-		for _, f := range readBlocks(f) {
+		for _, ft := range readBlocks(f) {
 			gjfc.Features = append(gjfc.Features, &geojson.Feature{
-				Geometry: f,
+				Geometry:   ft.Geom(),
+				Properties: ft.Properties(),
 			})
 		}
 		buf, err := gjfc.MarshalJSON()
@@ -127,8 +136,25 @@ func writeFileHeader(w io.Writer) {
 func writeBlock(w io.Writer, fs []WKBable) {
 	blockBody := &fileformat.Body{}
 	for _, f := range fs {
+		var (
+			tags []*fileformat.Tag
+		)
+		for k, v := range f.Properties() {
+			val, typ, err := fileformat.ValueType(v)
+			if err != nil {
+				// TODO: convert to error reporting
+				log.Fatal(err)
+			}
+			tags = append(tags, &fileformat.Tag{
+				Key:   k,
+				Value: val,
+				Type:  typ,
+			})
+		}
+
 		blockBody.Feature = append(blockBody.Feature, &fileformat.Feature{
 			Geom: f.WKB(),
+			Tags: tags,
 		})
 	}
 	bodyBuf, err := proto.Marshal(blockBody)
@@ -166,6 +192,19 @@ func readFileHeader(r io.Reader) {
 	if vers > version {
 		log.Fatal("invalid file version")
 	}
+}
+
+type geomWithProps struct {
+	geom  geom.T
+	props map[string]interface{}
+}
+
+func (g *geomWithProps) Geom() geom.T {
+	return g.geom
+}
+
+func (g *geomWithProps) Properties() map[string]interface{} {
+	return g.props
 }
 
 func readBlocks(r io.Reader) []GeoJSONable {
@@ -212,7 +251,17 @@ func readBlocks(r io.Reader) []GeoJSONable {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fs = append(fs, geom)
+
+			gwp := geomWithProps{geom: geom, props: make(map[string]interface{})}
+			for _, tag := range f.Tags {
+				k, v, err := fileformat.KeyValue(tag)
+				if err != nil {
+					// TODO
+					log.Fatal(err)
+				}
+				gwp.props[k] = v
+			}
+			fs = append(fs, &gwp)
 		}
 	}
 	return fs
