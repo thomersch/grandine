@@ -32,29 +32,41 @@ type geoJSONFeature struct {
 	Props    map[string]interface{} `json:"properties"`
 	Geometry struct {
 		Type        string
-		Coordinates [][][2]float64
+		Coordinates json.RawMessage
 	}
 }
 
 func (g *geoJSONFeature) WKB() []byte {
-	var crdss [][]geom.Coord
-
-	for _, coordset := range g.Geometry.Coordinates {
-		var crds []geom.Coord
-		for _, crd := range coordset {
-			crds = append(crds, geom.Coord{crd[0], crd[1]})
+	var (
+		err       error
+		elem      geom.T
+		unmarshal = func(c interface{}) {
+			err = json.Unmarshal(g.Geometry.Coordinates, c)
 		}
-		crdss = append(crdss, crds)
-	}
+	)
 
-	var elem geom.T
 	switch g.Geometry.Type {
+	case "Point":
+		var coords geom.Coord
+		unmarshal(&coords)
+		elem = geom.NewPoint(geom.XY).MustSetCoords(coords)
 	case "LineString":
-		elem = geom.NewLineString(geom.XY).MustSetCoords(crdss[0])
+		var coords []geom.Coord
+		unmarshal(&coords)
+		elem = geom.NewLineString(geom.XY).MustSetCoords(coords)
 	case "Polygon":
-		elem = geom.NewPolygon(geom.XY).MustSetCoords(crdss)
+		var coords [][]geom.Coord
+		unmarshal(&coords)
+		elem = geom.NewPolygon(geom.XY).MustSetCoords(coords)
+	case "MultiPolygon":
+		var coords [][][]geom.Coord
+		unmarshal(&coords)
+		elem = geom.NewMultiPolygon(geom.XY).MustSetCoords(coords)
 	default:
 		log.Fatalf("type %v not yet implemented", g.Geometry.Type)
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 	buf, err := wkb.Marshal(elem, binary.LittleEndian)
 	if err != nil {
