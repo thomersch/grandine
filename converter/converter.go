@@ -116,8 +116,14 @@ func main() {
 		}
 
 		// for now write a block for every feature
-		for _, feat := range gj.Features {
-			writeBlock(out, []WKBable{&feat})
+		for _, featBlock := range geomBlocks(100, gj.Features) {
+			// TODO: oh god, why.
+			var fs []WKBable
+			for _, feat := range featBlock {
+				ft := feat
+				fs = append(fs, &ft)
+			}
+			writeBlock(out, fs)
 		}
 	} else {
 		log.Println("Decoding .unnamed, writing geojson")
@@ -143,6 +149,28 @@ func writeFileHeader(w io.Writer) {
 
 	// Version
 	binary.Write(w, binary.LittleEndian, uint32(version))
+}
+
+// geomBlocks slices a slice of geometries into slices with a max size
+func geomBlocks(size int, src []geoJSONFeature) [][]geoJSONFeature {
+	if len(src) <= size {
+		return [][]geoJSONFeature{src}
+	}
+
+	var (
+		i   int
+		res [][]geoJSONFeature
+		end int
+	)
+	for end < len(src) {
+		end = (i + 1) * size
+		if end > len(src) {
+			end = len(src)
+		}
+		res = append(res, src[i*size:end])
+		i++
+	}
+	return res
 }
 
 func writeBlock(w io.Writer, fs []WKBable) {
