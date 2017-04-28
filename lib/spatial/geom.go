@@ -23,6 +23,16 @@ type Feature struct {
 	}
 }
 
+type Point [2]float64
+
+func (p *Point) X() float64 {
+	return p[0]
+}
+
+func (p *Point) Y() float64 {
+	return p[1]
+}
+
 type Coords struct {
 	b []byte
 }
@@ -32,13 +42,22 @@ func (c *Coords) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func (c *Coords) Point() [2]float64 {
-	p := [2]float64{}
+func (c *Coords) Point() (Point, error) {
+	var p Point
 	err := json.Unmarshal(c.b, &p)
-	if err != nil {
-		panic(err)
-	}
-	return p
+	return p, err
+}
+
+func (c *Coords) LineString() ([]Point, error) {
+	var ls []Point
+	err := json.Unmarshal(c.b, &ls)
+	return ls, err
+}
+
+func (c *Coords) Polygon() ([][]Point, error) {
+	var poly [][]Point
+	err := json.Unmarshal(c.b, &poly)
+	return poly, err
 }
 
 type PropertyRetriever interface {
@@ -54,10 +73,13 @@ func (f *Feature) MarshalWKB() ([]byte, error) {
 	binary.Write(&buf, endianness, f.Typ())  // geometry type
 
 	switch f.Typ() {
-	case Point:
-		p := f.Geometry.Coordinates.Point()
-		binary.Write(&buf, endianness, p[0])
-		binary.Write(&buf, endianness, p[1])
+	case GeomTypePoint:
+		p, err := f.Geometry.Coordinates.Point()
+		if err != nil {
+			return nil, err
+		}
+		binary.Write(&buf, endianness, p.X)
+		binary.Write(&buf, endianness, p.Y)
 	}
 	return buf.Bytes(), nil
 }
@@ -65,22 +87,22 @@ func (f *Feature) MarshalWKB() ([]byte, error) {
 type GeomType uint32
 
 const (
-	Point      GeomType = 1
-	LineString          = 2
-	Polygon             = 3
-	Invalid
+	GeomTypePoint      GeomType = 1
+	GeomTypeLineString          = 2
+	GeomTypePolygon             = 3
+	GeomTypeInvalid
 )
 
 func (f *Feature) Typ() GeomType {
 	switch f.Geometry.Type {
 	case "Point":
-		return Point
+		return GeomTypePoint
 	case "LineString":
-		return LineString
+		return GeomTypeLineString
 	case "Polygon":
-		return Polygon
+		return GeomTypePolygon
 	}
-	return Invalid
+	return GeomTypeInvalid
 }
 
 func (f *Feature) Properties() map[string]interface{} {

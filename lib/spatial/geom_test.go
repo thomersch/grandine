@@ -24,4 +24,16 @@ func TestGeoJSON(t *testing.T) {
 	fc := FeatureCollection{}
 	err = json.NewDecoder(f).Decode(&fc)
 	assert.Nil(t, err)
+
+	p, err := fc.Features[0].Geometry.Coordinates.Point()
+	assert.Nil(t, err)
+	assert.NotNil(t, p)
+
+	ls, err := fc.Features[1].Geometry.Coordinates.LineString()
+	assert.Nil(t, err)
+	assert.NotNil(t, ls)
+
+	poly, err := fc.Features[2].Geometry.Coordinates.Polygon()
+	assert.Nil(t, err)
+	assert.NotNil(t, poly)
 }
