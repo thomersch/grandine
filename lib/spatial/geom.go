@@ -3,10 +3,15 @@ package spatial
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 )
 
 var endianness = binary.LittleEndian
+
+type FeatureCollection struct {
+	Features []Feature
+}
 
 type Feature struct {
 	// For now this is a GeoJSON feature
@@ -14,8 +19,26 @@ type Feature struct {
 	Props    map[string]interface{} `json:"properties"`
 	Geometry struct {
 		Type        string
-		Coordinates [][][2]float64
+		Coordinates Coords
 	}
+}
+
+type Coords struct {
+	b []byte
+}
+
+func (c *Coords) UnmarshalJSON(buf []byte) error {
+	c.b = buf
+	return nil
+}
+
+func (c *Coords) Point() [2]float64 {
+	p := [2]float64{}
+	err := json.Unmarshal(c.b, &p)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 type PropertyRetriever interface {
@@ -32,8 +55,9 @@ func (f *Feature) MarshalWKB() ([]byte, error) {
 
 	switch f.Typ() {
 	case Point:
-		binary.Write(&buf, endianness, f.Geometry.Coordinates[0][0][0])
-		binary.Write(&buf, endianness, f.Geometry.Coordinates[0][0][1])
+		p := f.Geometry.Coordinates.Point()
+		binary.Write(&buf, endianness, p[0])
+		binary.Write(&buf, endianness, p[1])
 	}
 	return buf.Bytes(), nil
 }
