@@ -33,7 +33,6 @@ const (
 type Geom struct {
 	typ GeomType
 	g   interface{}
-	b   []byte
 }
 
 func NewGeom(g interface{}) (Geom, error) {
@@ -54,19 +53,36 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		Type        string
 		Coordinates json.RawMessage
 	}{}
-	json.Unmarshal(buf, &wg)
+	err := json.Unmarshal(buf, &wg)
+	if err != nil {
+		return err
+	}
 
 	switch strings.ToLower(wg.Type) {
 	case "point":
 		g.typ = GeomTypePoint
+		var p Point
+		if err = json.Unmarshal(wg.Coordinates, &p); err != nil {
+			return err
+		}
+		g.g = p
 	case "linestring":
 		g.typ = GeomTypeLineString
+		var ls []Point
+		if err = json.Unmarshal(wg.Coordinates, &ls); err != nil {
+			return err
+		}
+		g.g = ls
 	case "polygon":
 		g.typ = GeomTypePolygon
+		var poly [][]Point
+		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
+			return err
+		}
+		g.g = poly
 	default:
 		return fmt.Errorf("unsupported geometry type: %s", wg.Type)
 	}
-	g.b = wg.Coordinates
 	return nil
 }
 
@@ -75,21 +91,27 @@ func (g *Geom) Typ() GeomType {
 }
 
 func (g *Geom) Point() (Point, error) {
-	var p Point
-	err := json.Unmarshal(g.b, &p)
-	return p, err
+	geom, ok := g.g.(Point)
+	if !ok {
+		return Point{}, errors.New("geometry is not a Point")
+	}
+	return geom, nil
 }
 
 func (g *Geom) LineString() ([]Point, error) {
-	var ls []Point
-	err := json.Unmarshal(g.b, &ls)
-	return ls, err
+	geom, ok := g.g.([]Point)
+	if !ok {
+		return nil, errors.New("geometry is not a LineString")
+	}
+	return geom, nil
 }
 
 func (g *Geom) Polygon() ([][]Point, error) {
-	var poly [][]Point
-	err := json.Unmarshal(g.b, &poly)
-	return poly, err
+	geom, ok := g.g.([][]Point)
+	if !ok {
+		return nil, errors.New("geometry is not a Polygon")
+	}
+	return geom, nil
 }
 
 type Feature struct {
