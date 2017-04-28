@@ -25,15 +25,15 @@ func TestGeoJSON(t *testing.T) {
 	err = json.NewDecoder(f).Decode(&fc)
 	assert.Nil(t, err)
 
-	p, err := fc.Features[0].Geometry.Coordinates.Point()
+	p, err := fc.Features[0].Geometry.Point()
 	assert.Nil(t, err)
 	assert.NotNil(t, p)
 
-	ls, err := fc.Features[1].Geometry.Coordinates.LineString()
+	ls, err := fc.Features[1].Geometry.LineString()
 	assert.Nil(t, err)
 	assert.NotNil(t, ls)
 
-	poly, err := fc.Features[2].Geometry.Coordinates.Polygon()
+	poly, err := fc.Features[2].Geometry.Polygon()
 	assert.Nil(t, err)
 	assert.NotNil(t, poly)
 }
