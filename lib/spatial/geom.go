@@ -48,11 +48,13 @@ func NewGeom(g interface{}) (Geom, error) {
 	}
 }
 
+type geoJSONGeom struct {
+	Type        string          `json:"type"`
+	Coordinates json.RawMessage `json:"coordinates"`
+}
+
 func (g *Geom) UnmarshalJSON(buf []byte) error {
-	wg := struct {
-		Type        string
-		Coordinates json.RawMessage
-	}{}
+	var wg geoJSONGeom
 	err := json.Unmarshal(buf, &wg)
 	if err != nil {
 		return err
@@ -86,6 +88,44 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
+func (g *Geom) MarshalJSON() ([]byte, error) {
+	var wg geoJSONGeom
+
+	switch g.typ {
+	case GeomTypePoint:
+		wg.Type = "Point"
+		pt, err := g.Point()
+		if err != nil {
+			return nil, err
+		}
+		wg.Coordinates, err = json.Marshal(pt)
+		if err != nil {
+			return nil, err
+		}
+	case GeomTypeLineString:
+		wg.Type = "LineString"
+		ls, err := g.LineString()
+		if err != nil {
+			return nil, err
+		}
+		wg.Coordinates, err = json.Marshal(ls)
+		if err != nil {
+			return nil, err
+		}
+	case GeomTypePolygon:
+		wg.Type = "Polygon"
+		poly, err := g.Polygon()
+		if err != nil {
+			return nil, err
+		}
+		wg.Coordinates, err = json.Marshal(poly)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(&wg)
+}
+
 func (g *Geom) Typ() GeomType {
 	return g.typ
 }
@@ -115,9 +155,9 @@ func (g *Geom) Polygon() ([][]Point, error) {
 }
 
 type Feature struct {
-	Type     string
+	Type     string                 `json:"type"`
 	Props    map[string]interface{} `json:"properties"`
-	Geometry Geom
+	Geometry Geom                   `json:"geometry"`
 }
 
 func (f *Feature) MarshalWKB() ([]byte, error) {
@@ -150,5 +190,16 @@ func (f *Feature) Properties() map[string]interface{} {
 }
 
 type FeatureCollection struct {
-	Features []Feature
+	Features []Feature `json:"features"`
+}
+
+func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
+	wfc := struct {
+		Type     string    `json:"type"`
+		Features []Feature `json:"features"`
+	}{
+		Type:     "FeatureCollection",
+		Features: fc.Features,
+	}
+	return json.Marshal(wfc)
 }

@@ -36,4 +36,9 @@ func TestGeoJSON(t *testing.T) {
 	poly, err := fc.Features[2].Geometry.Polygon()
 	assert.Nil(t, err)
 	assert.NotNil(t, poly)
+
+	buf, err := json.Marshal(fc)
+	assert.Nil(t, err)
+	assert.NotNil(t, buf)
+	fmt.Printf("%s\n", buf)
 }
