@@ -147,6 +147,12 @@ func (g *Geom) MarshalWKB() ([]byte, error) {
 			return nil, err
 		}
 		wkbWriteLineString(&buf, ls)
+	case GeomTypePolygon:
+		poly, err := g.Polygon()
+		if err != nil {
+			return nil, err
+		}
+		wkbWritePolygon(&buf, poly)
 	default:
 		panic("not implemented yet")
 	}

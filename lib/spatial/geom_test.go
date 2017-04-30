@@ -31,7 +31,21 @@ func TestMarshalWKBLineString(t *testing.T) {
 }
 
 func TestMarshalWKBPolygon(t *testing.T) {
+	g, err := NewGeom(
+		[][]Point{
+			{
+				{1, 2}, {3, 4}, {5, 4},
+			},
+			{
+				{2, 2}, {3, 4}, {2, 2},
+			},
+		})
+	assert.Nil(t, err)
+	buf, err := g.MarshalWKB()
+	assert.Nil(t, err)
 
+	_, err = wkb.Unmarshal(buf)
+	assert.Nil(t, err)
 }
 
 func TestGeoJSON(t *testing.T) {
