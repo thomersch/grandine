@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "JIr9p6O/vUqrOgj6fHkC+eM6zdE=",
+			"path": "github.com/twpayne/go-geom",
+			"revision": "648d1eb0d35e4e5b8b6d9fe128a9fc8c66748cbb",
+			"revisionTime": "2017-04-28T17:46:46Z"
+		},
+		{
+			"checksumSHA1": "3ln6zIgDvRxdkLU9ckOI9i5mWnA=",
+			"path": "github.com/twpayne/go-geom/encoding/wkb",
+			"revision": "648d1eb0d35e4e5b8b6d9fe128a9fc8c66748cbb",
+			"revisionTime": "2017-04-28T17:46:46Z"
+		},
+		{
+			"checksumSHA1": "KDedv+IgB08fN9r3oSsHJ5/1Xyc=",
+			"path": "github.com/twpayne/go-geom/encoding/wkbcommon",
+			"revision": "648d1eb0d35e4e5b8b6d9fe128a9fc8c66748cbb",
+			"revisionTime": "2017-04-28T17:46:46Z"
+		}
+	],
+	"rootPath": "github.com/thomersch/grandine/lib/spatial"
+}
