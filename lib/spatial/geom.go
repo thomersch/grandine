@@ -37,14 +37,14 @@ type Geom struct {
 
 func NewGeom(g interface{}) (Geom, error) {
 	switch g.(type) {
-	case [2]float64:
+	case Point:
 		return Geom{typ: GeomTypePoint, g: g}, nil
-	case [][2]float64:
+	case []Point:
 		return Geom{typ: GeomTypeLineString, g: g}, nil
-	case [][][2]float64:
+	case [][]Point:
 		return Geom{typ: GeomTypePolygon, g: g}, nil
 	default:
-		return Geom{}, errors.New("unknown input geom type")
+		return Geom{}, fmt.Errorf("unknown input geom type: %T", g)
 	}
 }
 
@@ -126,6 +126,33 @@ func (g *Geom) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&wg)
 }
 
+func (g *Geom) MarshalWKB() ([]byte, error) {
+	if endianness != binary.LittleEndian {
+		return nil, errors.New("only little endian is supported")
+	}
+	var buf bytes.Buffer
+	binary.Write(&buf, endianness, uint8(1)) // little endian
+	binary.Write(&buf, endianness, g.Typ())  // geometry type
+
+	switch g.Typ() {
+	case GeomTypePoint:
+		p, err := g.Point()
+		if err != nil {
+			return nil, err
+		}
+		wkbWritePoint(&buf, p)
+	case GeomTypeLineString:
+		ls, err := g.LineString()
+		if err != nil {
+			return nil, err
+		}
+		wkbWriteLineString(&buf, ls)
+	default:
+		panic("not implemented yet")
+	}
+	return buf.Bytes(), nil
+}
+
 func (g *Geom) Typ() GeomType {
 	return g.typ
 }
@@ -158,31 +185,6 @@ type Feature struct {
 	Type     string                 `json:"type"`
 	Props    map[string]interface{} `json:"properties"`
 	Geometry Geom                   `json:"geometry"`
-}
-
-func (f *Feature) MarshalWKB() ([]byte, error) {
-	if endianness != binary.LittleEndian {
-		return nil, errors.New("only little endian is supported")
-	}
-	var buf bytes.Buffer
-	binary.Write(&buf, endianness, uint8(1))         // little endian
-	binary.Write(&buf, endianness, f.Geometry.Typ()) // geometry type
-
-	switch f.Geometry.Typ() {
-	case GeomTypePoint:
-		p, err := f.Geometry.Point()
-		if err != nil {
-			return nil, err
-		}
-		wkbWritePoint(&buf, p)
-	case GeomTypeLineString:
-		ls, err := f.Geometry.LineString()
-		if err != nil {
-			return nil, err
-		}
-		wkbWriteLineString(&buf, ls)
-	}
-	return buf.Bytes(), nil
 }
 
 func (f *Feature) Properties() map[string]interface{} {

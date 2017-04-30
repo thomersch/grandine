@@ -7,14 +7,31 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
-func TestMarshalWKB(t *testing.T) {
-	f := Feature{}
-	buf, err := f.MarshalWKB()
+func TestMarshalWKBPoint(t *testing.T) {
+	g, err := NewGeom(Point{1, 2})
+	assert.Nil(t, err)
+	buf, err := g.MarshalWKB()
 	assert.Nil(t, err)
 
-	fmt.Printf("%v\n", buf)
+	_, err = wkb.Unmarshal(buf)
+	assert.Nil(t, err)
+}
+
+func TestMarshalWKBLineString(t *testing.T) {
+	g, err := NewGeom([]Point{{1, 2}, {3, 4}, {5, 4}})
+	assert.Nil(t, err)
+	buf, err := g.MarshalWKB()
+	assert.Nil(t, err)
+
+	_, err = wkb.Unmarshal(buf)
+	assert.Nil(t, err)
+}
+
+func TestMarshalWKBPolygon(t *testing.T) {
+
 }
 
 func TestGeoJSON(t *testing.T) {
