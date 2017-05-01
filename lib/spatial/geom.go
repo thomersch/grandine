@@ -154,7 +154,7 @@ func (g *Geom) UnmarshalWKB(r io.Reader) error {
 	case GeomTypePolygon:
 		npg, err = wkbReadPolygon(r)
 	default:
-		panic("not implemented yet")
+		return fmt.Errorf("unsupported GeomType: %v", gt)
 	}
 	if err != nil {
 		return err
@@ -177,29 +177,33 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 	binary.Write(&buf, endianness, uint8(1)) // little endian
 	binary.Write(&buf, endianness, g.Typ())  // geometry type
 
+	var err error
 	switch g.Typ() {
 	case GeomTypePoint:
-		p, err := g.Point()
+		var p Point
+		p, err = g.Point()
 		if err != nil {
 			return nil, err
 		}
-		wkbWritePoint(&buf, p)
+		err = wkbWritePoint(&buf, p)
 	case GeomTypeLineString:
-		ls, err := g.LineString()
+		var ls []Point
+		ls, err = g.LineString()
 		if err != nil {
 			return nil, err
 		}
-		wkbWriteLineString(&buf, ls)
+		err = wkbWriteLineString(&buf, ls)
 	case GeomTypePolygon:
-		poly, err := g.Polygon()
+		var poly [][]Point
+		poly, err = g.Polygon()
 		if err != nil {
 			return nil, err
 		}
-		wkbWritePolygon(&buf, poly)
+		err = wkbWritePolygon(&buf, poly)
 	default:
-		panic("not implemented yet")
+		return nil, fmt.Errorf("unsupported GeomType: %v", g.Typ())
 	}
-	return buf.Bytes(), nil
+	return buf.Bytes(), err
 }
 
 func (g *Geom) Typ() GeomType {

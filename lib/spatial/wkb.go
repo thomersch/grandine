@@ -3,28 +3,58 @@ package spatial
 import (
 	"encoding/binary"
 	"io"
+	"math"
 )
 
-func wkbWritePoint(w io.Writer, p Point) {
-	binary.Write(w, endianness, float64(p.X()))
-	binary.Write(w, endianness, float64(p.Y()))
+func wkbWritePoint(w io.Writer, p Point) error {
+	var (
+		err error
+		x   = make([]byte, 8)
+		y   = make([]byte, 8)
+	)
+	endianness.PutUint64(x, math.Float64bits(p.X()))
+	endianness.PutUint64(y, math.Float64bits(p.Y()))
+	_, err = w.Write(append(x, y...))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func wkbWriteLineString(w io.Writer, ls []Point) {
+func wkbWriteLineString(w io.Writer, ls []Point) error {
 	// write number of points
-	binary.Write(w, endianness, uint32(len(ls)))
-	for _, pt := range ls {
-		binary.Write(w, endianness, pt.X())
-		binary.Write(w, endianness, pt.Y())
+	var ln = make([]byte, 4)
+	endianness.PutUint32(ln, uint32(len(ls)))
+	_, err := w.Write(ln)
+	if err != nil {
+		return err
 	}
+
+	for _, pt := range ls {
+		err = wkbWritePoint(w, pt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func wkbWritePolygon(w io.Writer, poly [][]Point) {
+func wkbWritePolygon(w io.Writer, poly [][]Point) error {
 	// write number of rings
-	binary.Write(w, endianness, uint32(len(poly)))
-	for _, ring := range poly {
-		wkbWriteLineString(w, ring)
+	var lnr = make([]byte, 4)
+	endianness.PutUint32(lnr, uint32(len(poly)))
+	_, err := w.Write(lnr)
+	if err != nil {
+		return err
 	}
+
+	for _, ring := range poly {
+		err = wkbWriteLineString(w, ring)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // TODO: evaluate returning Geom instead of Point
