@@ -173,11 +173,20 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 	if endianness != binary.LittleEndian {
 		return nil, errors.New("only little endian is supported")
 	}
-	var buf bytes.Buffer
-	binary.Write(&buf, endianness, uint8(1)) // little endian
-	binary.Write(&buf, endianness, g.Typ())  // geometry type
+	var (
+		buf     bytes.Buffer
+		typeBuf = make([]byte, 4)
+	)
+	_, err := buf.Write([]byte{1}) // little endian
+	if err != nil {
+		return nil, err
+	}
+	endianness.PutUint32(typeBuf, uint32(g.Typ()))
+	_, err = buf.Write(typeBuf)
+	if err != nil {
+		return nil, err
+	}
 
-	var err error
 	switch g.Typ() {
 	case GeomTypePoint:
 		var p Point

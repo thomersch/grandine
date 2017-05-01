@@ -5,15 +5,16 @@ import (
 	"math"
 )
 
+const wkbRawPointSize = 16
+
 func wkbWritePoint(w io.Writer, p Point) error {
 	var (
 		err error
-		x   = make([]byte, 8)
-		y   = make([]byte, 8)
+		buf = make([]byte, wkbRawPointSize)
 	)
-	endianness.PutUint64(x, math.Float64bits(p.X()))
-	endianness.PutUint64(y, math.Float64bits(p.Y()))
-	_, err = w.Write(append(x, y...))
+	endianness.PutUint64(buf[:8], math.Float64bits(p.X()))
+	endianness.PutUint64(buf[8:16], math.Float64bits(p.Y()))
+	_, err = w.Write(buf)
 	if err != nil {
 		return err
 	}
@@ -55,8 +56,6 @@ func wkbWritePolygon(w io.Writer, poly [][]Point) error {
 	}
 	return nil
 }
-
-const wkbRawPointSize = 16
 
 // TODO: evaluate returning Geom instead of Point
 func wkbReadPoint(r io.Reader) (p Point, err error) {
