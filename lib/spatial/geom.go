@@ -151,6 +151,8 @@ func (g *Geom) UnmarshalWKB(r io.Reader) error {
 		npg, err = wkbReadPoint(r)
 	case GeomTypeLineString:
 		npg, err = wkbReadLineString(r)
+	case GeomTypePolygon:
+		npg, err = wkbReadPolygon(r)
 	default:
 		panic("not implemented yet")
 	}
