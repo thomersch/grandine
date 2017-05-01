@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -88,7 +89,7 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func (g *Geom) MarshalJSON() ([]byte, error) {
+func (g Geom) MarshalJSON() ([]byte, error) {
 	var wg geoJSONGeom
 
 	switch g.typ {
@@ -126,7 +127,38 @@ func (g *Geom) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&wg)
 }
 
-func (g *Geom) MarshalWKB() ([]byte, error) {
+func (g *Geom) UnmarshalWKB(r io.Reader) error {
+	var wkbEndianness uint8
+	err := binary.Read(r, endianness, &wkbEndianness)
+	if err != nil {
+		return err
+	}
+	if wkbEndianness != 1 {
+		return errors.New("only little endian is supported")
+	}
+
+	var gt GeomType
+	err = binary.Read(r, endianness, &gt)
+	if err != nil {
+		return err
+	}
+	switch gt {
+	case GeomTypePoint:
+		p, err := wkbReadPoint(r)
+		if err != nil {
+			return err
+		}
+		ng, err := NewGeom(p)
+		g.typ = ng.typ
+		g.g = ng.g
+		return err
+	default:
+		panic("not implemented yet")
+	}
+}
+
+// TODO: maybe MarshalWKB could take an io.Writer instead of returning a buffer?
+func (g Geom) MarshalWKB() ([]byte, error) {
 	if endianness != binary.LittleEndian {
 		return nil, errors.New("only little endian is supported")
 	}

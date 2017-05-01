@@ -1,8 +1,8 @@
 package spatial
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -11,13 +11,23 @@ import (
 )
 
 func TestMarshalWKBPoint(t *testing.T) {
-	g, err := NewGeom(Point{1, 2})
+	spt := Point{1, 2}
+	g, err := NewGeom(spt)
 	assert.Nil(t, err)
 	buf, err := g.MarshalWKB()
 	assert.Nil(t, err)
 
+	// test against third party implementation
 	_, err = wkb.Unmarshal(buf)
 	assert.Nil(t, err)
+
+	// test against own implementation
+	rp := &Geom{}
+	err = rp.UnmarshalWKB(bytes.NewReader(buf))
+	assert.Nil(t, err)
+	pt, err := rp.Point()
+	assert.Equal(t, spt, pt)
+	// spew.Dump(rp)
 }
 
 func TestMarshalWKBLineString(t *testing.T) {
@@ -71,5 +81,4 @@ func TestGeoJSON(t *testing.T) {
 	buf, err := json.Marshal(fc)
 	assert.Nil(t, err)
 	assert.NotNil(t, buf)
-	fmt.Printf("%s\n", buf)
 }
