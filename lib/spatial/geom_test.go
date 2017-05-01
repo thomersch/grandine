@@ -27,17 +27,23 @@ func TestMarshalWKBPoint(t *testing.T) {
 	assert.Nil(t, err)
 	pt, err := rp.Point()
 	assert.Equal(t, spt, pt)
-	// spew.Dump(rp)
 }
 
 func TestMarshalWKBLineString(t *testing.T) {
-	g, err := NewGeom([]Point{{1, 2}, {3, 4}, {5, 4}})
+	sls := []Point{{1, 2}, {3, 4}, {5, 4}}
+	g, err := NewGeom(sls)
 	assert.Nil(t, err)
 	buf, err := g.MarshalWKB()
 	assert.Nil(t, err)
 
 	_, err = wkb.Unmarshal(buf)
 	assert.Nil(t, err)
+
+	rp := &Geom{}
+	err = rp.UnmarshalWKB(bytes.NewReader(buf))
+	assert.Nil(t, err)
+	ls, err := rp.LineString()
+	assert.Equal(t, sls, ls)
 }
 
 func TestMarshalWKBPolygon(t *testing.T) {

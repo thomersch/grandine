@@ -137,24 +137,33 @@ func (g *Geom) UnmarshalWKB(r io.Reader) error {
 		return errors.New("only little endian is supported")
 	}
 
-	var gt GeomType
+	var (
+		gt  GeomType
+		npg interface{}
+		ng  Geom
+	)
 	err = binary.Read(r, endianness, &gt)
 	if err != nil {
 		return err
 	}
 	switch gt {
 	case GeomTypePoint:
-		p, err := wkbReadPoint(r)
-		if err != nil {
-			return err
-		}
-		ng, err := NewGeom(p)
-		g.typ = ng.typ
-		g.g = ng.g
-		return err
+		npg, err = wkbReadPoint(r)
+	case GeomTypeLineString:
+		npg, err = wkbReadLineString(r)
 	default:
 		panic("not implemented yet")
 	}
+	if err != nil {
+		return err
+	}
+	ng, err = NewGeom(npg)
+	if err != nil {
+		return err
+	}
+	g.typ = ng.typ
+	g.g = ng.g
+	return nil
 }
 
 // TODO: maybe MarshalWKB could take an io.Writer instead of returning a buffer?
