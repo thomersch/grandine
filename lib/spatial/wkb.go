@@ -1,7 +1,6 @@
 package spatial
 
 import (
-	"encoding/binary"
 	"io"
 	"math"
 )
@@ -57,23 +56,31 @@ func wkbWritePolygon(w io.Writer, poly [][]Point) error {
 	return nil
 }
 
+const wkbRawPointSize = 16
+
 // TODO: evaluate returning Geom instead of Point
 func wkbReadPoint(r io.Reader) (p Point, err error) {
-	err = binary.Read(r, endianness, &p[0])
+	var buf = make([]byte, wkbRawPointSize)
+	n, err := r.Read(buf)
+	if n != wkbRawPointSize {
+		return p, io.EOF
+	}
 	if err != nil {
 		return
 	}
-	err = binary.Read(r, endianness, &p[1])
+	p[0] = math.Float64frombits(endianness.Uint64(buf[:8]))
+	p[1] = math.Float64frombits(endianness.Uint64(buf[8:16]))
 	return
 }
 
 // TODO: evaluate returning Geom instead of Point
 func wkbReadLineString(r io.Reader) ([]Point, error) {
-	var nop uint32 // number of points
-	err := binary.Read(r, endianness, &nop)
+	var buf = make([]byte, 4)
+	_, err := r.Read(buf)
 	if err != nil {
 		return nil, err
 	}
+	nop := endianness.Uint32(buf)
 
 	var ls = make([]Point, nop)
 	for i := 0; i < int(nop); i++ {
@@ -86,11 +93,12 @@ func wkbReadLineString(r io.Reader) ([]Point, error) {
 }
 
 func wkbReadPolygon(r io.Reader) ([][]Point, error) {
-	var nor uint32 // number of rings
-	err := binary.Read(r, endianness, &nor)
+	var buf = make([]byte, 4)
+	_, err := r.Read(buf)
 	if err != nil {
 		return nil, err
 	}
+	nor := endianness.Uint32(buf)
 
 	var rings = make([][]Point, nor)
 	for i := 0; i < int(nor); i++ {
