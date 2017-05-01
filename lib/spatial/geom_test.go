@@ -3,6 +3,8 @@ package spatial
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"testing"
 
@@ -28,6 +30,14 @@ func TestMarshalWKBPoint(t *testing.T) {
 	pt, err := rp.Point()
 	assert.Nil(t, err)
 	assert.Equal(t, spt, pt)
+}
+
+func TestUnmarshalWKBEOF(t *testing.T) {
+	var buf []byte
+	fmt.Sscanf("09000000000000000000f03f00000000000000400000000000000840000000000000104000000000000014400000000000001040", "%x", &buf)
+
+	_, err := wkbReadLineString(bytes.NewReader(buf))
+	assert.Equal(t, io.EOF, err)
 }
 
 func TestMarshalWKBLineString(t *testing.T) {
@@ -99,9 +109,9 @@ func TestGeoJSON(t *testing.T) {
 }
 
 func BenchmarkWKBMarshalPoint(b *testing.B) {
-	b.ReportAllocs()
 	g, err := NewGeom(Point{2, 3})
 	assert.Nil(b, err)
+	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -110,9 +120,9 @@ func BenchmarkWKBMarshalPoint(b *testing.B) {
 }
 
 func BenchmarkWKBMarshalRawPoint(b *testing.B) {
-	b.ReportAllocs()
 	var buf bytes.Buffer
 	p := Point{2, 3}
+	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -121,10 +131,10 @@ func BenchmarkWKBMarshalRawPoint(b *testing.B) {
 }
 
 func BenchmarkWKBMarshalLineString(b *testing.B) {
-	b.ReportAllocs()
 	ls := []Point{{2, 3}, {5, 6}, {10, 15}, {20, 50}}
 	g, err := NewGeom(ls)
 	assert.Nil(b, err)
+	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -133,10 +143,10 @@ func BenchmarkWKBMarshalLineString(b *testing.B) {
 }
 
 func BenchmarkWKBMarshalPoly(b *testing.B) {
-	b.ReportAllocs()
 	poly := [][]Point{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
 	g, err := NewGeom(poly)
 	assert.Nil(b, err)
+	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -145,12 +155,57 @@ func BenchmarkWKBMarshalPoly(b *testing.B) {
 }
 
 func BenchmarkWKBMarshalRawPoly(b *testing.B) {
-	b.ReportAllocs()
 	var buf bytes.Buffer
 	poly := [][]Point{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
+	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		wkbWritePolygon(&buf, poly)
+	}
+}
+
+func BenchmarkWKBUnmarshalPoint(b *testing.B) {
+	var rawPt []byte
+	_, err := fmt.Sscanf("b77efacf9a1f35c0b648da8d3e66ef3f", "%x", &rawPt)
+	assert.Nil(b, err)
+	r := bytes.NewReader(rawPt)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		r.Reset(rawPt)
+		wkbReadPoint(r)
+	}
+}
+
+func BenchmarkWKBUnmarshalLineString(b *testing.B) {
+	var rawLine []byte
+	_, err := fmt.Sscanf("03000000000000000000f03f00000000000000400000000000000840000000000000104000000000000014400000000000001040", "%x", &rawLine)
+	assert.Nil(b, err)
+	r := bytes.NewReader(rawLine)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		r.Reset(rawLine)
+		wkbReadLineString(r)
+	}
+}
+
+func BenchmarkWKBUnmarshalPoly(b *testing.B) {
+	var rawPoly []byte
+	_, err := fmt.Sscanf("0200000003000000000000000000f03f0000000000000040000000000000084000000000000010400000000000001440000000000000104003000000000000000000004000000000000000400000000000000840000000000000104000000000000000400000000000000040", "%x", &rawPoly)
+	assert.Nil(b, err)
+	r := bytes.NewReader(rawPoly)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		r.Reset(rawPoly)
+		wkbReadPolygon(r)
 	}
 }
