@@ -20,8 +20,10 @@ func TestMarshalWKBPoint(t *testing.T) {
 	assert.Nil(t, err)
 
 	// test against third party implementation
-	_, err = wkb.Unmarshal(buf)
+	tpt, err := wkb.Unmarshal(buf)
 	assert.Nil(t, err)
+	assert.Equal(t, tpt.FlatCoords()[0], spt[0])
+	assert.Equal(t, tpt.FlatCoords()[1], spt[1])
 
 	// test against own implementation
 	rp := &Geom{}
@@ -47,8 +49,14 @@ func TestMarshalWKBLineString(t *testing.T) {
 	buf, err := g.MarshalWKB()
 	assert.Nil(t, err)
 
-	_, err = wkb.Unmarshal(buf)
+	tls, err := wkb.Unmarshal(buf)
 	assert.Nil(t, err)
+	assert.Equal(t, tls.FlatCoords()[0], sls[0][0])
+	assert.Equal(t, tls.FlatCoords()[1], sls[0][1])
+	assert.Equal(t, tls.FlatCoords()[2], sls[1][0])
+	assert.Equal(t, tls.FlatCoords()[3], sls[1][1])
+	assert.Equal(t, tls.FlatCoords()[4], sls[2][0])
+	assert.Equal(t, tls.FlatCoords()[5], sls[2][1])
 
 	rp := &Geom{}
 	err = rp.UnmarshalWKB(bytes.NewReader(buf))

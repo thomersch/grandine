@@ -57,6 +57,13 @@ func wkbWritePolygon(w io.Writer, poly [][]Point) error {
 	return nil
 }
 
+func wkbReadHeader(r io.Reader) (GeomType, error) {
+	var buf = make([]byte, 4)
+	_, err := r.Read(buf)
+	gt := endianness.Uint32(buf)
+	return GeomType(gt), err
+}
+
 // TODO: evaluate returning Geom instead of Point
 func wkbReadPoint(r io.Reader) (p Point, err error) {
 	var buf = make([]byte, wkbRawPointSize)

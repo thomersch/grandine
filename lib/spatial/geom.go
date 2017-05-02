@@ -129,6 +129,7 @@ func (g Geom) MarshalJSON() ([]byte, error) {
 
 func (g *Geom) UnmarshalWKB(r io.Reader) error {
 	var wkbEndianness uint8
+	//TODO: read the byte directly
 	err := binary.Read(r, endianness, &wkbEndianness)
 	if err != nil {
 		return err
@@ -138,11 +139,10 @@ func (g *Geom) UnmarshalWKB(r io.Reader) error {
 	}
 
 	var (
-		gt  GeomType
 		npg interface{}
 		ng  Geom
 	)
-	err = binary.Read(r, endianness, &gt)
+	gt, err := wkbReadHeader(r)
 	if err != nil {
 		return err
 	}
