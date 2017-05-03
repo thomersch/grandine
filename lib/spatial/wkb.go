@@ -7,6 +7,13 @@ import (
 
 const wkbRawPointSize = 16
 
+func wkbReadHeader(r io.Reader) (GeomType, error) {
+	var buf = make([]byte, 4)
+	_, err := r.Read(buf)
+	gt := endianness.Uint32(buf)
+	return GeomType(gt), err
+}
+
 func wkbWritePoint(w io.Writer, p Point) error {
 	var (
 		err error
@@ -55,13 +62,6 @@ func wkbWritePolygon(w io.Writer, poly [][]Point) error {
 		}
 	}
 	return nil
-}
-
-func wkbReadHeader(r io.Reader) (GeomType, error) {
-	var buf = make([]byte, 4)
-	_, err := r.Read(buf)
-	gt := endianness.Uint32(buf)
-	return GeomType(gt), err
 }
 
 // TODO: evaluate returning Geom instead of Point

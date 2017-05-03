@@ -60,7 +60,38 @@ func (wr *wrappedReader) ReadByte() (c byte, err error) {
 	return b[0], nil
 }
 
-func twkbReadPoint(r io.Reader, previous Point) (Point, error) {
+type twkbHeader struct {
+	typ       GeomType
+	precision int
+	// metadata attributes
+	bbox, size, idList, extendedPrecision, emptyGeom bool
+}
+
+func twkbReadHeader(r io.Reader) (twkbHeader, error) {
+	var (
+		// BIT   USAGE
+		// 1-4   type
+		// 5-8   precision
+		// 9	 bbox
+		// 10    size attribute
+		// 11    id list
+		// 12    extended precision
+		// 13    empty geom
+		// 14-16 unused
+		by = make([]byte, 2)
+		hd twkbHeader
+	)
+	_, err := r.Read(by)
+	// TODO: type & precision
+	hd.bbox = int(by[1])&1 == 1
+	hd.size = int(by[1])&2 == 2
+	hd.idList = int(by[1])&4 == 4
+	hd.extendedPrecision = int(by[1])&8 == 8
+	hd.emptyGeom = int(by[1])&16 == 16
+	return hd, err
+}
+
+func twkbReadPoint(r io.Reader, previous Point, precision int) (Point, error) {
 	wr, ok := r.(io.ByteReader)
 	if !ok {
 		wr = &wrappedReader{r}
@@ -74,15 +105,15 @@ func twkbReadPoint(r io.Reader, previous Point) (Point, error) {
 	if err != nil {
 		return pt, err
 	}
-	xΔ := float64(xe) / math.Pow10(twkbPrecision)
-	yΔ := float64(ye) / math.Pow10(twkbPrecision)
+	xΔ := float64(xe) / math.Pow10(precision)
+	yΔ := float64(ye) / math.Pow10(precision)
 
 	pt[0] = xΔ + previous[0]
 	pt[1] = yΔ + previous[1]
 	return pt, nil
 }
 
-func twkbReadLineString(r io.Reader) ([]Point, error) {
+func twkbReadLineString(r io.Reader, precision int) ([]Point, error) {
 	wr, ok := r.(combinedReader)
 	if !ok {
 		wr = &wrappedReader{r}
@@ -97,15 +128,27 @@ func twkbReadLineString(r io.Reader) ([]Point, error) {
 		lastPt Point
 	)
 	for i := 0; i < int(npoints); i++ {
-		lastPt, err = twkbReadPoint(wr, lastPt)
+		lastPt, err = twkbReadPoint(wr, lastPt, precision)
 		if err != nil {
 			return ls, err
 		}
-		ls = append(ls, lastPt)
+		ls[i] = lastPt
 	}
 	return ls, nil
 }
 
-// func twkbWriteLineString(w io.Writer, ls []Point) error {
-// 	npoints := binary.
-// }
+func twkbWriteLineString(w io.Writer, ls []Point) error {
+	buf := make([]byte, 10)
+	bWritten := binary.PutUvarint(buf, uint64(len(ls)))
+	_, err := w.Write(buf[:bWritten-1])
+	if err != nil {
+		return err
+	}
+	var previous Point
+	for _, pt := range ls {
+		if err = twkbWritePoint(w, pt, previous); err != nil {
+			return err
+		}
+	}
+	return nil
+}
