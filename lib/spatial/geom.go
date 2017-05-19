@@ -243,6 +243,25 @@ func (g *Geom) Polygon() ([][]Point, error) {
 	return geom, nil
 }
 
+func (g *Geom) BBox() (nw, se Point) {
+	switch gm := g.g.(type) {
+	case Point:
+		return gm, gm
+	case []Point:
+		return ringBBox(gm)
+	case [][]Point:
+		var bboxPoints []Point
+		for _, ring := range gm {
+			neb, seb := ringBBox(ring)
+			bboxPoints = append(bboxPoints, neb, seb)
+		}
+		return ringBBox(bboxPoints)
+	default:
+		panic("unimplemented type")
+	}
+	return
+}
+
 type Feature struct {
 	Type     string                 `json:"type"`
 	Props    map[string]interface{} `json:"properties"`
