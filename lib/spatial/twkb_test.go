@@ -18,11 +18,22 @@ func TestTWKBReadHeader(t *testing.T) {
 	assert.True(t, hd.bbox)
 }
 
+func TestTWKBWriteHeader(t *testing.T) {
+	w := &bytes.Buffer{}
+	typ := GeomTypeLineString
+	precision := 4
+	twkbWriteHeader(w, typ, precision)
+
+	hd, err := twkbReadHeader(w)
+	assert.Nil(t, err)
+	assert.Equal(t, twkbHeader{typ: typ, precision: precision}, hd)
+}
+
 func TestTWKBWritePoint(t *testing.T) {
 	precision := 6
 	origPt := Point{-212, 12.3}
 	buf := bytes.Buffer{}
-	err := twkbWritePoint(&buf, origPt, Point{})
+	err := twkbWritePoint(&buf, origPt, Point{}, precision)
 	assert.Nil(t, err)
 
 	pt, err := twkbReadPoint(&buf, Point{}, precision)
@@ -55,13 +66,14 @@ func TestTWKBReadLine(t *testing.T) {
 }
 
 func BenchmarkTWKBWriteRawPoint(b *testing.B) {
+	precision := 2
 	p := Point{2, 3}
 	buf := bytes.Buffer{}
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := twkbWritePoint(&buf, p, Point{})
+		err := twkbWritePoint(&buf, p, Point{}, precision)
 		assert.Nil(b, err)
 	}
 }
@@ -77,6 +89,6 @@ func BenchmarkTWKBReadRawPoint(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		r.Reset(rawPt)
-		twkbReadPoint(r, Point{}, twkbPrecision)
+		twkbReadPoint(r, Point{}, 0)
 	}
 }

@@ -26,8 +26,8 @@ type GeomType uint32
 
 const (
 	GeomTypePoint      GeomType = 1
-	GeomTypeLineString          = 2
-	GeomTypePolygon             = 3
+	GeomTypeLineString GeomType = 2
+	GeomTypePolygon    GeomType = 3
 	GeomTypeInvalid
 )
 

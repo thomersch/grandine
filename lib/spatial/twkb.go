@@ -6,28 +6,21 @@ import (
 	"math"
 )
 
-// TODO: allow configurable precision
-const twkbPrecision = 6
-
-func twkbWriteHeader(w io.Writer, gt GeomType) error {
-	var buf = make([]byte, 9)
-
-	endianness.PutUint32(buf[:4], uint32(gt))
-	endianness.PutUint32(buf[4:8], twkbPrecision)
-	buf[8] = 0 // no additional features (metadata header)
-
+func twkbWriteHeader(w io.Writer, gt GeomType, precision int) error {
+	var buf = make([]byte, 2)
+	buf[0] = byte(precision<<4) ^ byte(gt)
 	_, err := w.Write(buf)
 	return err
 }
 
-func twkbWritePoint(w io.Writer, p Point, previous Point) error {
+func twkbWritePoint(w io.Writer, p Point, previous Point, precision int) error {
 	var (
-		xi  = int(p[0] * math.Pow10(twkbPrecision))
-		yi  = int(p[1] * math.Pow10(twkbPrecision))
-		xpi = int(previous[0] * math.Pow10(twkbPrecision))
-		ypi = int(previous[1] * math.Pow10(twkbPrecision))
+		xi  = int(p[0] * math.Pow10(precision))
+		yi  = int(p[1] * math.Pow10(precision))
+		xpi = int(previous[0] * math.Pow10(precision))
+		ypi = int(previous[1] * math.Pow10(precision))
 
-		buf = make([]byte, 16)
+		buf = make([]byte, 20) // up to 10 bytes per varint
 	)
 
 	dx := int64(xi - xpi)
@@ -145,7 +138,7 @@ func twkbReadLineString(r io.Reader, precision int) ([]Point, error) {
 	return ls, nil
 }
 
-func twkbWriteLineString(w io.Writer, ls []Point) error {
+func twkbWriteLineString(w io.Writer, ls []Point, precision int) error {
 	buf := make([]byte, 10)
 	bWritten := binary.PutUvarint(buf, uint64(len(ls)))
 	_, err := w.Write(buf[:bWritten-1])
@@ -154,7 +147,7 @@ func twkbWriteLineString(w io.Writer, ls []Point) error {
 	}
 	var previous Point
 	for _, pt := range ls {
-		if err = twkbWritePoint(w, pt, previous); err != nil {
+		if err = twkbWritePoint(w, pt, previous, precision); err != nil {
 			return err
 		}
 	}
