@@ -10,7 +10,7 @@ import (
 )
 
 func TestTWKBReadHeader(t *testing.T) {
-	buf, err := hex.DecodeString("01FF")
+	buf, err := hex.DecodeString("24FF")
 	assert.Nil(t, err)
 	r := bytes.NewBuffer(buf)
 	hd, err := twkbReadHeader(r)
@@ -24,7 +24,6 @@ func TestTWKBWritePoint(t *testing.T) {
 	buf := bytes.Buffer{}
 	err := twkbWritePoint(&buf, origPt, Point{})
 	assert.Nil(t, err)
-	fmt.Printf("%x\n", buf.Bytes())
 
 	pt, err := twkbReadPoint(&buf, Point{}, precision)
 	assert.Nil(t, err)

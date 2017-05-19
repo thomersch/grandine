@@ -67,6 +67,13 @@ type twkbHeader struct {
 	bbox, size, idList, extendedPrecision, emptyGeom bool
 }
 
+func unzigzag(nVal int) int {
+	if (nVal & 1) == 0 {
+		return nVal >> 1
+	}
+	return -(nVal >> 1) - 1
+}
+
 func twkbReadHeader(r io.Reader) (twkbHeader, error) {
 	var (
 		// BIT   USAGE
@@ -82,7 +89,8 @@ func twkbReadHeader(r io.Reader) (twkbHeader, error) {
 		hd twkbHeader
 	)
 	_, err := r.Read(by)
-	// TODO: type & precision
+	hd.typ = GeomType(by[0] & 15)
+	hd.precision = int(by[0] >> 4)
 	hd.bbox = int(by[1])&1 == 1
 	hd.size = int(by[1])&2 == 2
 	hd.idList = int(by[1])&4 == 4

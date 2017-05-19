@@ -115,7 +115,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// for now write a block for every feature
 		for _, featBlock := range geomBlocks(100, gj.Features) {
 			// TODO: oh god, why.
 			var fs []WKBable
