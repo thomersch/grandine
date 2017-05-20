@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/thomersch/grandine/converter/fileformat"
+	"github.com/thomersch/grandine/lib/cugdf"
+	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/golang/protobuf/proto"
 	geom "github.com/twpayne/go-geom"
@@ -79,11 +81,6 @@ func (g *geoJSONFeature) Properties() map[string]interface{} {
 	return g.Props
 }
 
-type WKBable interface {
-	WKB() []byte
-	Properties() map[string]interface{}
-}
-
 type GeoJSONable interface {
 	Geom() geom.T
 	Properties() map[string]interface{}
@@ -106,23 +103,20 @@ func main() {
 	}
 	defer out.Close()
 
-	if strings.HasSuffix(*source, ".geojson") {
+	if strings.HasSuffix(*source, ".geojson") || strings.HasSuffix(*source, ".json") {
 		log.Println("Decoding geojson, encoding .unnamed")
-		writeFileHeader(out)
-
-		var gj GeoJSON
-		if err := json.NewDecoder(f).Decode(&gj); err != nil {
+		err := cugdf.WriteFileHeader(out)
+		if err != nil {
 			log.Fatal(err)
 		}
 
-		for _, featBlock := range geomBlocks(100, gj.Features) {
-			// TODO: oh god, why.
-			var fs []WKBable
-			for _, feat := range featBlock {
-				ft := feat
-				fs = append(fs, &ft)
-			}
-			writeBlock(out, fs)
+		fc := spatial.FeatureCollection{}
+		if err := json.NewDecoder(f).Decode(&fc); err != nil {
+			log.Fatal(err)
+		}
+
+		for _, featBlock := range geomBlocks(100, fc.Features) {
+			cugdf.WriteBlock(out, featBlock)
 		}
 	} else {
 		log.Println("Decoding .unnamed, writing geojson")
@@ -142,23 +136,15 @@ func main() {
 	}
 }
 
-func writeFileHeader(w io.Writer) {
-	// Cookie
-	w.Write([]byte(cookie))
-
-	// Version
-	binary.Write(w, binary.LittleEndian, uint32(version))
-}
-
 // geomBlocks slices a slice of geometries into slices with a max size
-func geomBlocks(size int, src []geoJSONFeature) [][]geoJSONFeature {
+func geomBlocks(size int, src []spatial.Feature) [][]spatial.Feature {
 	if len(src) <= size {
-		return [][]geoJSONFeature{src}
+		return [][]spatial.Feature{src}
 	}
 
 	var (
 		i   int
-		res [][]geoJSONFeature
+		res [][]spatial.Feature
 		end int
 	)
 	for end < len(src) {
@@ -170,47 +156,6 @@ func geomBlocks(size int, src []geoJSONFeature) [][]geoJSONFeature {
 		i++
 	}
 	return res
-}
-
-func writeBlock(w io.Writer, fs []WKBable) {
-	blockBody := &fileformat.Body{}
-	for _, f := range fs {
-		var (
-			tags []*fileformat.Tag
-		)
-		for k, v := range f.Properties() {
-			val, typ, err := fileformat.ValueType(v)
-			if err != nil {
-				// TODO: convert to error reporting
-				log.Fatal(err)
-			}
-			tags = append(tags, &fileformat.Tag{
-				Key:   k,
-				Value: val,
-				Type:  typ,
-			})
-		}
-
-		blockBody.Feature = append(blockBody.Feature, &fileformat.Feature{
-			Geom: f.WKB(),
-			Tags: tags,
-		})
-	}
-	bodyBuf, err := proto.Marshal(blockBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Body Length (fill later)
-	binary.Write(w, binary.LittleEndian, uint32(len(bodyBuf)))
-	// Flags
-	binary.Write(w, binary.LittleEndian, uint16(0))
-	// Compression
-	binary.Write(w, binary.LittleEndian, uint8(0))
-	// Message Type
-	binary.Write(w, binary.LittleEndian, uint8(0))
-
-	w.Write(bodyBuf)
 }
 
 func readFileHeader(r io.Reader) {

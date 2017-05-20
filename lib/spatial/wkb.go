@@ -5,6 +5,15 @@ import (
 	"math"
 )
 
+type WKBable interface {
+	MarshalWKB() ([]byte, error)
+}
+
+type WKBableWithProps interface {
+	WKBable
+	PropertyRetriever
+}
+
 const wkbRawPointSize = 16
 
 func wkbReadHeader(r io.Reader) (GeomType, error) {

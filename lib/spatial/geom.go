@@ -215,10 +215,12 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+// Typ returns the geometries type.
 func (g *Geom) Typ() GeomType {
 	return g.typ
 }
 
+// Point retruns the geometry as a point (check type with Typ()) first.
 func (g *Geom) Point() (Point, error) {
 	geom, ok := g.g.(Point)
 	if !ok {
@@ -260,29 +262,4 @@ func (g *Geom) BBox() (nw, se Point) {
 		panic("unimplemented type")
 	}
 	return
-}
-
-type Feature struct {
-	Type     string                 `json:"type"`
-	Props    map[string]interface{} `json:"properties"`
-	Geometry Geom                   `json:"geometry"`
-}
-
-func (f *Feature) Properties() map[string]interface{} {
-	return f.Props
-}
-
-type FeatureCollection struct {
-	Features []Feature `json:"features"`
-}
-
-func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
-	wfc := struct {
-		Type     string    `json:"type"`
-		Features []Feature `json:"features"`
-	}{
-		Type:     "FeatureCollection",
-		Features: fc.Features,
-	}
-	return json.Marshal(wfc)
 }
