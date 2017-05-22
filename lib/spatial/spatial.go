@@ -8,9 +8,8 @@ type PropertyRetriever interface {
 
 // Feature is a data structure which holds geometry and tags/properties of a geographical feature.
 type Feature struct {
-	Type     string                 `json:"type"` //TODO: necessary?
-	Props    map[string]interface{} `json:"properties"`
-	Geometry Geom                   `json:"geometry"`
+	Props    map[string]interface{}
+	Geometry Geom
 }
 
 func (f *Feature) Properties() map[string]interface{} {
@@ -19,6 +18,19 @@ func (f *Feature) Properties() map[string]interface{} {
 
 func (f *Feature) MarshalWKB() ([]byte, error) {
 	return f.Geometry.MarshalWKB()
+}
+
+func (f Feature) MarshalJSON() ([]byte, error) {
+	tfc := struct {
+		Type     string                 `json:"type"`
+		Props    map[string]interface{} `json:"properties"`
+		Geometry Geom                   `json:"geometry"`
+	}{
+		Type:     "Feature",
+		Props:    f.Props,
+		Geometry: f.Geometry,
+	}
+	return json.Marshal(tfc)
 }
 
 type FeatureCollection struct {

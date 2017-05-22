@@ -1,11 +1,13 @@
 package cugdf
 
 import (
+	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"log"
 
-	"github.com/thomersch/grandine/converter/fileformat"
+	"github.com/thomersch/grandine/lib/cugdf/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/golang/protobuf/proto"
@@ -15,6 +17,10 @@ const (
 	cookie  = "ABCD"
 	version = 0
 )
+
+type Header struct {
+	Version int
+}
 
 var encoding = binary.LittleEndian
 
@@ -30,6 +36,29 @@ func WriteFileHeader(w io.Writer) error {
 		return io.EOF
 	}
 	return err
+}
+
+func ReadFileHeader(r io.Reader) (Header, error) {
+	var (
+		ck   = make([]byte, 4)
+		vers uint32
+		hd   Header
+	)
+	if _, err := r.Read(ck); err != nil {
+		return hd, err
+	}
+	if string(ck) != cookie {
+		return hd, errors.New("invalid cookie")
+	}
+
+	if err := binary.Read(r, binary.LittleEndian, &vers); err != nil {
+		return hd, err
+	}
+	hd.Version = int(vers)
+	if vers > version {
+		return hd, errors.New("invalid file version")
+	}
+	return hd, nil
 }
 
 func WriteBlock(w io.Writer, fs []spatial.Feature) error {
@@ -76,4 +105,68 @@ func WriteBlock(w io.Writer, fs []spatial.Feature) error {
 
 	w.Write(bodyBuf)
 	return nil
+}
+
+// ReadBlocks is a high-level interface for reading all features from a file at once.
+func ReadBlocks(r io.Reader) ([]spatial.Feature, error) {
+	var fs []spatial.Feature
+	for {
+		var (
+			blockLength uint32
+			flags       uint16
+			compression uint8
+			messageType uint8
+		)
+		if err := binary.Read(r, binary.LittleEndian, &blockLength); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
+			return nil, err
+		}
+		if err := binary.Read(r, binary.LittleEndian, &compression); err != nil {
+			if compression != 0 {
+				return nil, errors.New("compression is not supported")
+			}
+		}
+		if err := binary.Read(r, binary.LittleEndian, &messageType); err != nil {
+			if messageType != 0 {
+				return nil, errors.New("message type is not supported")
+			}
+		}
+
+		var (
+			buf       = make([]byte, blockLength)
+			blockBody fileformat.Body
+		)
+		if _, err := r.Read(buf); err != nil {
+			return nil, err
+		}
+		if err := proto.Unmarshal(buf, &blockBody); err != nil {
+			return nil, err
+		}
+		for _, f := range blockBody.GetFeature() {
+			var (
+				feature spatial.Feature
+				geomBuf = bytes.NewBuffer(f.GetGeom())
+			)
+			err := feature.Geometry.UnmarshalWKB(geomBuf)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, tag := range f.Tags {
+				k, v, err := fileformat.KeyValue(tag)
+				if err != nil {
+					// TODO
+					return nil, err
+				}
+				feature.Props[k] = v
+			}
+			fs = append(fs, feature)
+		}
+	}
+	return fs, nil
 }
