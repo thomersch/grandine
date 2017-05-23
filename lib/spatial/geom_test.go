@@ -217,3 +217,39 @@ func BenchmarkWKBUnmarshalPoly(b *testing.B) {
 		wkbReadPolygon(r)
 	}
 }
+
+func TestClipPoint(t *testing.T) {
+	p, err := NewGeom(Point{1, 1})
+	assert.Nil(t, err)
+	t.Run("inside", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{5, 5}))
+	})
+	t.Run("outside", func(t *testing.T) {
+		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 0}, Point{5, 5}))
+	})
+	t.Run("on SE edge", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{1, 1}))
+	})
+	t.Run("on NW edge", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{1, 1}, Point{2, 2}))
+	})
+}
+
+func TestClipLineString(t *testing.T) {
+	p, err := NewGeom([]Point{
+		{1, 1},
+		{1, 2},
+		{2, 2},
+		{3, 3},
+	})
+	assert.Nil(t, err)
+	t.Run("completely inside bbox", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{3, 3}))
+	})
+	t.Run("completely outside 1", func(t *testing.T) {
+		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 5}, Point{12, 10}))
+	})
+	t.Run("completely outside 2", func(t *testing.T) {
+		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{-5, -5}, Point{0, 0}))
+	})
+}

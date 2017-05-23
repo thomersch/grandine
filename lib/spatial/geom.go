@@ -263,3 +263,34 @@ func (g *Geom) BBox() (nw, se Point) {
 	}
 	return
 }
+
+// Clips a geometry and returns a cropped copy. Returns a slice, because clip might result in multiple sub-Geoms.
+func (g *Geom) ClipToBBox(nw, se Point) []Geom {
+	switch gm := g.g.(type) {
+	case Point:
+		if nw[0] <= gm[0] && se[0] >= gm[0] &&
+			nw[1] <= gm[1] && se[1] >= gm[1] {
+			return []Geom{*g}
+		}
+		return []Geom{}
+
+	case []Point:
+		lsNW, lsSE := g.BBox()
+		// Is linestring completely inside bbox?
+		if nw[0] <= lsNW[0] && se[0] >= lsSE[0] &&
+			nw[1] <= lsNW[1] && se[1] >= lsSE[1] {
+			// no clipping necessary
+			return []Geom{*g}
+		}
+
+		// Is linestring fully outside the bbox?
+		if lsSE[0] < nw[0] || lsSE[1] < nw[1] || lsNW[0] > se[0] || lsNW[1] > se[1] {
+			return []Geom{}
+		}
+
+		// TODO: clip into linestrings, if necessary
+	default:
+		panic("unknown geom type")
+	}
+	panic("falling through")
+}
