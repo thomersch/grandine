@@ -37,10 +37,12 @@ type Geom struct {
 }
 
 func NewGeom(g interface{}) (Geom, error) {
-	switch g.(type) {
+	switch geom := g.(type) {
 	case Point:
 		return Geom{typ: GeomTypePoint, g: g}, nil
 	case []Point:
+		return Geom{typ: GeomTypeLineString, g: Line(geom)}, nil
+	case Line:
 		return Geom{typ: GeomTypeLineString, g: g}, nil
 	case [][]Point:
 		return Geom{typ: GeomTypePolygon, g: g}, nil
@@ -71,7 +73,7 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		g.g = p
 	case "linestring":
 		g.typ = GeomTypeLineString
-		var ls []Point
+		var ls Line
 		if err = json.Unmarshal(wg.Coordinates, &ls); err != nil {
 			return err
 		}
@@ -229,8 +231,8 @@ func (g *Geom) Point() (Point, error) {
 	return geom, nil
 }
 
-func (g *Geom) LineString() ([]Point, error) {
-	geom, ok := g.g.([]Point)
+func (g *Geom) LineString() (Line, error) {
+	geom, ok := g.g.(Line)
 	if !ok {
 		return nil, errors.New("geometry is not a LineString")
 	}
@@ -249,7 +251,7 @@ func (g *Geom) BBox() (nw, se Point) {
 	switch gm := g.g.(type) {
 	case Point:
 		return gm, gm
-	case []Point:
+	case Line:
 		return ringBBox(gm)
 	case [][]Point:
 		var bboxPoints []Point
@@ -274,7 +276,7 @@ func (g *Geom) ClipToBBox(nw, se Point) []Geom {
 		}
 		return []Geom{}
 
-	case []Point:
+	case Line:
 		lsNW, lsSE := g.BBox()
 		// Is linestring completely inside bbox?
 		if nw[0] <= lsNW[0] && se[0] >= lsSE[0] &&
@@ -288,7 +290,32 @@ func (g *Geom) ClipToBBox(nw, se Point) []Geom {
 			return []Geom{}
 		}
 
-		// TODO: clip into linestrings, if necessary
+		var cutsegs []Segment
+		for _, seg := range gm.Segments() {
+			if seg.FullyInBBox(nw, se) {
+				cutsegs = append(cutsegs, seg)
+				continue
+			}
+			for _, bbl := range BBoxBorders(nw, se) {
+				if ipt, intersects := seg.Intersection(bbl); intersects {
+					s1, s2 := seg.SplitAt(ipt)
+
+					if s1.FullyInBBox(nw, se) && s1.Length() != 0 {
+						cutsegs = append(cutsegs, s1)
+						break
+					}
+					if s2.FullyInBBox(nw, se) && s2.Length() != 0 {
+						cutsegs = append(cutsegs, s2)
+						break
+					}
+				}
+			}
+		}
+		var gms []Geom
+		for _, ln := range NewLinesFromSegments(cutsegs) {
+			gms = append(gms, Geom{typ: GeomTypeLineString, g: ln})
+		}
+		return gms
 	default:
 		panic("unknown geom type")
 	}

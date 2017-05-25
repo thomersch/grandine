@@ -43,7 +43,7 @@ func TestUnmarshalWKBEOF(t *testing.T) {
 }
 
 func TestMarshalWKBLineString(t *testing.T) {
-	sls := []Point{{1, 2}, {3, 4}, {5, 4}}
+	sls := Line{{1, 2}, {3, 4}, {5, 4}}
 	g, err := NewGeom(sls)
 	assert.Nil(t, err)
 	buf, err := g.MarshalWKB()
@@ -236,7 +236,7 @@ func TestClipPoint(t *testing.T) {
 }
 
 func TestClipLineString(t *testing.T) {
-	p, err := NewGeom([]Point{
+	ls1, err := NewGeom([]Point{
 		{1, 1},
 		{1, 2},
 		{2, 2},
@@ -244,12 +244,44 @@ func TestClipLineString(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	t.Run("completely inside bbox", func(t *testing.T) {
-		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{3, 3}))
+		assert.Equal(t, []Geom{ls1}, ls1.ClipToBBox(Point{0, 0}, Point{3, 3}))
 	})
 	t.Run("completely outside 1", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 5}, Point{12, 10}))
+		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{5, 5}, Point{12, 10}))
 	})
 	t.Run("completely outside 2", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{-5, -5}, Point{0, 0}))
+		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{-5, -5}, Point{0, 0}))
+	})
+
+	ls2, err := NewGeom([]Point{
+		{1, 1},
+		{3, 3},
+		{5, 1},
+	})
+	assert.Nil(t, err)
+	t.Run("split into two sublines", func(t *testing.T) {
+		sl1, err := NewGeom([]Point{
+			{1, 1},
+			{2, 2},
+		})
+		assert.Nil(t, err)
+		sl2, err := NewGeom([]Point{
+			{4, 2},
+			{5, 1},
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []Geom{sl1, sl2}, ls2.ClipToBBox(Point{1, 1}, Point{5, 2}))
+	})
+
+	ls3, err := NewGeom(Line{
+		{1, 1},
+		{1, 2},
+		{1, 5},
+	})
+	assert.Nil(t, err)
+	t.Run("cut linestring", func(t *testing.T) {
+		assert.Equal(t,
+			[]Geom{{typ: GeomTypeLineString, g: Line{{1, 1}, {1, 2}, {1, 3}}}},
+			ls3.ClipToBBox(Point{0, 0}, Point{3, 3}))
 	})
 }
