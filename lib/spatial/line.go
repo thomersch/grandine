@@ -4,6 +4,7 @@ import "math"
 
 type Line []Point
 
+// NewLinesFromSegments creates a line from continous segments.
 func NewLinesFromSegments(segs []Segment) []Line {
 	ls := []Line{Line{}}
 	for i, seg := range segs {
@@ -90,6 +91,46 @@ func (l Line) ClipToBBox(nw, se Point) []Geom {
 	return gms
 }
 
+func (l Line) Closed() bool {
+	if len(l) < 2 {
+		return false
+	}
+	return l[0] == l[len(l)-1]
+}
+
+func (l1 Line) IsExtendedBy(l2 Line) bool {
+	return l1[0] == l2[0] || l1[1] == l2[1] || l1[len(l1)-1] == l2[0] || l1[0] == l2[len(l2)-1]
+}
+
+func (l Line) Reverse() {
+	for i := len(l)/2 - 1; i >= 0; i-- {
+		opp := len(l) - 1 - i
+		l[i], l[opp] = l[opp], l[i]
+	}
+}
+
+func MergeLines(l1, l2 Line) Line {
+	// head to head
+	if l1[0] == l2[0] {
+		l1.Reverse()
+		return append(l1, l2[1:]...)
+	}
+	// tail to tail
+	if l1[len(l1)-1] == l2[len(l2)-1] {
+		l2.Reverse()
+		return append(l1, l2[1:]...)
+	}
+	// head to tail
+	if l1[0] == l2[len(l2)-1] {
+		return append(l2, l1[1:]...)
+	}
+	// tail to head
+	if l1[len(l1)-1] == l2[0] {
+		return append(l1, l2[1:]...)
+	}
+	return Line{}
+}
+
 type Segment [2]Point
 
 func (s *Segment) HasPoint(pt Point) bool {
@@ -137,12 +178,12 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 	intersection := Point{
 		(b2*c1 - b1*c2) / det,
 		(a1*c2 - a2*c1) / det,
-	}
+	}.RoundedCoords()
 	return intersection, s.HasPoint(intersection) && s2.HasPoint(intersection)
 }
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.
-// Segments are counter-clockwise.
+// Segments are returned in counter-clockwise order.
 func BBoxBorders(nw, se Point) [4]Segment {
 	return [4]Segment{
 		{

@@ -209,4 +209,89 @@ func TestClipLineString(t *testing.T) {
 
 		assert.Equal(t, []Geom{cut1, cut2}, ls4.ClipToBBox(Point{0, 0}, Point{0.5, 1}))
 	})
+
+	ls5, err := NewGeom(Line{
+		{1, 0}, {0, 0}, {0, 0.2}, {0.8, 0.2}, {0.8, 0.8}, {0, 0.8}, {0, 1}, {1, 1},
+	})
+	assert.Nil(t, err)
+	t.Run("two Us", func(t *testing.T) {
+		u1, err := NewGeom(Line{
+			{0.5, 0}, {0, 0}, {0, 0.2}, {0.5, 0.2},
+		})
+		assert.Nil(t, err)
+		u2, err := NewGeom(Line{
+			{0.5, 0.8}, {0, 0.8}, {0, 1}, {0.5, 1},
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []Geom{u1, u2}, ls5.ClipToBBox(Point{0, 0}, Point{0.5, 1}))
+	})
+}
+
+func TestLineClosed(t *testing.T) {
+	l := Line{
+		{2, 2},
+		{3, 5},
+		{4, 2},
+		{2, 2},
+	}
+
+	t.Run("closed", func(t *testing.T) {
+		assert.True(t, l.Closed())
+	})
+	t.Run("open", func(t *testing.T) {
+		assert.False(t, l[:2].Closed())
+	})
+}
+
+func TestMergeLines(t *testing.T) {
+	t.Run("head to head", func(t *testing.T) {
+		ln1 := Line{
+			{0, 0},
+			{1, 0},
+			{1, 1},
+		}
+		ln2 := Line{
+			{0, 0},
+			{-1, -1},
+		}
+		assert.Equal(t, Line{{1, 1}, {1, 0}, {0, 0}, {-1, -1}}, MergeLines(ln1, ln2))
+	})
+
+	t.Run("tail to tail", func(t *testing.T) {
+		ln1 := Line{
+			{-1, -1},
+			{0, 0},
+		}
+		ln2 := Line{
+			{2, 3},
+			{0, 0},
+		}
+		assert.Equal(t, Line{{-1, -1}, {0, 0}, {2, 3}}, MergeLines(ln1, ln2))
+	})
+
+	t.Run("head to tail", func(t *testing.T) {
+		ln1 := Line{
+			{0, 0},
+			{1, 0},
+			{1, 1},
+		}
+		ln2 := Line{
+			{1, 1},
+			{2, 3},
+		}
+		assert.Equal(t, Line{{0, 0}, {1, 0}, {1, 1}, {2, 3}}, MergeLines(ln1, ln2))
+	})
+
+	t.Run("tail to head", func(t *testing.T) {
+		ln1 := Line{
+			{0, 0},
+			{1, 0},
+			{1, 1},
+		}
+		ln2 := Line{
+			{1, 1},
+			{2, 3},
+		}
+		assert.Equal(t, Line{{0, 0}, {1, 0}, {1, 1}, {2, 3}}, MergeLines(ln2, ln1))
+	})
 }

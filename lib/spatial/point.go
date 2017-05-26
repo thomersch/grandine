@@ -1,5 +1,7 @@
 package spatial
 
+import "math"
+
 type Point [2]float64
 
 func (p *Point) X() float64 {
@@ -17,4 +19,25 @@ func (p Point) ClipToBBox(nw, se Point) []Geom {
 		return []Geom{g}
 	}
 	return []Geom{}
+}
+
+const pointPrecision = 8
+
+func (p Point) RoundedCoords() Point {
+	return Point{
+		roundWithPrecision(p[0], pointPrecision),
+		roundWithPrecision(p[1], pointPrecision),
+	}
+}
+
+func round(v float64) float64 {
+	if v < 0 {
+		return math.Ceil(v - 0.5)
+	}
+	return math.Floor(v + 0.5)
+}
+
+func roundWithPrecision(v float64, decimals int) float64 {
+	s := math.Pow(10, float64(decimals))
+	return round(v*s) / s
 }
