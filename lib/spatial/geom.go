@@ -12,16 +12,6 @@ import (
 
 var endianness = binary.LittleEndian
 
-type Point [2]float64
-
-func (p *Point) X() float64 {
-	return p[0]
-}
-
-func (p *Point) Y() float64 {
-	return p[1]
-}
-
 type GeomType uint32
 
 const (
@@ -38,13 +28,26 @@ type Geom struct {
 
 func NewGeom(g interface{}) (Geom, error) {
 	switch geom := g.(type) {
+	// Point
 	case Point:
 		return Geom{typ: GeomTypePoint, g: g}, nil
+
+	// Line String
 	case []Point:
 		return Geom{typ: GeomTypeLineString, g: Line(geom)}, nil
 	case Line:
 		return Geom{typ: GeomTypeLineString, g: g}, nil
+
+	// Polygon
 	case [][]Point:
+		var poly Polygon
+		for _, ln := range geom {
+			poly = append(poly, Line(ln))
+		}
+		return Geom{typ: GeomTypePolygon, g: poly}, nil
+	case []Line:
+		return Geom{typ: GeomTypePolygon, g: Polygon(geom)}, nil
+	case Polygon:
 		return Geom{typ: GeomTypePolygon, g: g}, nil
 	default:
 		return Geom{}, fmt.Errorf("unknown input geom type: %T", g)
@@ -80,7 +83,7 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		g.g = ls
 	case "polygon":
 		g.typ = GeomTypePolygon
-		var poly [][]Point
+		var poly Polygon
 		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
 			return err
 		}
@@ -198,14 +201,14 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 		}
 		err = wkbWritePoint(&buf, p)
 	case GeomTypeLineString:
-		var ls []Point
+		var ls Line
 		ls, err = g.LineString()
 		if err != nil {
 			return nil, err
 		}
 		err = wkbWriteLineString(&buf, ls)
 	case GeomTypePolygon:
-		var poly [][]Point
+		var poly Polygon
 		poly, err = g.Polygon()
 		if err != nil {
 			return nil, err
@@ -239,8 +242,8 @@ func (g *Geom) LineString() (Line, error) {
 	return geom, nil
 }
 
-func (g *Geom) Polygon() ([][]Point, error) {
-	geom, ok := g.g.([][]Point)
+func (g *Geom) Polygon() (Polygon, error) {
+	geom, ok := g.g.(Polygon)
 	if !ok {
 		return nil, errors.New("geometry is not a Polygon")
 	}
@@ -252,72 +255,29 @@ func (g *Geom) BBox() (nw, se Point) {
 	case Point:
 		return gm, gm
 	case Line:
-		return ringBBox(gm)
-	case [][]Point:
-		var bboxPoints []Point
+		return gm.BBox()
+	case Polygon:
+		var bboxPoints Line
 		for _, ring := range gm {
-			neb, seb := ringBBox(ring)
+			neb, seb := ring.BBox()
 			bboxPoints = append(bboxPoints, neb, seb)
 		}
-		return ringBBox(bboxPoints)
+		return bboxPoints.BBox()
 	default:
 		panic("unimplemented type")
 	}
 	return
 }
 
+type Clippable interface {
+	// TODO: consider returning primitive geom, instead of Geom
+	ClipToBBox(nw, se Point) []Geom
+}
+
 // Clips a geometry and returns a cropped copy. Returns a slice, because clip might result in multiple sub-Geoms.
 func (g *Geom) ClipToBBox(nw, se Point) []Geom {
-	switch gm := g.g.(type) {
-	case Point:
-		if nw[0] <= gm[0] && se[0] >= gm[0] &&
-			nw[1] <= gm[1] && se[1] >= gm[1] {
-			return []Geom{*g}
-		}
-		return []Geom{}
-
-	case Line:
-		lsNW, lsSE := g.BBox()
-		// Is linestring completely inside bbox?
-		if nw[0] <= lsNW[0] && se[0] >= lsSE[0] &&
-			nw[1] <= lsNW[1] && se[1] >= lsSE[1] {
-			// no clipping necessary
-			return []Geom{*g}
-		}
-
-		// Is linestring fully outside the bbox?
-		if lsSE[0] < nw[0] || lsSE[1] < nw[1] || lsNW[0] > se[0] || lsNW[1] > se[1] {
-			return []Geom{}
-		}
-
-		var cutsegs []Segment
-		for _, seg := range gm.Segments() {
-			if seg.FullyInBBox(nw, se) {
-				cutsegs = append(cutsegs, seg)
-				continue
-			}
-			for _, bbl := range BBoxBorders(nw, se) {
-				if ipt, intersects := seg.Intersection(bbl); intersects {
-					s1, s2 := seg.SplitAt(ipt)
-
-					if s1.FullyInBBox(nw, se) && s1.Length() != 0 {
-						cutsegs = append(cutsegs, s1)
-						break
-					}
-					if s2.FullyInBBox(nw, se) && s2.Length() != 0 {
-						cutsegs = append(cutsegs, s2)
-						break
-					}
-				}
-			}
-		}
-		var gms []Geom
-		for _, ln := range NewLinesFromSegments(cutsegs) {
-			gms = append(gms, Geom{typ: GeomTypeLineString, g: ln})
-		}
-		return gms
-	default:
-		panic("unknown geom type")
+	if gm, ok := g.g.(Clippable); ok {
+		return gm.ClipToBBox(nw, se)
 	}
-	panic("falling through")
+	panic("internal geometry needs to fulfill Clippable interface")
 }

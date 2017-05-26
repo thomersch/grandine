@@ -55,7 +55,7 @@ func wkbWriteLineString(w io.Writer, ls []Point) error {
 	return nil
 }
 
-func wkbWritePolygon(w io.Writer, poly [][]Point) error {
+func wkbWritePolygon(w io.Writer, poly Polygon) error {
 	// write number of rings
 	var lnr = make([]byte, 4)
 	endianness.PutUint32(lnr, uint32(len(poly)))

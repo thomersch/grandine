@@ -67,7 +67,7 @@ func TestMarshalWKBLineString(t *testing.T) {
 }
 
 func TestMarshalWKBPolygon(t *testing.T) {
-	spoly := [][]Point{
+	spoly := Polygon{
 		{
 			{1, 2}, {3, 4}, {5, 4},
 		},
@@ -164,7 +164,7 @@ func BenchmarkWKBMarshalPoly(b *testing.B) {
 
 func BenchmarkWKBMarshalRawPoly(b *testing.B) {
 	var buf bytes.Buffer
-	poly := [][]Point{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
+	poly := Polygon{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -232,56 +232,5 @@ func TestClipPoint(t *testing.T) {
 	})
 	t.Run("on NW edge", func(t *testing.T) {
 		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{1, 1}, Point{2, 2}))
-	})
-}
-
-func TestClipLineString(t *testing.T) {
-	ls1, err := NewGeom([]Point{
-		{1, 1},
-		{1, 2},
-		{2, 2},
-		{3, 3},
-	})
-	assert.Nil(t, err)
-	t.Run("completely inside bbox", func(t *testing.T) {
-		assert.Equal(t, []Geom{ls1}, ls1.ClipToBBox(Point{0, 0}, Point{3, 3}))
-	})
-	t.Run("completely outside 1", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{5, 5}, Point{12, 10}))
-	})
-	t.Run("completely outside 2", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{-5, -5}, Point{0, 0}))
-	})
-
-	ls2, err := NewGeom([]Point{
-		{1, 1},
-		{3, 3},
-		{5, 1},
-	})
-	assert.Nil(t, err)
-	t.Run("split into two sublines", func(t *testing.T) {
-		sl1, err := NewGeom([]Point{
-			{1, 1},
-			{2, 2},
-		})
-		assert.Nil(t, err)
-		sl2, err := NewGeom([]Point{
-			{4, 2},
-			{5, 1},
-		})
-		assert.Nil(t, err)
-		assert.Equal(t, []Geom{sl1, sl2}, ls2.ClipToBBox(Point{1, 1}, Point{5, 2}))
-	})
-
-	ls3, err := NewGeom(Line{
-		{1, 1},
-		{1, 2},
-		{1, 5},
-	})
-	assert.Nil(t, err)
-	t.Run("cut linestring", func(t *testing.T) {
-		assert.Equal(t,
-			[]Geom{{typ: GeomTypeLineString, g: Line{{1, 1}, {1, 2}, {1, 3}}}},
-			ls3.ClipToBBox(Point{0, 0}, Point{3, 3}))
 	})
 }

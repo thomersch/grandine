@@ -30,6 +30,66 @@ func (l Line) Segments() []Segment {
 	return segs
 }
 
+func (l Line) BBox() (nw, se Point) {
+	nw[0] = l[0][0]
+	nw[1] = l[0][1]
+	se[0] = nw[0]
+	se[1] = nw[1]
+	for _, pt := range l {
+		nw[0] = math.Min(nw[0], pt[0])
+		nw[1] = math.Min(nw[1], pt[1])
+		se[0] = math.Max(se[0], pt[0])
+		se[1] = math.Max(se[1], pt[1])
+	}
+	return
+}
+
+func (l Line) ClipToBBox(nw, se Point) []Geom {
+	lsNW, lsSE := l.BBox()
+	// Is linestring completely inside bbox?
+	if nw[0] <= lsNW[0] && se[0] >= lsSE[0] &&
+		nw[1] <= lsNW[1] && se[1] >= lsSE[1] {
+		// no clipping necessary
+		g, _ := NewGeom(l)
+		return []Geom{g}
+	}
+
+	// Is linestring fully outside the bbox?
+	if lsSE[0] < nw[0] || lsSE[1] < nw[1] || lsNW[0] > se[0] || lsNW[1] > se[1] {
+		return []Geom{}
+	}
+
+	var cutsegs []Segment
+	for _, seg := range l.Segments() {
+		if seg.FullyInBBox(nw, se) {
+			cutsegs = append(cutsegs, seg)
+			continue
+		}
+		for _, bbl := range BBoxBorders(nw, se) {
+			if ipt, intersects := seg.Intersection(bbl); intersects {
+				s1, s2 := seg.SplitAt(ipt)
+
+				if s1.FullyInBBox(nw, se) && s1.Length() != 0 {
+					cutsegs = append(cutsegs, s1)
+					break
+				}
+				if s2.FullyInBBox(nw, se) && s2.Length() != 0 {
+					cutsegs = append(cutsegs, s2)
+					break
+				}
+				if s1.Length() == 0 && s2.Length() == 0 {
+					panic("cut lines have no length, something is really bad")
+				}
+			}
+		}
+	}
+	var gms []Geom
+	for _, ln := range NewLinesFromSegments(cutsegs) {
+		gms = append(gms, Geom{typ: GeomTypeLineString, g: ln})
+	}
+	return gms
+}
+
 type Segment [2]Point
 
 func (s *Segment) HasPoint(pt Point) bool {
@@ -82,22 +142,23 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 }
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.
+// Segments are counter-clockwise.
 func BBoxBorders(nw, se Point) [4]Segment {
 	return [4]Segment{
 		{
 			{nw.X(), nw.Y()},
-			{nw.Y(), se.X()},
-		},
-		{
-			{nw.Y(), se.X()},
-			{se.X(), se.Y()},
-		},
-		{
-			{se.X(), se.Y()},
 			{nw.X(), se.Y()},
 		},
 		{
 			{nw.X(), se.Y()},
+			{se.X(), se.Y()},
+		},
+		{
+			{se.X(), se.Y()},
+			{se.X(), nw.Y()},
+		},
+		{
+			{se.X(), nw.Y()},
 			{nw.X(), nw.Y()},
 		},
 	}
