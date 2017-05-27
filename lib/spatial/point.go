@@ -12,9 +12,13 @@ func (p *Point) Y() float64 {
 	return p[1]
 }
 
+func (p Point) InBBox(nw, se Point) bool {
+	return nw[0] <= p[0] && se[0] >= p[0] &&
+		nw[1] <= p[1] && se[1] >= p[1]
+}
+
 func (p Point) ClipToBBox(nw, se Point) []Geom {
-	if nw[0] <= p[0] && se[0] >= p[0] &&
-		nw[1] <= p[1] && se[1] >= p[1] {
+	if p.InBBox(nw, se) {
 		g, _ := NewGeom(p)
 		return []Geom{g}
 	}
@@ -28,6 +32,26 @@ func (p Point) RoundedCoords() Point {
 		roundWithPrecision(p[0], pointPrecision),
 		roundWithPrecision(p[1], pointPrecision),
 	}
+}
+
+func (p Point) InPolygon(poly Polygon) bool {
+	pbnw, pbse := poly[0].BBox()
+	if !p.InBBox(pbnw, pbse) {
+		return false
+	}
+
+	outTestPoint := Point{pbnw[0] - 1, pbnw[1] - 1}
+
+	var allsegs []Segment
+	for _, ln := range poly {
+		allsegs = append(allsegs, ln.Segments()...)
+	}
+
+	l := Line{p, outTestPoint}
+	if len(l.Intersections(allsegs))%2 == 0 {
+		return false
+	}
+	return true
 }
 
 func round(v float64) float64 {
