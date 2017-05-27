@@ -161,15 +161,15 @@ func newOrderableLine(l Line) orderableLine {
 	return orderableLine{ln: l, center: l.Center()}
 }
 
-// Methods for sorting in counter-clockwise order
+// Methods for sorting in a clockwise order
 func (l orderableLine) Len() int      { return len(l.ln) }
 func (l orderableLine) Swap(i, j int) { l.ln[i], l.ln[j] = l.ln[j], l.ln[i] }
 func (l orderableLine) Less(i, j int) bool {
 	// inspired by https://stackoverflow.com/a/6989383/552651
 	var (
 		center = l.center
-		a      = l.ln[i]
-		b      = l.ln[j]
+		b      = l.ln[i]
+		a      = l.ln[j]
 	)
 	if a.X()-center.X() >= 0 && b.X()-center.X() < 0 {
 		return true
