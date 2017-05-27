@@ -31,6 +31,23 @@ func (l Line) Segments() []Segment {
 	return segs
 }
 
+func (l Line) Intersections(segments []Segment) []Point {
+	var intersectionSet = map[Point]struct{}{} // set
+	for _, seg := range l.Segments() {
+		for _, seg2 := range segments {
+			if ipt, intersects := seg.Intersection(seg2); intersects {
+				intersectionSet[ipt] = struct{}{}
+			}
+		}
+	}
+
+	var intersections []Point
+	for inter := range intersectionSet {
+		intersections = append(intersections, inter)
+	}
+	return intersections
+}
+
 func (l Line) BBox() (nw, se Point) {
 	nw[0] = l[0][0]
 	nw[1] = l[0][1]
@@ -66,22 +83,9 @@ func (l Line) ClipToBBox(nw, se Point) []Geom {
 			cutsegs = append(cutsegs, seg)
 			continue
 		}
-		for _, bbl := range BBoxBorders(nw, se) {
-			if ipt, intersects := seg.Intersection(bbl); intersects {
-				s1, s2 := seg.SplitAt(ipt)
-
-				if s1.FullyInBBox(nw, se) && s1.Length() != 0 {
-					cutsegs = append(cutsegs, s1)
-					break
-				}
-				if s2.FullyInBBox(nw, se) && s2.Length() != 0 {
-					cutsegs = append(cutsegs, s2)
-					break
-				}
-				if s1.Length() == 0 && s2.Length() == 0 {
-					panic("cut lines have no length, something is really bad")
-				}
-			}
+		ns := seg.ClipToBBox(nw, se)
+		if len(ns) != 0 {
+			cutsegs = append(cutsegs, ns...)
 		}
 	}
 	var gms []Geom
@@ -145,6 +149,48 @@ func (s *Segment) HasPoint(pt Point) bool {
 
 func (s *Segment) SplitAt(p Point) (Segment, Segment) {
 	return Segment{s[0], p}, Segment{p, s[1]}
+}
+
+// ClipToBBox returns 0 or 1 Segment which is inside bbox.
+func (s *Segment) ClipToBBox(nw, se Point) []Segment {
+	var intersections []Point
+	for _, bbrd := range BBoxBorders(nw, se) {
+		if ipt, ok := s.Intersection(bbrd); ok {
+			intersections = append(intersections, ipt)
+		}
+	}
+	for i, is := range intersections {
+		s1, s2 := s.SplitAt(is)
+		if s1.Length() != 0 && s1.FullyInBBox(nw, se) {
+			return []Segment{s1}
+		}
+		if s2.Length() != 0 && s2.FullyInBBox(nw, se) {
+			return []Segment{s2}
+		}
+		// segment starts and ends outside bbox
+		// TODO: this could probably be solved cleaner
+		for ii, iis := range intersections {
+			if i == ii {
+				continue
+			}
+			is1, is2 := s1.SplitAt(iis)
+			if is1.Length() != 0 && is1.FullyInBBox(nw, se) {
+				return []Segment{is1}
+			}
+			if is2.Length() != 0 && is2.FullyInBBox(nw, se) {
+				return []Segment{is2}
+			}
+			is1, is2 = s2.SplitAt(iis)
+			if is1.Length() != 0 && is1.FullyInBBox(nw, se) {
+				return []Segment{is1}
+			}
+			if is2.Length() != 0 && is2.FullyInBBox(nw, se) {
+				return []Segment{is2}
+			}
+		}
+	}
+	// no intersection
+	return nil
 }
 
 func (s *Segment) FullyInBBox(nw, se Point) bool {
