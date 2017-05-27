@@ -1,6 +1,8 @@
 package spatial
 
 import (
+	"math"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -294,4 +296,26 @@ func TestMergeLines(t *testing.T) {
 		}
 		assert.Equal(t, Line{{0, 0}, {1, 0}, {1, 1}, {2, 3}}, MergeLines(ln2, ln1))
 	})
+}
+
+func TestLineCenter(t *testing.T) {
+	line := Line{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
+	assert.Equal(t, Point{0.5, 0.5}, line.Center())
+
+	line2 := Line{{0, 0}, {0, 2}, {8, 2}, {8, 8}, {0, 8}, {0, 10}, {10, 10}, {10, 0}}
+	l2ctr := line2.Center()
+	l2ctr[0] = math.Ceil(l2ctr[0])
+	assert.Equal(t, Point{6, 5}, l2ctr)
+}
+
+func TestLineSort(t *testing.T) {
+	line1 := newOrderableLine(Line{
+		{1, 0}, {0, 0}, {0, 1}, {1, 1},
+	})
+	line2 := newOrderableLine(Line{
+		{0, 0}, {1, 0}, {1, 1}, {0, 1},
+	})
+	sort.Sort(line1)
+	sort.Sort(line2)
+	assert.Equal(t, line1, line2)
 }
