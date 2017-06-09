@@ -290,8 +290,8 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.
 // Segments are returned in counter-clockwise order.
-func BBoxBorders(nw, se Point) [4]Segment {
-	return [4]Segment{
+func BBoxBorders(nw, se Point) []Segment {
+	return []Segment{
 		{
 			{nw.X(), nw.Y()},
 			{nw.X(), se.Y()},
