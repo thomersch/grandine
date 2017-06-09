@@ -1,6 +1,9 @@
 package spatial
 
-import "math"
+import (
+	"log"
+	"math"
+)
 
 type Point [2]float64
 
@@ -48,7 +51,16 @@ func (p Point) InPolygon(poly Polygon) bool {
 	}
 
 	l := Line{p, outTestPoint}
-	if len(l.Intersections(allsegs))%2 == 0 {
+	intersections := l.Intersections(allsegs)
+	if len(intersections)%2 == 0 {
+		for _, itsct := range intersections {
+			// if the intersection is exactly the tested point, the point is actually inside
+			// TODO: test more
+			if itsct == p {
+				log.Println("point in polygon, intersection is point")
+				return true
+			}
+		}
 		return false
 	}
 	return true

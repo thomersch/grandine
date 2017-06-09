@@ -41,21 +41,19 @@ func TestClipPolygon(t *testing.T) {
 	t.Run("single ring into two subpolygons", func(t *testing.T) {
 		polyCut1, err := NewGeom(Polygon{
 			{
-				{0.5, 0},
-				{0, 0},
-				{0, 0.2},
-				{0.5, 0.2},
-				{0.5, 0},
+				{0.5, 0.8},
+				{0, 0.8},
+				{0, 1},
+				{0.5, 1},
 			},
 		})
 		assert.Nil(t, err)
 		polyCut2, err := NewGeom(Polygon{
 			{
-				{0.5, 0.8},
-				{0, 0.8},
-				{0, 1},
-				{0.5, 1},
-				{0.5, 0.8},
+				{0.5, 0},
+				{0, 0},
+				{0, 0.2},
+				{0.5, 0.2},
 			},
 		})
 		assert.Nil(t, err)

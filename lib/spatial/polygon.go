@@ -43,17 +43,17 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 	}
 
 	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
-		if subjPt.Next() == nil {
-			// no further segment can be constructed
-			break
-		}
-		subjSeg := Segment{subjPt.Value.(refPoint).pt, subjPt.Next().Value.(refPoint).pt}
+		// if subjPt.Next() == nil {
+		// 	// no further segment can be constructed
+		// 	break
+		// }
+		subjSeg := Segment{subjPt.Value.(refPoint).pt, nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt}
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
-			if clipPt.Next() == nil {
-				// no further clip segment can be constructed
-				break
-			}
-			clipSeg := Segment{clipPt.Value.(Point), clipPt.Next().Value.(Point)}
+			// if clipPt.Next() == nil {
+			// 	// no further clip segment can be constructed
+			// 	break
+			// }
+			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
 				log.Printf("intersection: %v (%v %v)", intsct, subjSeg, clipSeg)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
@@ -79,17 +79,21 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		}
 		// entering intersection
 		if !subjPt.Value.(refPoint).pt.InPolygon(Polygon{clipLn}) && nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt.InPolygon(Polygon{clipLn}) {
-			startIntsct = subjPt
+			if startIntsct == nil {
+				startIntsct = subjPt
+			}
+
 			log.Printf("entering")
 			var (
-				nln        Line
-				startingPt = subjPt.Value.(refPoint)
+				nln Line
+
+				startingPt = nextElemOrWrap(subjLL, subjPt).Value.(refPoint)
 			)
 			log.Printf("stop at: %v", startingPt)
 			nln = append(nln, startingPt.pt)
 
 			// walk the subject line until there is a leaving intersection
-			for subjPt = subjPt.Next(); subjPt != nil; subjPt = subjPt.Next() {
+			for subjPt = nextElemOrWrap(subjLL, subjPt); ; subjPt = nextElemOrWrap(subjLL, subjPt) {
 				log.Printf("walking subject: %v", subjPt)
 				// don't duplicate points
 				if len(nln) == 0 || nln[len(nln)-1] != subjPt.Value.(refPoint).pt {
@@ -97,18 +101,20 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 					nln = append(nln, subjPt.Value.(refPoint).pt)
 				}
 
-				if len(nln) > 1 && subjPt.Next() != nil && subjPt.Value.(refPoint).pt.InPolygon(Polygon{clipLn}) && !subjPt.Next().Value.(refPoint).pt.InPolygon(Polygon{clipLn}) {
-					log.Printf("breche")
+				if len(nln) > 1 && !nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt.InPolygon(Polygon{clipLn}) {
+					log.Printf("breche, next pt: %v", nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt.InPolygon(Polygon{clipLn}))
 					break
 				}
-				if subjPt.Next() == nil {
-					// prevent applying Next()
-					break
-				}
+				// if subjPt.Next() == nil {
+				// 	// prevent applying Next()
+				// 	break
+				// }
 			}
-			log.Printf("ref: %p", subjPt)
+			log.Printf("ref: %v", subjPt)
+			log.Printf("stop clip iter at: %v", startingPt)
 			// walk the clip line until starting intersection is reached
-			for clipPt := subjPt.Value.(refPoint).clipRef; clipPt != nil; clipPt = clipPt.Next() {
+			for clipPt := subjPt.Value.(refPoint).clipRef; ; clipPt = nextElemOrWrap(clipLL, clipPt) {
+				log.Printf("%v %p", clipPt, clipPt)
 				if clipPt == startingPt.clipRef {
 					log.Println("ref reached")
 					break
@@ -121,6 +127,7 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 				}
 			}
 			if len(nln) != 0 {
+				log.Printf("appending: %v", nln)
 				lines = append(lines, nln)
 			}
 		}
