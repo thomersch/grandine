@@ -1,9 +1,6 @@
 package spatial
 
-import (
-	"container/list"
-	"log"
-)
+import "container/list"
 
 // Polygon is a data type for storing simple polygons: One outer ring and an arbitrary number of inner rings.
 type Polygon []Line
@@ -16,12 +13,17 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		return []Geom{geom}
 	}
 
+	// This clipping method uses Weiler-Atherton Polygon Clipping
+	// It is implemented with in a two-pass manner.
+	// Step 1: All edges (subject and clipping) are traversed and intersections are added.
+	// Step 2: Starting with an incoming intersection, all edges of the subject polygon are
+	//         iterated and until the clipping region is exited, those edges are collected.
+	//         After this the clipping polygon is traversed until the original entering
+	//         intersection is reached.
+	//         This is repeated until the starting intersection is reached.
+
 	// TODO: inner ring handling
 	clipLn := NewLinesFromSegments(BBoxBorders(nw, se))[0]
-
-	// clockwise ordering first
-	// subjLns := orderableLine{ln: p[0]}
-	// sort.Sort(subjLns)
 
 	var (
 		subjLL = list.New()
@@ -30,7 +32,6 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 
 	// convert subj and clip slices into linked lists
 	for _, subjPt := range p[0] {
-		log.Printf("subj: %v", subjPt)
 		subjLL.PushBack(refPoint{pt: subjPt})
 	}
 	for _, clipPt := range clipLn {
@@ -43,19 +44,15 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
 			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
-				log.Printf("intersection: %v (%v %v)", intsct, subjSeg, clipSeg)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
 				clipPt = clipPt.Next()
 
-				log.Println(nil, subjPt, intsct, clipRef)
 				if existingElem := hasPointElement(subjLL, refPoint{pt: intsct}); existingElem == nil {
-					log.Println(existingElem, subjPt, intsct, clipRef)
 					subjLL.InsertAfter(refPoint{
 						pt:      intsct,
 						clipRef: clipRef,
 					}, subjPt)
 				} else {
-					log.Println("hipp")
 					existingElem.Value = refPoint{
 						pt:      intsct,
 						clipRef: clipRef,
@@ -69,16 +66,11 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		}
 	}
 
-	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
-		log.Printf("subj pt: %v", subjPt)
-	}
-
 	var (
 		lines       []Line
 		startIntsct *list.Element
 	)
 	for subjPt := subjLL.Front(); ; subjPt = nextElemOrWrap(subjLL, subjPt) {
-		log.Printf("Processing %v", subjPt.Value.(refPoint))
 		if subjPt == nil || (startIntsct != nil && subjPt == startIntsct) {
 			break
 		}
@@ -88,43 +80,28 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 				startIntsct = subjPt
 			}
 
-			log.Printf("entering")
 			var (
-				nln Line
-
+				nln        Line
 				startingPt = nextElemOrWrap(subjLL, subjPt).Value.(refPoint)
 			)
-			log.Printf("stop at: %v", startingPt)
 			nln = append(nln, startingPt.pt)
 
 			// walk the subject line until there is a leaving intersection
 			for subjPt = nextElemOrWrap(subjLL, subjPt); ; subjPt = nextElemOrWrap(subjLL, subjPt) {
-				log.Printf("walking subject: %v", subjPt)
 				// don't duplicate points
 				if len(nln) == 0 || nln[len(nln)-1] != subjPt.Value.(refPoint).pt {
-					log.Printf("app.")
 					nln = append(nln, subjPt.Value.(refPoint).pt)
 				}
 
 				if len(nln) > 1 && !nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt.InPolygon(Polygon{clipLn}) {
-					log.Printf("breche, next pt: %v", nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt.InPolygon(Polygon{clipLn}))
 					break
 				}
-				// if subjPt.Next() == nil {
-				// 	// prevent applying Next()
-				// 	break
-				// }
 			}
-			log.Printf("ref: %v", subjPt)
-			log.Printf("stop clip iter at: %v", startingPt)
 			// walk the clip line until starting intersection is reached
 			for clipPt := subjPt.Value.(refPoint).clipRef; ; clipPt = nextElemOrWrap(clipLL, clipPt) {
-				log.Printf("%v %p", clipPt, clipPt)
 				if clipPt == startingPt.clipRef {
-					log.Println("ref reached")
 					break
 				}
-				log.Printf("clip ref %p", clipPt)
 
 				// don't duplicate points
 				if len(nln) == 0 || nln[len(nln)-1] != clipPt.Value.(Point) {
@@ -132,7 +109,6 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 				}
 			}
 			if len(nln) != 0 {
-				log.Printf("appending: %v", nln)
 				lines = append(lines, nln)
 			}
 		}
