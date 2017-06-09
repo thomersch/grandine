@@ -9,7 +9,7 @@ import (
 func TestClipPolygon(t *testing.T) {
 	poly1, err := NewGeom(Polygon{
 		{
-			{0, 0}, {1, 0}, {1, 1}, {0, 1},
+			{0, 0}, {0, 1}, {1, 1}, {1, 0},
 		},
 	})
 	poly2, err := NewGeom(Polygon{
@@ -29,10 +29,10 @@ func TestClipPolygon(t *testing.T) {
 	t.Run("single ring cut", func(t *testing.T) {
 		polyCut, err := NewGeom(Polygon{
 			{
-				{0, 1},
-				{0.5, 1},
 				{0.5, 0},
 				{0, 0},
+				{0, 1},
+				{0.5, 1},
 			},
 		})
 		assert.Nil(t, err)

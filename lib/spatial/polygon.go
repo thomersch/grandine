@@ -28,11 +28,6 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		clipLL = list.New()
 	)
 
-	type refPoint struct {
-		pt      Point
-		clipRef *list.Element
-	}
-
 	// convert subj and clip slices into linked lists
 	for _, subjPt := range p[0] {
 		log.Printf("subj: %v", subjPt)
@@ -42,30 +37,40 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 		clipLL.PushBack(clipPt)
 	}
 
+	// build intersections
 	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
-		// if subjPt.Next() == nil {
-		// 	// no further segment can be constructed
-		// 	break
-		// }
 		subjSeg := Segment{subjPt.Value.(refPoint).pt, nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt}
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
-			// if clipPt.Next() == nil {
-			// 	// no further clip segment can be constructed
-			// 	break
-			// }
 			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
 				log.Printf("intersection: %v (%v %v)", intsct, subjSeg, clipSeg)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
 				clipPt = clipPt.Next()
 
-				subjLL.InsertAfter(refPoint{
-					pt:      intsct,
-					clipRef: clipRef,
-				}, subjPt)
-				subjPt = subjPt.Next()
+				log.Println(nil, subjPt, intsct, clipRef)
+				if existingElem := hasPointElement(subjLL, refPoint{pt: intsct}); existingElem == nil {
+					log.Println(existingElem, subjPt, intsct, clipRef)
+					subjLL.InsertAfter(refPoint{
+						pt:      intsct,
+						clipRef: clipRef,
+					}, subjPt)
+				} else {
+					log.Println("hipp")
+					existingElem.Value = refPoint{
+						pt:      intsct,
+						clipRef: clipRef,
+					}
+				}
+
+				if subjPt.Next() != nil {
+					subjPt = subjPt.Next()
+				}
 			}
 		}
+	}
+
+	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
+		log.Printf("subj pt: %v", subjPt)
 	}
 
 	var (
@@ -170,4 +175,18 @@ func nextElemOrWrap(l *list.List, elem *list.Element) *list.Element {
 		return l.Front()
 	}
 	return elem.Next()
+}
+
+type refPoint struct {
+	pt      Point
+	clipRef *list.Element
+}
+
+func hasPointElement(l *list.List, ref1 refPoint) *list.Element {
+	for ref2 := l.Front(); ref2 != nil; ref2 = ref2.Next() {
+		if ref2.Value.(refPoint).pt == ref1.pt {
+			return ref2
+		}
+	}
+	return nil
 }
