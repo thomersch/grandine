@@ -43,7 +43,7 @@ func TestUnmarshalWKBEOF(t *testing.T) {
 }
 
 func TestMarshalWKBLineString(t *testing.T) {
-	sls := []Point{{1, 2}, {3, 4}, {5, 4}}
+	sls := Line{{1, 2}, {3, 4}, {5, 4}}
 	g, err := NewGeom(sls)
 	assert.Nil(t, err)
 	buf, err := g.MarshalWKB()
@@ -67,7 +67,7 @@ func TestMarshalWKBLineString(t *testing.T) {
 }
 
 func TestMarshalWKBPolygon(t *testing.T) {
-	spoly := [][]Point{
+	spoly := Polygon{
 		{
 			{1, 2}, {3, 4}, {5, 4},
 		},
@@ -164,7 +164,7 @@ func BenchmarkWKBMarshalPoly(b *testing.B) {
 
 func BenchmarkWKBMarshalRawPoly(b *testing.B) {
 	var buf bytes.Buffer
-	poly := [][]Point{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
+	poly := Polygon{{{2, 3}, {5, 6}, {10, 15}, {2, 3}}, {{10, 15}, {5, 6}, {10, 15}}}
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -216,4 +216,21 @@ func BenchmarkWKBUnmarshalPoly(b *testing.B) {
 		r.Reset(rawPoly)
 		wkbReadPolygon(r)
 	}
+}
+
+func TestClipPoint(t *testing.T) {
+	p, err := NewGeom(Point{1, 1})
+	assert.Nil(t, err)
+	t.Run("inside", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{5, 5}))
+	})
+	t.Run("outside", func(t *testing.T) {
+		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 0}, Point{5, 5}))
+	})
+	t.Run("on SE edge", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{1, 1}))
+	})
+	t.Run("on NW edge", func(t *testing.T) {
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{1, 1}, Point{2, 2}))
+	})
 }

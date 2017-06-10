@@ -12,16 +12,6 @@ import (
 
 var endianness = binary.LittleEndian
 
-type Point [2]float64
-
-func (p *Point) X() float64 {
-	return p[0]
-}
-
-func (p *Point) Y() float64 {
-	return p[1]
-}
-
 type GeomType uint32
 
 const (
@@ -37,12 +27,27 @@ type Geom struct {
 }
 
 func NewGeom(g interface{}) (Geom, error) {
-	switch g.(type) {
+	switch geom := g.(type) {
+	// Point
 	case Point:
 		return Geom{typ: GeomTypePoint, g: g}, nil
+
+	// Line String
 	case []Point:
+		return Geom{typ: GeomTypeLineString, g: Line(geom)}, nil
+	case Line:
 		return Geom{typ: GeomTypeLineString, g: g}, nil
+
+	// Polygon
 	case [][]Point:
+		var poly Polygon
+		for _, ln := range geom {
+			poly = append(poly, Line(ln))
+		}
+		return Geom{typ: GeomTypePolygon, g: poly}, nil
+	case []Line:
+		return Geom{typ: GeomTypePolygon, g: Polygon(geom)}, nil
+	case Polygon:
 		return Geom{typ: GeomTypePolygon, g: g}, nil
 	default:
 		return Geom{}, fmt.Errorf("unknown input geom type: %T", g)
@@ -71,14 +76,14 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		g.g = p
 	case "linestring":
 		g.typ = GeomTypeLineString
-		var ls []Point
+		var ls Line
 		if err = json.Unmarshal(wg.Coordinates, &ls); err != nil {
 			return err
 		}
 		g.g = ls
 	case "polygon":
 		g.typ = GeomTypePolygon
-		var poly [][]Point
+		var poly Polygon
 		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
 			return err
 		}
@@ -196,14 +201,14 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 		}
 		err = wkbWritePoint(&buf, p)
 	case GeomTypeLineString:
-		var ls []Point
+		var ls Line
 		ls, err = g.LineString()
 		if err != nil {
 			return nil, err
 		}
 		err = wkbWriteLineString(&buf, ls)
 	case GeomTypePolygon:
-		var poly [][]Point
+		var poly Polygon
 		poly, err = g.Polygon()
 		if err != nil {
 			return nil, err
@@ -229,16 +234,16 @@ func (g *Geom) Point() (Point, error) {
 	return geom, nil
 }
 
-func (g *Geom) LineString() ([]Point, error) {
-	geom, ok := g.g.([]Point)
+func (g *Geom) LineString() (Line, error) {
+	geom, ok := g.g.(Line)
 	if !ok {
 		return nil, errors.New("geometry is not a LineString")
 	}
 	return geom, nil
 }
 
-func (g *Geom) Polygon() ([][]Point, error) {
-	geom, ok := g.g.([][]Point)
+func (g *Geom) Polygon() (Polygon, error) {
+	geom, ok := g.g.(Polygon)
 	if !ok {
 		return nil, errors.New("geometry is not a Polygon")
 	}
@@ -249,17 +254,30 @@ func (g *Geom) BBox() (nw, se Point) {
 	switch gm := g.g.(type) {
 	case Point:
 		return gm, gm
-	case []Point:
-		return ringBBox(gm)
-	case [][]Point:
-		var bboxPoints []Point
+	case Line:
+		return gm.BBox()
+	case Polygon:
+		var bboxPoints Line
 		for _, ring := range gm {
-			neb, seb := ringBBox(ring)
+			neb, seb := ring.BBox()
 			bboxPoints = append(bboxPoints, neb, seb)
 		}
-		return ringBBox(bboxPoints)
+		return bboxPoints.BBox()
 	default:
 		panic("unimplemented type")
 	}
 	return
+}
+
+type Clippable interface {
+	// TODO: consider returning primitive geom, instead of Geom
+	ClipToBBox(nw, se Point) []Geom
+}
+
+// Clips a geometry and returns a cropped copy. Returns a slice, because clip might result in multiple sub-Geoms.
+func (g *Geom) ClipToBBox(nw, se Point) []Geom {
+	if gm, ok := g.g.(Clippable); ok {
+		return gm.ClipToBBox(nw, se)
+	}
+	panic("internal geometry needs to fulfill Clippable interface")
 }
