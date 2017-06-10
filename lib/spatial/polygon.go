@@ -122,30 +122,6 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 	return geoms
 }
 
-func PolygonsFromLines(ls []Line) []Polygon {
-	var mlines []Line
-	for lni := range ls {
-		var merged bool
-		for mi := range mlines {
-			if mlines[mi].IsExtendedBy(ls[lni]) {
-				mlines[mi] = MergeLines(mlines[mi], ls[lni])
-				merged = true
-			}
-		}
-		if !merged {
-			mlines = append(mlines, ls[lni])
-		}
-	}
-	var polys []Polygon
-	for i := range mlines {
-		if !mlines[i].Closed() {
-			mlines[i] = append(mlines[i], mlines[i][0])
-		}
-		polys = append(polys, Polygon{mlines[i]})
-	}
-	return polys
-}
-
 func nextElemOrWrap(l *list.List, elem *list.Element) *list.Element {
 	if elem.Next() == nil {
 		return l.Front()

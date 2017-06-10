@@ -63,16 +63,3 @@ func TestClipPolygon(t *testing.T) {
 		poly3.ClipToBBox(Point{5, -5}, Point{20, 20})
 	})
 }
-
-func TestPolygonsFromLines(t *testing.T) {
-	ln := []Line{
-		{{0, 0}, {0.5, 0}},
-		{{0.5, 1}, {0, 1}, {0, 0}},
-	}
-
-	assert.Equal(t, []Polygon{{
-		{
-			{0.5, 1}, {0, 1}, {0, 0}, {0.5, 0}, {0.5, 1},
-		},
-	}}, PolygonsFromLines(ln))
-}
