@@ -1,6 +1,10 @@
 package mvt
 
-import "github.com/thomersch/grandine/lib/spatial"
+import (
+	"math"
+
+	"github.com/thomersch/grandine/lib/spatial"
+)
 
 type bbox struct {
 	NW, SE point
@@ -17,8 +21,8 @@ func tileOffset(bb bbox) (xOffset, yOffset float64) {
 
 func tileScalingFactor(bb bbox, extent int) (xScale, yScale float64) {
 	var (
-		deltaX = bb.SE.X() - bb.NW.X()
-		deltaY = bb.SE.Y() - bb.NW.Y()
+		deltaX = math.Abs(bb.SE.X() - bb.NW.X())
+		deltaY = math.Abs(bb.SE.Y() - bb.NW.Y())
 	)
 	return deltaX * float64(extent), deltaY * float64(extent)
 }

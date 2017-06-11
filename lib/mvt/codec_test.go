@@ -18,13 +18,15 @@ func TestEncodeGeometry(t *testing.T) {
 			geom: []interface{}{
 				spatial.Point{1, 1},
 			},
-			expectedResult: []uint32{9, 2, 2},
+			// TODO: validate coordinates
+			expectedResult: []uint32{9, 182, 198},
 		},
 		{
 			geom: []interface{}{
 				spatial.Point{25, 17},
 			},
-			expectedResult: []uint32{9, 50, 34},
+			// TODO: validate coordinates
+			expectedResult: []uint32{9, 4550, 3398},
 		},
 	}
 
@@ -36,7 +38,7 @@ func TestEncodeGeometry(t *testing.T) {
 				assert.Nil(t, err)
 				fts = append(fts, spatial.Feature{Geometry: geom})
 			}
-			res := encodeGeometry(fts, TileID{})
+			res := encodeGeometry(fts, TileID{X: 4, Y: 4, Z: 3})
 			assert.Equal(t, tc.expectedResult, res)
 		})
 	}

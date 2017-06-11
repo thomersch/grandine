@@ -19,7 +19,10 @@ func (t TileID) BBox() (NW, SE spatial.Point) {
 
 func (t TileID) NW() spatial.Point {
 	n := math.Pow(2, float64(t.Z))
-	lonDeg := float64(t.X)/n*360 - 180
+	lonDeg := float64(0)
+	if t.X != 0 {
+		lonDeg = float64(t.X)/n*360 - 180
+	}
 	latRad := math.Atan(math.Sinh(math.Pi * (1 - 2*float64(t.Y)/n)))
 	latDeg := latRad * 180 / math.Pi
 	return spatial.Point{lonDeg, latDeg}
