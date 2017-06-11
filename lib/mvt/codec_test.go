@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/thomersch/grandine/lib/spatial"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEncodeGeometry(t *testing.T) {
@@ -35,7 +36,7 @@ func TestEncodeGeometry(t *testing.T) {
 				assert.Nil(t, err)
 				fts = append(fts, spatial.Feature{Geometry: geom})
 			}
-			res := encodeGeometry(fts)
+			res := encodeGeometry(fts, TileID{})
 			assert.Equal(t, tc.expectedResult, res)
 		})
 	}
