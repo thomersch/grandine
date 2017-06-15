@@ -250,7 +250,7 @@ func (g *Geom) Polygon() (Polygon, error) {
 	return geom, nil
 }
 
-func (g *Geom) BBox() (nw, se Point) {
+func (g *Geom) BBox() (sw, ne Point) {
 	switch gm := g.g.(type) {
 	case Point:
 		return gm, gm
@@ -271,13 +271,13 @@ func (g *Geom) BBox() (nw, se Point) {
 
 type Clippable interface {
 	// TODO: consider returning primitive geom, instead of Geom
-	ClipToBBox(nw, se Point) []Geom
+	ClipToBBox(sw, ne Point) []Geom
 }
 
 // Clips a geometry and returns a cropped copy. Returns a slice, because clip might result in multiple sub-Geoms.
-func (g *Geom) ClipToBBox(nw, se Point) []Geom {
+func (g *Geom) ClipToBBox(sw, ne Point) []Geom {
 	if gm, ok := g.g.(Clippable); ok {
-		return gm.ClipToBBox(nw, se)
+		return gm.ClipToBBox(sw, ne)
 	}
 	panic("internal geometry needs to fulfill Clippable interface")
 }

@@ -65,42 +65,42 @@ func (l Line) Intersections(segments []Segment) []Point {
 	return intersections
 }
 
-func (l Line) BBox() (nw, se Point) {
-	nw[0] = l[0][0]
-	nw[1] = l[0][1]
-	se[0] = nw[0]
-	se[1] = nw[1]
+func (l Line) BBox() (sw, ne Point) {
+	sw[0] = l[0][0]
+	sw[1] = l[0][1]
+	ne[0] = sw[0]
+	ne[1] = sw[1]
 	for _, pt := range l {
-		nw[0] = math.Min(nw[0], pt[0])
-		nw[1] = math.Min(nw[1], pt[1])
-		se[0] = math.Max(se[0], pt[0])
-		se[1] = math.Max(se[1], pt[1])
+		sw[0] = math.Min(sw[0], pt[0])
+		sw[1] = math.Min(sw[1], pt[1])
+		ne[0] = math.Max(ne[0], pt[0])
+		ne[1] = math.Max(ne[1], pt[1])
 	}
 	return
 }
 
-func (l Line) ClipToBBox(nw, se Point) []Geom {
-	lsNW, lsSE := l.BBox()
+func (l Line) ClipToBBox(sw, ne Point) []Geom {
+	lsSW, lsNE := l.BBox()
 	// Is linestring completely inside bbox?
-	if nw[0] <= lsNW[0] && se[0] >= lsSE[0] &&
-		nw[1] <= lsNW[1] && se[1] >= lsSE[1] {
+	if sw[0] <= lsSW[0] && ne[0] >= lsNE[0] &&
+		sw[1] <= lsSW[1] && ne[1] >= lsNE[1] {
 		// no clipping necessary
 		g, _ := NewGeom(l)
 		return []Geom{g}
 	}
 
 	// Is linestring fully outside the bbox?
-	if lsSE[0] < nw[0] || lsSE[1] < nw[1] || lsNW[0] > se[0] || lsNW[1] > se[1] {
+	if lsNE[0] < sw[0] || lsNE[1] < sw[1] || lsSW[0] > ne[0] || lsSW[1] > ne[1] {
 		return []Geom{}
 	}
 
 	var cutsegs []Segment
 	for _, seg := range l.Segments() {
-		if seg.FullyInBBox(nw, se) {
+		if seg.FullyInBBox(sw, ne) {
 			cutsegs = append(cutsegs, seg)
 			continue
 		}
-		ns := seg.ClipToBBox(nw, se)
+		ns := seg.ClipToBBox(sw, ne)
 		if len(ns) != 0 {
 			cutsegs = append(cutsegs, ns...)
 		}
@@ -212,19 +212,19 @@ func (s *Segment) SplitAt(p Point) (Segment, Segment) {
 }
 
 // ClipToBBox returns 0 or 1 Segment which is inside bbox.
-func (s *Segment) ClipToBBox(nw, se Point) []Segment {
+func (s *Segment) ClipToBBox(sw, ne Point) []Segment {
 	var intersections []Point
-	for _, bbrd := range BBoxBorders(nw, se) {
+	for _, bbrd := range BBoxBorders(sw, ne) {
 		if ipt, ok := s.Intersection(bbrd); ok {
 			intersections = append(intersections, ipt)
 		}
 	}
 	for i, is := range intersections {
 		s1, s2 := s.SplitAt(is)
-		if s1.Length() != 0 && s1.FullyInBBox(nw, se) {
+		if s1.Length() != 0 && s1.FullyInBBox(sw, ne) {
 			return []Segment{s1}
 		}
-		if s2.Length() != 0 && s2.FullyInBBox(nw, se) {
+		if s2.Length() != 0 && s2.FullyInBBox(sw, ne) {
 			return []Segment{s2}
 		}
 		// segment starts and ends outside bbox
@@ -234,17 +234,17 @@ func (s *Segment) ClipToBBox(nw, se Point) []Segment {
 				continue
 			}
 			is1, is2 := s1.SplitAt(iis)
-			if is1.Length() != 0 && is1.FullyInBBox(nw, se) {
+			if is1.Length() != 0 && is1.FullyInBBox(sw, ne) {
 				return []Segment{is1}
 			}
-			if is2.Length() != 0 && is2.FullyInBBox(nw, se) {
+			if is2.Length() != 0 && is2.FullyInBBox(sw, ne) {
 				return []Segment{is2}
 			}
 			is1, is2 = s2.SplitAt(iis)
-			if is1.Length() != 0 && is1.FullyInBBox(nw, se) {
+			if is1.Length() != 0 && is1.FullyInBBox(sw, ne) {
 				return []Segment{is1}
 			}
-			if is2.Length() != 0 && is2.FullyInBBox(nw, se) {
+			if is2.Length() != 0 && is2.FullyInBBox(sw, ne) {
 				return []Segment{is2}
 			}
 		}
@@ -253,11 +253,11 @@ func (s *Segment) ClipToBBox(nw, se Point) []Segment {
 	return nil
 }
 
-func (s *Segment) FullyInBBox(nw, se Point) bool {
-	return s[0].X() >= nw.X() && s[0].Y() >= nw.Y() &&
-		s[1].X() >= nw.X() && s[1].Y() >= nw.Y() &&
-		s[0].X() <= se.X() && s[0].Y() <= se.Y() &&
-		s[1].X() <= se.X() && s[1].Y() <= se.Y()
+func (s *Segment) FullyInBBox(sw, ne Point) bool {
+	return s[0].X() >= sw.X() && s[0].Y() >= sw.Y() &&
+		s[1].X() >= sw.X() && s[1].Y() >= sw.Y() &&
+		s[0].X() <= ne.X() && s[0].Y() <= ne.Y() &&
+		s[1].X() <= ne.X() && s[1].Y() <= ne.Y()
 }
 
 func (s *Segment) Length() float64 {
@@ -290,23 +290,23 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.
 // Segments are returned in counter-clockwise order.
-func BBoxBorders(nw, se Point) []Segment {
+func BBoxBorders(sw, ne Point) []Segment {
 	return []Segment{
 		{
-			{nw.X(), nw.Y()},
-			{nw.X(), se.Y()},
+			{sw.X(), sw.Y()},
+			{sw.X(), ne.Y()},
 		},
 		{
-			{nw.X(), se.Y()},
-			{se.X(), se.Y()},
+			{sw.X(), ne.Y()},
+			{ne.X(), ne.Y()},
 		},
 		{
-			{se.X(), se.Y()},
-			{se.X(), nw.Y()},
+			{ne.X(), ne.Y()},
+			{ne.X(), sw.Y()},
 		},
 		{
-			{se.X(), nw.Y()},
-			{nw.X(), nw.Y()},
+			{ne.X(), sw.Y()},
+			{sw.X(), sw.Y()},
 		},
 	}
 }

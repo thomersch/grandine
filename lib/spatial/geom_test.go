@@ -227,10 +227,10 @@ func TestClipPoint(t *testing.T) {
 	t.Run("outside", func(t *testing.T) {
 		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 0}, Point{5, 5}))
 	})
-	t.Run("on SE edge", func(t *testing.T) {
+	t.Run("on SW edge", func(t *testing.T) {
 		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{1, 1}))
 	})
-	t.Run("on NW edge", func(t *testing.T) {
+	t.Run("on NE edge", func(t *testing.T) {
 		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{1, 1}, Point{2, 2}))
 	})
 }

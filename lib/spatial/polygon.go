@@ -5,10 +5,10 @@ import "container/list"
 // Polygon is a data type for storing simple polygons: One outer ring and an arbitrary number of inner rings.
 type Polygon []Line
 
-func (p Polygon) ClipToBBox(nw, se Point) []Geom {
+func (p Polygon) ClipToBBox(sw, ne Point) []Geom {
 	// Is outer ring fully inside?
-	oNW, oSE := p[0].BBox()
-	if oNW.X() >= nw.X() && oNW.Y() >= nw.Y() && oSE.X() <= se.X() && oSE.Y() <= se.Y() {
+	oSW, oNE := p[0].BBox()
+	if oSW.X() >= sw.X() && oSW.Y() >= sw.Y() && oNE.X() <= ne.X() && oNE.Y() <= ne.Y() {
 		geom, _ := NewGeom(p)
 		return []Geom{geom}
 	}
@@ -23,7 +23,7 @@ func (p Polygon) ClipToBBox(nw, se Point) []Geom {
 	//         This is repeated until the starting intersection is reached.
 
 	// TODO: inner ring handling
-	clipLn := NewLinesFromSegments(BBoxBorders(nw, se))[0]
+	clipLn := NewLinesFromSegments(BBoxBorders(sw, ne))[0]
 
 	var (
 		subjLL = list.New()
