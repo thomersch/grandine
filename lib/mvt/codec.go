@@ -2,6 +2,7 @@ package mvt
 
 import (
 	"errors"
+	"log"
 
 	"github.com/golang/protobuf/proto"
 	vt "github.com/thomersch/grandine/lib/mvt/vector_tile"
@@ -98,8 +99,8 @@ func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err e
 		cur    [2]uint32
 		dx, dy uint32
 		// the following four lines might be optimized
-		nw, se           = tile.BBox()
-		bbox             = bbox{nw, se}
+		sw, ne           = tile.BBox()
+		bbox             = bbox{sw, ne}
 		xScale, yScale   = tileScalingFactor(bbox, extent)
 		xOffset, yOffset = tileOffset(bbox)
 	)
@@ -112,6 +113,9 @@ func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err e
 		case spatial.GeomTypePoint:
 			pt, _ := geom.Point()
 			tX, tY := tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
+			if tX > extent || tY > extent {
+				log.Printf("%v is outside of tile", pt)
+			}
 			dx = encodeZigZag(tX - int(cur[0]))
 			dy = encodeZigZag(tY - int(cur[1]))
 			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), dx, dy)

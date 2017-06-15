@@ -20,14 +20,14 @@ func TestEncodeGeometry(t *testing.T) {
 				spatial.Point{1, 1},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 182, 198},
+			expectedResult: []uint32{9, 44, 96},
 		},
 		{
 			geom: []interface{}{
 				spatial.Point{25, 17},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 4550, 3398},
+			expectedResult: []uint32{9, 1136, 1636},
 		},
 	}
 
@@ -39,7 +39,7 @@ func TestEncodeGeometry(t *testing.T) {
 				assert.Nil(t, err)
 				geoms = append(geoms, geom)
 			}
-			res, err := encodeGeometry(geoms, TileID{X: 4, Y: 4, Z: 3})
+			res, err := encodeGeometry(geoms, TileID{X: 1, Y: 0, Z: 1})
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedResult, res)
 		})
@@ -49,9 +49,9 @@ func TestEncodeGeometry(t *testing.T) {
 func TestEncodeTile(t *testing.T) {
 	var features []spatial.Feature
 	geoms := []interface{}{
-		spatial.Point{10, 10},
-		spatial.Point{20, 10},
-		spatial.Point{20, 30},
+		spatial.Point{45, 45},
+		spatial.Point{50, 47},
+		spatial.Point{49, 40},
 	}
 
 	for _, geom := range geoms {
@@ -64,7 +64,7 @@ func TestEncodeTile(t *testing.T) {
 		"main": features,
 	}
 
-	buf, err := EncodeTile(layers, TileID{X: 0, Y: 0, Z: 1})
+	buf, err := EncodeTile(layers, TileID{X: 1, Y: 0, Z: 1})
 	assert.Nil(t, err)
 	f, err := os.Create("testtile.mvt")
 	assert.Nil(t, err)

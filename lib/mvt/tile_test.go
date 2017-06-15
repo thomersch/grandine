@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/thomersch/grandine/lib/spatial"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTileName(t *testing.T) {
@@ -54,4 +56,35 @@ func TestTileName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTileBBox(t *testing.T) {
+	for _, tc := range []struct {
+		tid      TileID
+		expected bbox
+	}{
+		{
+			tid:      TileID{0, 0, 0},
+			expected: bbox{spatial.Point{-180, -85.05112878}, spatial.Point{180, 85.05112878}},
+		},
+		{
+			tid:      TileID{0, 0, 1},
+			expected: bbox{spatial.Point{-180, 0}, spatial.Point{0, 85.05112878}},
+		},
+		{
+			tid:      TileID{0, 1, 1},
+			expected: bbox{spatial.Point{-180, -85.05112878}, spatial.Point{0, 0}},
+		},
+		{
+			tid:      TileID{1, 2, 2},
+			expected: bbox{spatial.Point{-90, -66.51326044}, spatial.Point{0, 0}},
+		},
+	} {
+		t.Run(fmt.Sprintf("%v_%v_%v", tc.tid.X, tc.tid.Y, tc.tid.Z), func(t *testing.T) {
+			sw, ne := tc.tid.BBox()
+			bb := bbox{sw.RoundedCoords(), ne.RoundedCoords()}
+			assert.Equal(t, tc.expected, bb)
+		})
+	}
+
 }

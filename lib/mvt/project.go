@@ -1,13 +1,14 @@
 package mvt
 
 import (
+	"log"
 	"math"
 
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
 type bbox struct {
-	NW, SE point
+	SW, NE point
 }
 
 type point interface {
@@ -16,14 +17,16 @@ type point interface {
 }
 
 func tileOffset(bb bbox) (xOffset, yOffset float64) {
-	return bb.NW.X(), bb.NW.Y()
+	return bb.SW.X(), bb.SW.Y()
 }
 
 func tileScalingFactor(bb bbox, extent int) (xScale, yScale float64) {
 	var (
-		deltaX = math.Abs(bb.SE.X() - bb.NW.X())
-		deltaY = math.Abs(bb.SE.Y() - bb.NW.Y())
+		// TODO: check if delta is correct if tile crosses hemispheres
+		deltaX = math.Abs(bb.SW.X() - bb.NE.X())
+		deltaY = math.Abs(bb.SW.Y() - bb.NE.Y())
 	)
+	log.Printf("deltae: %v %v", deltaX, deltaY)
 	return deltaX * float64(extent), deltaY * float64(extent)
 }
 

@@ -10,19 +10,18 @@ import (
 // a separate package.
 
 type TileID struct {
-	Z, X, Y int
+	X, Y, Z int
 }
 
-func (t TileID) BBox() (NW, SE spatial.Point) {
-	return t.NW(), TileID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
+func (t TileID) BBox() (SW, NE spatial.Point) {
+	nw := t.NW()
+	se := TileID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
+	return spatial.Point{nw.X(), se.Y()}, spatial.Point{se.X(), nw.Y()}
 }
 
 func (t TileID) NW() spatial.Point {
 	n := math.Pow(2, float64(t.Z))
-	lonDeg := float64(0)
-	if t.X != 0 {
-		lonDeg = float64(t.X)/n*360 - 180
-	}
+	lonDeg := float64(t.X)/n*360 - 180
 	latRad := math.Atan(math.Sinh(math.Pi * (1 - 2*float64(t.Y)/n)))
 	latDeg := latRad * 180 / math.Pi
 	return spatial.Point{lonDeg, latDeg}
