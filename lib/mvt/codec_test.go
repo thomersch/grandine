@@ -20,14 +20,14 @@ func TestEncodeGeometry(t *testing.T) {
 				spatial.Point{1, 1},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 44, 96},
+			expectedResult: []uint32{9, 44, 8096},
 		},
 		{
 			geom: []interface{}{
 				spatial.Point{25, 17},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 1136, 1636},
+			expectedResult: []uint32{9, 1136, 6556},
 		},
 	}
 
@@ -49,9 +49,34 @@ func TestEncodeGeometry(t *testing.T) {
 func TestEncodeTile(t *testing.T) {
 	var features []spatial.Feature
 	geoms := []interface{}{
+		// Point
 		spatial.Point{45, 45},
 		spatial.Point{50, 47},
-		spatial.Point{49, 40},
+		spatial.Point{100, 40},
+		spatial.Point{179, 40},
+		// LineString
+		spatial.Line{
+			spatial.Point{
+				-1.0546875,
+				55.97379820507658,
+			},
+			spatial.Point{
+				14.765625,
+				44.08758502824516,
+			},
+			spatial.Point{
+				39.7265625,
+				67.7427590666639,
+			},
+			spatial.Point{
+				16.875,
+				67.06743335108297,
+			},
+			spatial.Point{
+				16.171875,
+				58.07787626787517,
+			},
+		},
 	}
 
 	for _, geom := range geoms {

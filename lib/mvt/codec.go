@@ -159,8 +159,8 @@ func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, erro
 // encodes one or more geometries of the same type into one (multi-)geometry
 func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err error) {
 	var (
-		cur    [2]uint32
-		dx, dy uint32
+		cur    [2]int
+		dx, dy int
 		// the following four lines might be optimized
 		sw, ne           = tile.BBox()
 		bbox             = bbox{sw, ne}
@@ -172,6 +172,9 @@ func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err e
 		if typ != 0 && typ != geom.Typ() {
 			return nil, errors.New("encodeGeometry only accepts uniform geoms")
 		}
+
+		cur[0] = 0
+		cur[1] = 0
 		switch geom.Typ() {
 		case spatial.GeomTypePoint:
 			pt, _ := geom.Point()
@@ -179,10 +182,33 @@ func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err e
 			if tX > extent || tY > extent {
 				log.Printf("%v is outside of tile", pt)
 			}
-			dx = encodeZigZag(tX - int(cur[0]))
-			dy = encodeZigZag(tY - int(cur[1]))
-			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), dx, dy)
+			dx = tX - int(cur[0])
+			dy = tY - int(cur[1])
+			// TODO: support multipoint
+			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
+		case spatial.GeomTypeLineString:
+			ls, _ := geom.LineString()
+			tX, tY := tileCoord(ls[0], extent, xScale, yScale, xOffset, yOffset)
+			dx = tX - int(cur[0])
+			dy = tY - int(cur[1])
+			cur[0] = cur[0] + dx
+			cur[1] = cur[1] + dy
+			log.Printf("cursor: %v", cur)
+
+			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
+				encodeCommandInt(cmdLineTo, uint32(len(ls)-1)))
+
+			for _, pt := range ls[1:] {
+				tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
+				dx = tX - int(cur[0])
+				dy = tY - int(cur[1])
+				commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
+				cur[0] = cur[0] + dx
+				cur[1] = cur[1] + dy
+				log.Printf("cursor: %v", cur)
+			}
 		}
 	}
+	log.Println(commands)
 	return commands, nil
 }

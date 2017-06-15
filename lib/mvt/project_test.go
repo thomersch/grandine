@@ -19,15 +19,15 @@ func TestScalePoint(t *testing.T) {
 
 	tX, tY := tileCoord(spatial.Point{50, 10}, ext, xScale, yScale, xOffset, yOffset)
 	assert.Equal(t, 0, tX)
-	assert.Equal(t, 0, tY)
+	assert.Equal(t, ext, tY)
 
 	tX, tY = tileCoord(spatial.Point{51, 10}, ext, xScale, yScale, xOffset, yOffset)
-	assert.Equal(t, 2048, tX)
-	assert.Equal(t, 0, tY)
+	assert.Equal(t, ext/2, tX)
+	assert.Equal(t, ext, tY)
 
 	tX, tY = tileCoord(spatial.Point{52, 12}, ext, xScale, yScale, xOffset, yOffset)
-	assert.Equal(t, 4096, tX)
-	assert.Equal(t, 4096, tY)
+	assert.Equal(t, ext, tX)
+	assert.Equal(t, 0, tY)
 }
 
 func scalePointToTileBothInterface(pt point, extent int, xScale, yScale float64, xOffset, yOffset float64) point {

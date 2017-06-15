@@ -15,6 +15,14 @@ type point interface {
 	Y() float64
 }
 
+// flip axis
+func flip(v int, extent int) int {
+	if v == 0 {
+		return extent
+	}
+	return (extent - v) % extent
+}
+
 func tileOffset(bb bbox) (xOffset, yOffset float64) {
 	return bb.SW.X(), bb.SW.Y()
 }
@@ -29,5 +37,5 @@ func tileScalingFactor(bb bbox, extent int) (xScale, yScale float64) {
 
 func tileCoord(pt spatial.Point, extent int, xScale, yScale float64, xOffset, yOffset float64) (x, y int) {
 	return int((pt.X() - xOffset) / (xScale / float64(extent)) * float64(extent)),
-		int((pt.Y() - yOffset) / (yScale / float64(extent)) * float64(extent))
+		flip(int((pt.Y()-yOffset)/(yScale/float64(extent))*float64(extent)), extent)
 }
