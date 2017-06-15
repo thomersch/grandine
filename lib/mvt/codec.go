@@ -2,6 +2,7 @@ package mvt
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/golang/protobuf/proto"
@@ -60,17 +61,76 @@ func assembleTile(features map[string][]spatial.Feature, tid TileID) (vt.Tile, e
 	return tile, nil
 }
 
+// tagElems is an intermediate data structure for serializing keys or values into flat
+// index referenced lists as used by MVT
+type tagElems map[interface{}]int
+
+func (te tagElems) Index(v interface{}) int {
+	if pos, ok := te[v]; ok {
+		return pos
+	}
+	pos := len(te)
+	te[v] = pos
+	return pos
+}
+
+func (te tagElems) Strings() []string {
+	var l = make([]string, len(te))
+	for elem, pos := range te {
+		l[pos] = elem.(string)
+	}
+	return l
+}
+
+func (te tagElems) Values() []*vt.Tile_Value {
+	var l = make([]*vt.Tile_Value, len(te))
+	for val, pos := range te {
+		var tv vt.Tile_Value
+		switch v := val.(type) {
+		case string:
+			tv.StringValue = &v
+		case float32:
+			tv.FloatValue = &v
+		case float64:
+			tv.DoubleValue = &v
+		case int:
+			i := int64(v)
+			tv.SintValue = &i
+		case int64:
+			tv.SintValue = &v
+		case uint:
+			i := uint64(v)
+			tv.UintValue = &i
+		case uint64:
+			tv.UintValue = &v
+		case bool:
+			tv.BoolValue = &v
+		default:
+			s := fmt.Sprintf("%s", v)
+			tv.StringValue = &s
+		}
+		l[pos] = &tv
+	}
+	return l
+}
+
 func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, error) {
 	var (
-		tl  vt.Tile_Layer
-		err error
-		ext = uint32(4096)
+		tl   vt.Tile_Layer
+		err  error
+		ext  = uint32(4096)
+		keys = tagElems{}
+		vals = tagElems{}
 	)
-
-	// TODO: tags
 
 	for _, feat := range features {
 		var tileFeat vt.Tile_Feature
+
+		for k, v := range feat.Properties() {
+			kpos := keys.Index(k)
+			vpos := vals.Index(v)
+			tileFeat.Tags = append(tileFeat.Tags, uint32(kpos), uint32(vpos))
+		}
 
 		tileFeat.Geometry, err = encodeGeometry([]spatial.Geom{feat.Geometry}, tile)
 		if err != nil {
@@ -90,6 +150,9 @@ func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, erro
 		tl.Features = append(tl.Features, &tileFeat)
 		tl.Extent = &ext //TODO: configurable?
 	}
+
+	tl.Keys = keys.Strings()
+	tl.Values = vals.Values()
 	return tl, nil
 }
 

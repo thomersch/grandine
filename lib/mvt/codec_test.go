@@ -60,6 +60,18 @@ func TestEncodeTile(t *testing.T) {
 		features = append(features, spatial.Feature{Geometry: g})
 	}
 
+	features[0].Props = map[string]interface{}{
+		"highway": "primary",
+		"oneway":  1,
+	}
+	features[1].Props = map[string]interface{}{
+		"highway": "secondary",
+		"oneway":  -1,
+	}
+	features[2].Props = map[string]interface{}{
+		"ignorance": "strength",
+	}
+
 	layers := map[string][]spatial.Feature{
 		"main": features,
 	}
