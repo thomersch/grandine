@@ -187,28 +187,34 @@ func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err e
 			// TODO: support multipoint
 			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
 		case spatial.GeomTypeLineString:
-			ls, _ := geom.LineString()
-			tX, tY := tileCoord(ls[0], extent, xScale, yScale, xOffset, yOffset)
-			dx = tX - int(cur[0])
-			dy = tY - int(cur[1])
-			cur[0] = cur[0] + dx
-			cur[1] = cur[1] + dy
-			log.Printf("cursor: %v", cur)
-
-			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
-				encodeCommandInt(cmdLineTo, uint32(len(ls)-1)))
-
-			for _, pt := range ls[1:] {
-				tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
-				dx = tX - int(cur[0])
-				dy = tY - int(cur[1])
-				commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
-				cur[0] = cur[0] + dx
-				cur[1] = cur[1] + dy
-				log.Printf("cursor: %v", cur)
-			}
+			ln, _ := geom.LineString()
+			commands = append(commands, encodeLine(ln, cur, extent, xScale, yScale, xOffset, yOffset)...)
+		case spatial.GeomTypePolygon:
+			// TODO: inner ring handling
+			poly, _ := geom.Polygon()
+			commands = append(commands, encodeLine(poly[0], cur, extent, xScale, yScale, xOffset, yOffset)...)
 		}
 	}
-	log.Println(commands)
 	return commands, nil
+}
+
+func encodeLine(ln spatial.Line, cur [2]int, extent int, xScale, yScale, xOffset, yOffset float64) (commands []uint32) {
+	tX, tY := tileCoord(ln[0], extent, xScale, yScale, xOffset, yOffset)
+	dx := tX - int(cur[0])
+	dy := tY - int(cur[1])
+	cur[0] = cur[0] + dx
+	cur[1] = cur[1] + dy
+
+	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
+		encodeCommandInt(cmdLineTo, uint32(len(ln)-1)))
+
+	for _, pt := range ln[1:] {
+		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
+		dx = tX - int(cur[0])
+		dy = tY - int(cur[1])
+		commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
+		cur[0] = cur[0] + dx
+		cur[1] = cur[1] + dy
+	}
+	return commands
 }

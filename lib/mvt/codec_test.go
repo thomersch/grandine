@@ -77,6 +77,44 @@ func TestEncodeTile(t *testing.T) {
 				58.07787626787517,
 			},
 		},
+		spatial.Polygon{spatial.Line{
+			spatial.Point{
+				2.8125,
+				54.77534585936447,
+			},
+			spatial.Point{
+				1.23046875,
+				47.87214396888731,
+			},
+			spatial.Point{
+				7.207031249999999,
+				37.020098201368114,
+			},
+			spatial.Point{
+				21.26953125,
+				40.97989806962013,
+			},
+			spatial.Point{
+				29.8828125,
+				48.69096039092549,
+			},
+			spatial.Point{
+				31.113281249999996,
+				53.12040528310657,
+			},
+			spatial.Point{
+				23.90625,
+				60.413852350464914,
+			},
+			spatial.Point{
+				10.01953125,
+				60.84491057364915,
+			},
+			spatial.Point{
+				2.8125,
+				54.77534585936447,
+			},
+		}},
 	}
 
 	for _, geom := range geoms {
