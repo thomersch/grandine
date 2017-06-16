@@ -81,9 +81,10 @@ func TestTileBBox(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%v_%v_%v", tc.tid.X, tc.tid.Y, tc.tid.Z), func(t *testing.T) {
-			sw, ne := tc.tid.BBox()
-			bb := spatial.BBox{sw.RoundedCoords(), ne.RoundedCoords()}
-			assert.Equal(t, tc.expected, bb)
+			bbox := tc.tid.BBox()
+			bbox.NE = bbox.NE.RoundedCoords()
+			bbox.SW = bbox.SW.RoundedCoords()
+			assert.Equal(t, tc.expected, bbox)
 		})
 	}
 

@@ -164,8 +164,7 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 		cur    [2]int
 		dx, dy int
 		// the following four lines might be optimized
-		sw, ne           = tid.BBox()
-		bbox             = bbox{sw, ne}
+		bbox             = tid.BBox()
 		xScale, yScale   = tileScalingFactor(bbox, extent)
 		xOffset, yOffset = tileOffset(bbox)
 	)

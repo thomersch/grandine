@@ -9,7 +9,7 @@ import (
 )
 
 func TestScalePoint(t *testing.T) {
-	bb := bbox{
+	bb := spatial.BBox{
 		spatial.Point{50, 10},
 		spatial.Point{52, 12},
 	}
