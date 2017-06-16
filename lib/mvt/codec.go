@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/golang/protobuf/proto"
 	vt "github.com/thomersch/grandine/lib/mvt/vector_tile"
 	"github.com/thomersch/grandine/lib/spatial"
+	tile "github.com/thomersch/grandine/lib/tile"
+
+	"github.com/golang/protobuf/proto"
 )
 
 type cmd uint32
@@ -39,26 +41,26 @@ func encodeZigZag(i int) uint32 {
 	return uint32((i << 1) ^ (i >> 31))
 }
 
-func EncodeTile(features map[string][]spatial.Feature, tid TileID) ([]byte, error) {
-	tile, err := assembleTile(features, tid)
+func EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, error) {
+	vtile, err := assembleTile(features, tid)
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&tile)
+	return proto.Marshal(&vtile)
 }
 
-func assembleTile(features map[string][]spatial.Feature, tid TileID) (vt.Tile, error) {
-	var tile vt.Tile
+func assembleTile(features map[string][]spatial.Feature, tid tile.ID) (vt.Tile, error) {
+	var vtile vt.Tile
 	for layerName, layerFeats := range features {
 		layer, err := assembleLayer(layerFeats, tid)
 		if err != nil {
-			return tile, err
+			return vtile, err
 		}
 		layer.Name = &layerName
 		layer.Version = &vtLayerVersion
-		tile.Layers = append(tile.Layers, &layer)
+		vtile.Layers = append(vtile.Layers, &layer)
 	}
-	return tile, nil
+	return vtile, nil
 }
 
 // tagElems is an intermediate data structure for serializing keys or values into flat
@@ -114,7 +116,7 @@ func (te tagElems) Values() []*vt.Tile_Value {
 	return l
 }
 
-func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, error) {
+func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, error) {
 	var (
 		tl   vt.Tile_Layer
 		err  error
@@ -132,7 +134,7 @@ func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, erro
 			tileFeat.Tags = append(tileFeat.Tags, uint32(kpos), uint32(vpos))
 		}
 
-		tileFeat.Geometry, err = encodeGeometry([]spatial.Geom{feat.Geometry}, tile)
+		tileFeat.Geometry, err = encodeGeometry([]spatial.Geom{feat.Geometry}, tid)
 		if err != nil {
 			return tl, err
 		}
@@ -157,12 +159,12 @@ func assembleLayer(features []spatial.Feature, tile TileID) (vt.Tile_Layer, erro
 }
 
 // encodes one or more geometries of the same type into one (multi-)geometry
-func encodeGeometry(geoms []spatial.Geom, tile TileID) (commands []uint32, err error) {
+func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err error) {
 	var (
 		cur    [2]int
 		dx, dy int
 		// the following four lines might be optimized
-		sw, ne           = tile.BBox()
+		sw, ne           = tid.BBox()
 		bbox             = bbox{sw, ne}
 		xScale, yScale   = tileScalingFactor(bbox, extent)
 		xOffset, yOffset = tileOffset(bbox)

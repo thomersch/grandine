@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/thomersch/grandine/lib/spatial"
+	tile "github.com/thomersch/grandine/lib/tile"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -39,7 +40,7 @@ func TestEncodeGeometry(t *testing.T) {
 				assert.Nil(t, err)
 				geoms = append(geoms, geom)
 			}
-			res, err := encodeGeometry(geoms, TileID{X: 1, Y: 0, Z: 1})
+			res, err := encodeGeometry(geoms, tile.ID{X: 1, Y: 0, Z: 1})
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedResult, res)
 		})
@@ -139,7 +140,7 @@ func TestEncodeTile(t *testing.T) {
 		"main": features,
 	}
 
-	buf, err := EncodeTile(layers, TileID{X: 1, Y: 0, Z: 1})
+	buf, err := EncodeTile(layers, tile.ID{X: 1, Y: 0, Z: 1})
 	assert.Nil(t, err)
 	f, err := os.Create("testtile.mvt")
 	assert.Nil(t, err)

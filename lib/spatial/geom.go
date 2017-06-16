@@ -21,6 +21,10 @@ const (
 	GeomTypeInvalid
 )
 
+type BBox struct {
+	SE, NW Point
+}
+
 type Geom struct {
 	typ GeomType
 	g   interface{}
@@ -250,23 +254,25 @@ func (g *Geom) Polygon() (Polygon, error) {
 	return geom, nil
 }
 
-func (g *Geom) BBox() (sw, ne Point) {
+func (g *Geom) BBox() BBox {
 	switch gm := g.g.(type) {
 	case Point:
-		return gm, gm
+		return BBox{gm, gm}
 	case Line:
-		return gm.BBox()
+		se, nw := gm.BBox()
+		return BBox{se, nw}
 	case Polygon:
 		var bboxPoints Line
 		for _, ring := range gm {
 			neb, seb := ring.BBox()
 			bboxPoints = append(bboxPoints, neb, seb)
 		}
-		return bboxPoints.BBox()
+		se, nw := bboxPoints.BBox()
+		return BBox{se, nw}
 	default:
 		panic("unimplemented type")
 	}
-	return
+	return BBox{}
 }
 
 type Clippable interface {

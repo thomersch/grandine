@@ -6,20 +6,17 @@ import (
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
-// Some of the contents are independent of the MVT implementation and could probably be moved to
-// a separate package.
-
-type TileID struct {
+type ID struct {
 	X, Y, Z int
 }
 
-func (t TileID) BBox() (SW, NE spatial.Point) {
+func (t ID) BBox() (SW, NE spatial.Point) {
 	nw := t.NW()
-	se := TileID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
+	se := ID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
 	return spatial.Point{nw.X(), se.Y()}, spatial.Point{se.X(), nw.Y()}
 }
 
-func (t TileID) NW() spatial.Point {
+func (t ID) NW() spatial.Point {
 	n := math.Pow(2, float64(t.Z))
 	lonDeg := float64(t.X)/n*360 - 180
 	latRad := math.Atan(math.Sinh(math.Pi * (1 - 2*float64(t.Y)/n)))
@@ -27,12 +24,12 @@ func (t TileID) NW() spatial.Point {
 	return spatial.Point{lonDeg, latDeg}
 }
 
-func TileName(p spatial.Point, zoom int) TileID {
+func TileName(p spatial.Point, zoom int) ID {
 	var (
 		zf     = float64(zoom)
 		latDeg = float64(p.Y() * math.Pi / 180)
 	)
-	return TileID{
+	return ID{
 		X: int(math.Floor((float64(p.X()) + 180) / 360 * math.Exp2(zf))),
 		Y: int(math.Floor((1 - math.Log(math.Tan(latDeg)+1/math.Cos(latDeg))/math.Pi) / 2 * math.Exp2(zf))),
 		Z: zoom,
