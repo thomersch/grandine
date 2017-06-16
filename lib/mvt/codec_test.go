@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/thomersch/grandine/lib/spatial"
-	tile "github.com/thomersch/grandine/lib/tile"
+	"github.com/thomersch/grandine/lib/tile"
 
 	"github.com/stretchr/testify/assert"
 )

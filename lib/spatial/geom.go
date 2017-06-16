@@ -22,7 +22,7 @@ const (
 )
 
 type BBox struct {
-	SE, NW Point
+	SW, NE Point
 }
 
 type Geom struct {
@@ -90,6 +90,10 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		var poly Polygon
 		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
 			return err
+		}
+		for pos := range poly {
+			// remove last element from every ring as it is unnecessary
+			poly[pos] = poly[pos][:len(poly[pos])-1]
 		}
 		g.g = poly
 	default:
@@ -273,6 +277,12 @@ func (g *Geom) BBox() BBox {
 		panic("unimplemented type")
 	}
 	return BBox{}
+}
+
+func (g *Geom) In(bbox BBox) bool {
+	// TODO: this probably needs some more love
+	gm := g.ClipToBBox(bbox.SW, bbox.NE)
+	return len(gm) != 0
 }
 
 type Clippable interface {

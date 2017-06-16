@@ -47,3 +47,14 @@ func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(wfc)
 }
+
+func Filter(fcs []Feature, bbox BBox) []Feature {
+	var filtered []Feature
+
+	for _, feat := range fcs {
+		if feat.Geometry.In(bbox) {
+			filtered = append(filtered, feat)
+		}
+	}
+	return filtered
+}

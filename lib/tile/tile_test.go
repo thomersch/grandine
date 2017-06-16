@@ -1,12 +1,12 @@
-package mvt
+package tile
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/thomersch/grandine/lib/spatial"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTileName(t *testing.T) {

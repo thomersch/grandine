@@ -7,7 +7,7 @@ import (
 
 	vt "github.com/thomersch/grandine/lib/mvt/vector_tile"
 	"github.com/thomersch/grandine/lib/spatial"
-	tile "github.com/thomersch/grandine/lib/tile"
+	"github.com/thomersch/grandine/lib/tile"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -195,6 +195,7 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 			// TODO: inner ring handling
 			poly, _ := geom.Polygon()
 			commands = append(commands, encodeLine(poly[0], cur, extent, xScale, yScale, xOffset, yOffset)...)
+			commands = append(commands, encodeCommandInt(cmdClosePath, 1))
 		}
 	}
 	return commands, nil
