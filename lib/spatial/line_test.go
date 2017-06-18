@@ -5,6 +5,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,6 +41,34 @@ func TestLineIntersect(t *testing.T) {
 		assert.Equal(t, Point{0, 1}, isp)
 		assert.False(t, is)
 	})
+}
+
+func TestSegmentIntersect(t *testing.T) {
+	s1 := Segment{
+		Point{-5.625, 40.979898069620134}.RoundedCoords(),
+		Point{-11.25, 40.979898069620134}.RoundedCoords(),
+	}
+	s2 := Segment{
+		Point{-6.13037109375, 41.07935114946896}.RoundedCoords(),
+		Point{-6.0205078125, 40.66397287638688}.RoundedCoords(),
+	}
+
+	it, is := s1.Intersection(s2)
+	spew.Dump(it)
+	assert.True(t, is)
+
+	s1 = Segment{
+		Point{-5.625, 40.979898069620134},
+		Point{-11.25, 40.979898069620134},
+	}
+	s2 = Segment{
+		Point{-6.13037109375, 41.07935114946896},
+		Point{-6.0205078125, 40.66397287638688},
+	}
+
+	it, is = s1.Intersection(s2)
+	spew.Dump(it)
+	assert.True(t, is)
 }
 
 func TestBBoxBorders(t *testing.T) {

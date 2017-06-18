@@ -162,6 +162,7 @@ func newOrderableLine(l Line) orderableLine {
 }
 
 // Methods for sorting in a clockwise order
+// TODO: Probably broken, reinvestigate!
 func (l orderableLine) Len() int      { return len(l.ln) }
 func (l orderableLine) Swap(i, j int) { l.ln[i], l.ln[j] = l.ln[j], l.ln[i] }
 func (l orderableLine) Less(i, j int) bool {
@@ -198,10 +199,15 @@ func (l orderableLine) Less(i, j int) bool {
 type Segment [2]Point
 
 func (s *Segment) HasPoint(pt Point) bool {
-	if math.Min(s[0].X(), s[1].X()) <= pt.X() &&
-		pt.X() <= math.Max(s[0].X(), s[1].X()) &&
-		math.Min(s[0].Y(), s[1].Y()) <= pt.Y() &&
-		pt.Y() <= math.Max(s[0].Y(), s[1].Y()) {
+	var (
+		s1 = s[0].RoundedCoords()
+		s2 = s[1].RoundedCoords()
+	)
+
+	if math.Min(s1.X(), s2.X()) <= pt.X() &&
+		pt.X() <= math.Max(s1.X(), s2.X()) &&
+		math.Min(s1.Y(), s2.Y()) <= pt.Y() &&
+		pt.Y() <= math.Max(s1.Y(), s2.Y()) {
 		return true
 	}
 	return false
