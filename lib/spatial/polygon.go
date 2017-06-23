@@ -1,9 +1,6 @@
 package spatial
 
-import (
-	"container/list"
-	"log"
-)
+import "container/list"
 
 // Polygon is a data type for storing simple polygons: One outer ring and an arbitrary number of inner rings.
 type Polygon []Line
@@ -36,12 +33,12 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	// convert subj and clip slices into linked lists
 	for _, subjPt := range p[0] {
 		subjLL.PushBack(refPoint{pt: subjPt.RoundedCoords()})
-		log.Printf("subjpt: %v", subjPt.RoundedCoords())
+		// log.Printf("subjpt: %v", subjPt.RoundedCoords())
 
 	}
 	for _, clipPt := range clipLn {
 		clipLL.PushBack(clipPt.RoundedCoords())
-		log.Printf("clippt: %v", clipPt.RoundedCoords())
+		// log.Printf("clippt: %v", clipPt.RoundedCoords())
 	}
 
 	// build intersections
@@ -50,7 +47,7 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
 			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
-				log.Println(">>>>>>>>", intsct)
+				// log.Println(">>>>>>>>", intsct)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
 				clipPt = clipPt.Next()
 
@@ -106,7 +103,7 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 			}
 			// walk the clip line until starting intersection is reached
 			for clipPt := subjPt.Value.(refPoint).clipRef; ; clipPt = nextElemOrWrap(clipLL, clipPt) {
-				if clipPt == startingPt.clipRef {
+				if clipPt == nil || clipPt == startingPt.clipRef || startingPt.clipRef == nil {
 					break
 				}
 

@@ -111,6 +111,10 @@ func (l Line) ClipToBBox(bbox BBox) []Geom {
 			cutsegs = append(cutsegs, ns...)
 		}
 	}
+	if len(cutsegs) == 0 {
+		return nil
+	}
+
 	var gms []Geom
 	for _, ln := range NewLinesFromSegments(cutsegs) {
 		gms = append(gms, Geom{typ: GeomTypeLineString, g: ln})
