@@ -6,7 +6,5 @@ type BBox struct {
 
 // In determines if the bboxes overlap.
 func (b BBox) In(b2 BBox) bool {
-	// b.SW.InBBox(b.SW, ne)
-	return false
-
+	return b.SW.InBBox(b2) || b.NE.InBBox(b2) || b2.SW.InBBox(b) || b2.NE.InBBox(b)
 }
