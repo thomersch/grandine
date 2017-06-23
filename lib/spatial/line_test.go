@@ -256,6 +256,14 @@ func TestClipLineString(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, []Geom{u1, u2}, ls5.ClipToBBox(BBox{Point{0, 0}, Point{0.5, 1}}))
 	})
+
+	ls6, err := NewGeom(Line{
+		{8.525390625, 52.908902047770255}, {16.611328125, 46.86019101567027}, {-2.98828125, 44.276671273775186}, {0.615234375, 47.57652571374621},
+	})
+	t.Run("zigzag", func(t *testing.T) {
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(ls6.ClipToBBox(BBox{Point{0, 45.08903556483102}, Point{5.625, 48.92249926375824}})))
+	})
 }
 
 func TestLineClosed(t *testing.T) {

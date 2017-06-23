@@ -270,6 +270,9 @@ func (s *Segment) ClipToBBox(sw, ne Point) []Segment {
 }
 
 func (s *Segment) FullyInBBox(sw, ne Point) bool {
+	// TODO: check rounding
+	sw = sw.RoundedCoords()
+	ne = ne.RoundedCoords()
 	return s[0].X() >= sw.X() && s[0].Y() >= sw.Y() &&
 		s[1].X() >= sw.X() && s[1].Y() >= sw.Y() &&
 		s[0].X() <= ne.X() && s[0].Y() <= ne.Y() &&
