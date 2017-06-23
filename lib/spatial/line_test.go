@@ -168,9 +168,9 @@ func TestLineBBox(t *testing.T) {
 		{-25, 4},
 	}
 
-	ne, sw := l.BBox()
-	assert.Equal(t, Point{-25, 4}, ne)
-	assert.Equal(t, Point{5, 9}, sw)
+	bbox := l.BBox()
+	assert.Equal(t, Point{-25, 4}, bbox.SW)
+	assert.Equal(t, Point{5, 9}, bbox.NE)
 }
 
 func TestClipLineString(t *testing.T) {
@@ -182,13 +182,13 @@ func TestClipLineString(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	t.Run("completely inside bbox", func(t *testing.T) {
-		assert.Equal(t, []Geom{ls1}, ls1.ClipToBBox(Point{0, 0}, Point{3, 3}))
+		assert.Equal(t, []Geom{ls1}, ls1.ClipToBBox(BBox{Point{0, 0}, Point{3, 3}}))
 	})
 	t.Run("completely outside 1", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{5, 5}, Point{12, 10}))
+		assert.Equal(t, []Geom{}, ls1.ClipToBBox(BBox{Point{5, 5}, Point{12, 10}}))
 	})
 	t.Run("completely outside 2", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, ls1.ClipToBBox(Point{-5, -5}, Point{0, 0}))
+		assert.Equal(t, []Geom{}, ls1.ClipToBBox(BBox{Point{-5, -5}, Point{0, 0}}))
 	})
 
 	ls2, err := NewGeom([]Point{
@@ -208,7 +208,7 @@ func TestClipLineString(t *testing.T) {
 			{5, 1},
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, []Geom{sl1, sl2}, ls2.ClipToBBox(Point{1, 1}, Point{5, 2}))
+		assert.Equal(t, []Geom{sl1, sl2}, ls2.ClipToBBox(BBox{Point{1, 1}, Point{5, 2}}))
 	})
 
 	ls3, err := NewGeom(Line{
@@ -220,7 +220,7 @@ func TestClipLineString(t *testing.T) {
 	t.Run("cut linestring", func(t *testing.T) {
 		assert.Equal(t,
 			[]Geom{{typ: GeomTypeLineString, g: Line{{1, 1}, {1, 2}, {1, 3}}}},
-			ls3.ClipToBBox(Point{0, 0}, Point{3, 3}))
+			ls3.ClipToBBox(BBox{Point{0, 0}, Point{3, 3}}))
 	})
 
 	ls4, err := NewGeom(Line{
@@ -238,7 +238,7 @@ func TestClipLineString(t *testing.T) {
 			{0, 0},
 		})
 
-		assert.Equal(t, []Geom{cut1, cut2}, ls4.ClipToBBox(Point{0, 0}, Point{0.5, 1}))
+		assert.Equal(t, []Geom{cut1, cut2}, ls4.ClipToBBox(BBox{Point{0, 0}, Point{0.5, 1}}))
 	})
 
 	ls5, err := NewGeom(Line{
@@ -254,7 +254,7 @@ func TestClipLineString(t *testing.T) {
 			{0.5, 0.8}, {0, 0.8}, {0, 1}, {0.5, 1},
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, []Geom{u1, u2}, ls5.ClipToBBox(Point{0, 0}, Point{0.5, 1}))
+		assert.Equal(t, []Geom{u1, u2}, ls5.ClipToBBox(BBox{Point{0, 0}, Point{0.5, 1}}))
 	})
 }
 

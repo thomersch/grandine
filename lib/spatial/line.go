@@ -1,6 +1,9 @@
 package spatial
 
-import "math"
+import (
+	"log"
+	"math"
+)
 
 type Line []Point
 
@@ -65,42 +68,45 @@ func (l Line) Intersections(segments []Segment) []Point {
 	return intersections
 }
 
-func (l Line) BBox() (sw, ne Point) {
-	sw[0] = l[0][0]
-	sw[1] = l[0][1]
-	ne[0] = sw[0]
-	ne[1] = sw[1]
+func (l Line) BBox() BBox {
+	var bb BBox
+	bb.SW[0] = l[0][0]
+	bb.SW[1] = l[0][1]
+	bb.NE[0] = bb.SW[0]
+	bb.NE[1] = bb.SW[1]
+
 	for _, pt := range l {
-		sw[0] = math.Min(sw[0], pt[0])
-		sw[1] = math.Min(sw[1], pt[1])
-		ne[0] = math.Max(ne[0], pt[0])
-		ne[1] = math.Max(ne[1], pt[1])
+		bb.SW[0] = math.Min(bb.SW[0], pt[0])
+		bb.SW[1] = math.Min(bb.SW[1], pt[1])
+		bb.NE[0] = math.Max(bb.NE[0], pt[0])
+		bb.NE[1] = math.Max(bb.NE[1], pt[1])
 	}
-	return
+	return bb
 }
 
-func (l Line) ClipToBBox(sw, ne Point) []Geom {
-	lsSW, lsNE := l.BBox()
+func (l Line) ClipToBBox(bbox BBox) []Geom {
+	lsBBox := l.BBox()
 	// Is linestring completely inside bbox?
-	if sw[0] <= lsSW[0] && ne[0] >= lsNE[0] &&
-		sw[1] <= lsSW[1] && ne[1] >= lsNE[1] {
+	if bbox.SW[0] <= lsBBox.SW[0] && bbox.NE[0] >= lsBBox.NE[0] &&
+		bbox.SW[1] <= lsBBox.SW[1] && bbox.NE[1] >= lsBBox.NE[1] {
 		// no clipping necessary
 		g, _ := NewGeom(l)
 		return []Geom{g}
 	}
 
 	// Is linestring fully outside the bbox?
-	if lsNE[0] < sw[0] || lsNE[1] < sw[1] || lsSW[0] > ne[0] || lsSW[1] > ne[1] {
+	if lsBBox.NE[0] < bbox.SW[0] || lsBBox.NE[1] < bbox.SW[1] || lsBBox.SW[0] > bbox.NE[0] || lsBBox.SW[1] > bbox.NE[1] {
+		log.Println("empty return")
 		return []Geom{}
 	}
 
 	var cutsegs []Segment
 	for _, seg := range l.Segments() {
-		if seg.FullyInBBox(sw, ne) {
+		if seg.FullyInBBox(bbox.SW, bbox.NE) {
 			cutsegs = append(cutsegs, seg)
 			continue
 		}
-		ns := seg.ClipToBBox(sw, ne)
+		ns := seg.ClipToBBox(bbox.SW, bbox.NE)
 		if len(ns) != 0 {
 			cutsegs = append(cutsegs, ns...)
 		}

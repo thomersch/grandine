@@ -1,14 +1,17 @@
 package spatial
 
-import "container/list"
+import (
+	"container/list"
+	"log"
+)
 
 // Polygon is a data type for storing simple polygons: One outer ring and an arbitrary number of inner rings.
 type Polygon []Line
 
-func (p Polygon) ClipToBBox(sw, ne Point) []Geom {
+func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	// Is outer ring fully inside?
-	oSW, oNE := p[0].BBox()
-	if oSW.X() >= sw.X() && oSW.Y() >= sw.Y() && oNE.X() <= ne.X() && oNE.Y() <= ne.Y() {
+	orBBox := p[0].BBox()
+	if orBBox.SW.X() >= bbox.SW.X() && orBBox.SW.Y() >= bbox.SW.Y() && orBBox.NE.X() <= bbox.NE.X() && orBBox.NE.Y() <= bbox.NE.Y() {
 		geom, _ := NewGeom(p)
 		return []Geom{geom}
 	}
@@ -23,7 +26,7 @@ func (p Polygon) ClipToBBox(sw, ne Point) []Geom {
 	//         This is repeated until the starting intersection is reached.
 
 	// TODO: inner ring handling
-	clipLn := NewLinesFromSegments(BBoxBorders(sw, ne))[0]
+	clipLn := NewLinesFromSegments(BBoxBorders(bbox.SW, bbox.NE))[0]
 
 	var (
 		subjLL = list.New()
@@ -32,10 +35,13 @@ func (p Polygon) ClipToBBox(sw, ne Point) []Geom {
 
 	// convert subj and clip slices into linked lists
 	for _, subjPt := range p[0] {
-		subjLL.PushBack(refPoint{pt: subjPt})
+		subjLL.PushBack(refPoint{pt: subjPt.RoundedCoords()})
+		log.Printf("subjpt: %v", subjPt.RoundedCoords())
+
 	}
 	for _, clipPt := range clipLn {
-		clipLL.PushBack(clipPt)
+		clipLL.PushBack(clipPt.RoundedCoords())
+		log.Printf("clippt: %v", clipPt.RoundedCoords())
 	}
 
 	// build intersections
@@ -44,6 +50,7 @@ func (p Polygon) ClipToBBox(sw, ne Point) []Geom {
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
 			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
+				log.Println(">>>>>>>>", intsct)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
 				clipPt = clipPt.Next()
 

@@ -12,13 +12,13 @@ func (p Point) Y() float64 {
 	return p[1]
 }
 
-func (p Point) InBBox(sw, ne Point) bool {
-	return sw[0] <= p[0] && ne[0] >= p[0] &&
-		sw[1] <= p[1] && ne[1] >= p[1]
+func (p Point) InBBox(b BBox) bool {
+	return b.SW[0] <= p[0] && b.NE[0] >= p[0] &&
+		b.SW[1] <= p[1] && b.NE[1] >= p[1]
 }
 
-func (p Point) ClipToBBox(sw, ne Point) []Geom {
-	if p.InBBox(sw, ne) {
+func (p Point) ClipToBBox(b BBox) []Geom {
+	if p.InBBox(b) {
 		g, _ := NewGeom(p)
 		return []Geom{g}
 	}
@@ -35,12 +35,12 @@ func (p Point) RoundedCoords() Point {
 }
 
 func (p Point) InPolygon(poly Polygon) bool {
-	pbsw, pbne := poly[0].BBox()
-	if !p.InBBox(pbsw, pbne) {
+	bbox := poly[0].BBox()
+	if !p.InBBox(bbox) {
 		return false
 	}
 
-	outTestPoint := Point{pbsw[0] - 1, pbsw[1] - 1}
+	outTestPoint := Point{bbox.SW[0] - 1, bbox.SW[1] - 1}
 
 	var allsegs []Segment
 	for _, ln := range poly {

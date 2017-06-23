@@ -222,15 +222,15 @@ func TestClipPoint(t *testing.T) {
 	p, err := NewGeom(Point{1, 1})
 	assert.Nil(t, err)
 	t.Run("inside", func(t *testing.T) {
-		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{5, 5}))
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(BBox{Point{0, 0}, Point{5, 5}}))
 	})
 	t.Run("outside", func(t *testing.T) {
-		assert.Equal(t, []Geom{}, p.ClipToBBox(Point{5, 0}, Point{5, 5}))
+		assert.Equal(t, []Geom{}, p.ClipToBBox(BBox{Point{5, 0}, Point{5, 5}}))
 	})
 	t.Run("on SW edge", func(t *testing.T) {
-		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{0, 0}, Point{1, 1}))
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(BBox{Point{0, 0}, Point{1, 1}}))
 	})
 	t.Run("on NE edge", func(t *testing.T) {
-		assert.Equal(t, []Geom{p}, p.ClipToBBox(Point{1, 1}, Point{2, 2}))
+		assert.Equal(t, []Geom{p}, p.ClipToBBox(BBox{Point{1, 1}, Point{2, 2}}))
 	})
 }

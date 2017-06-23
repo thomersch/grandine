@@ -21,10 +21,6 @@ const (
 	GeomTypeInvalid
 )
 
-type BBox struct {
-	SW, NE Point
-}
-
 type Geom struct {
 	typ GeomType
 	g   interface{}
@@ -263,16 +259,14 @@ func (g *Geom) BBox() BBox {
 	case Point:
 		return BBox{gm, gm}
 	case Line:
-		se, nw := gm.BBox()
-		return BBox{se, nw}
+		return gm.BBox()
 	case Polygon:
 		var bboxPoints Line
 		for _, ring := range gm {
-			neb, seb := ring.BBox()
-			bboxPoints = append(bboxPoints, neb, seb)
+			bb := ring.BBox()
+			bboxPoints = append(bboxPoints, bb.SW, bb.NE)
 		}
-		se, nw := bboxPoints.BBox()
-		return BBox{se, nw}
+		return bboxPoints.BBox()
 	default:
 		panic("unimplemented type")
 	}
@@ -280,20 +274,18 @@ func (g *Geom) BBox() BBox {
 }
 
 func (g *Geom) In(bbox BBox) bool {
-	// TODO: this probably needs some more love
-	gm := g.ClipToBBox(bbox.SW, bbox.NE)
-	return len(gm) != 0
+	return g.BBox().In(bbox)
 }
 
 type Clippable interface {
 	// TODO: consider returning primitive geom, instead of Geom
-	ClipToBBox(sw, ne Point) []Geom
+	ClipToBBox(BBox) []Geom
 }
 
 // Clips a geometry and returns a cropped copy. Returns a slice, because clip might result in multiple sub-Geoms.
-func (g *Geom) ClipToBBox(sw, ne Point) []Geom {
+func (g *Geom) ClipToBBox(bbox BBox) []Geom {
 	if gm, ok := g.g.(Clippable); ok {
-		return gm.ClipToBBox(sw, ne)
+		return gm.ClipToBBox(bbox)
 	}
 	panic("internal geometry needs to fulfill Clippable interface")
 }

@@ -24,7 +24,7 @@ func TestClipPolygon(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	t.Run("uncut", func(t *testing.T) {
-		assert.Equal(t, []Geom{poly1}, poly1.ClipToBBox(Point{0, 0}, Point{1, 1}))
+		assert.Equal(t, []Geom{poly1}, poly1.ClipToBBox(BBox{Point{0, 0}, Point{1, 1}}))
 	})
 	t.Run("single ring cut", func(t *testing.T) {
 		polyCut, err := NewGeom(Polygon{
@@ -36,7 +36,7 @@ func TestClipPolygon(t *testing.T) {
 			},
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, []Geom{polyCut}, poly1.ClipToBBox(Point{0, 0}, Point{0.5, 1}))
+		assert.Equal(t, []Geom{polyCut}, poly1.ClipToBBox(BBox{Point{0, 0}, Point{0.5, 1}}))
 	})
 	t.Run("single ring into two subpolygons", func(t *testing.T) {
 		polyCut1, err := NewGeom(Polygon{
@@ -57,9 +57,9 @@ func TestClipPolygon(t *testing.T) {
 			},
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, []Geom{polyCut1, polyCut2}, poly2.ClipToBBox(Point{-0.1, -0.1}, Point{0.5, 1.1}))
+		assert.Equal(t, []Geom{polyCut1, polyCut2}, poly2.ClipToBBox(BBox{Point{-0.1, -0.1}, Point{0.5, 1.1}}))
 	})
 	t.Run("triangle cut", func(t *testing.T) {
-		poly3.ClipToBBox(Point{5, -5}, Point{20, 20})
+		poly3.ClipToBBox(BBox{Point{5, -5}, Point{20, 20}})
 	})
 }
