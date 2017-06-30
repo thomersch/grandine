@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,7 +13,7 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
-var zoomlevel = 6
+var zoomlevels = []int{6, 7, 8, 9, 10}
 
 func main() {
 	source := flag.String("src", "geo.geojson", "")
@@ -55,7 +54,10 @@ func main() {
 	}
 	log.Printf("%d features to be processed", len(features))
 
-	tc := tile.Coverage(bbox, zoomlevel)
+	var tc []tile.ID
+	for _, zoomlevel := range zoomlevels {
+		tc = append(tc, tile.Coverage(bbox, zoomlevel)...)
+	}
 	log.Printf("attempting to generate %d tiles", len(tc))
 
 	for _, tID := range tc {
@@ -66,11 +68,6 @@ func main() {
 			for _, geom := range feat.Geometry.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
 				tileFeatures = append(tileFeatures, feat)
-				buf, err := feat.MarshalJSON()
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Printf("%s \n", buf)
 			}
 		}
 		if len(tileFeatures) == 0 {

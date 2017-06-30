@@ -8,7 +8,7 @@ type PropertyRetriever interface {
 
 // Feature is a data structure which holds geometry and tags/properties of a geographical feature.
 type Feature struct {
-	Props    map[string]interface{}
+	Props    map[string]interface{} `json:"properties"`
 	Geometry Geom
 }
 
