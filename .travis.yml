@@ -2,3 +2,9 @@ language: go
 
 go:
   - 1.8
+
+script:
+  - go test ./...
+  - cd cmd/converter && go build
+  - cd cmd/spatialize && go build
+  - cd cmd/tiler && go build
