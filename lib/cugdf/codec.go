@@ -149,7 +149,9 @@ func ReadBlocks(r io.Reader) ([]spatial.Feature, error) {
 		}
 		for _, f := range blockBody.GetFeature() {
 			var (
-				feature spatial.Feature
+				feature = spatial.Feature{
+					Props: map[string]interface{}{},
+				}
 				geomBuf = bytes.NewBuffer(f.GetGeom())
 			)
 			err := feature.Geometry.UnmarshalWKB(geomBuf)

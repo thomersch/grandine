@@ -7,16 +7,18 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
+	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/mvt"
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
 )
 
-var zoomlevels = []int{6, 7, 8, 9, 10}
+var zoomlevels = []int{6, 7, 8, 9, 10, 11, 12, 13, 14}
 
 func main() {
-	source := flag.String("src", "geo.geojson", "")
+	source := flag.String("src", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
 	target := flag.String("target", "tiles", "path where the tiles will be written")
 	flag.Parse()
 
@@ -33,9 +35,18 @@ func main() {
 
 	log.Println("parsing input...")
 	fc := spatial.FeatureCollection{}
-	if err := json.NewDecoder(f).Decode(&fc); err != nil {
-		log.Fatal(err)
+
+	if strings.HasSuffix(strings.ToLower(*source), "geojson") {
+		if err := json.NewDecoder(f).Decode(&fc); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		fc.Features, err = cugdf.Unmarshal(f)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	log.Printf("read %d features", len(fc.Features))
 
 	var bboxPts []spatial.Point

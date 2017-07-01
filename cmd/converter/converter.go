@@ -49,9 +49,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		var (
-			fcoll spatial.FeatureCollection
-		)
+
+		var fcoll spatial.FeatureCollection
 		blks, err := cugdf.ReadBlocks(f)
 		if err != nil {
 			log.Fatal(err)

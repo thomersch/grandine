@@ -13,7 +13,7 @@ type ID struct {
 func (t ID) BBox() spatial.BBox {
 	nw := t.NW()
 	se := ID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
-	return spatial.BBox{spatial.Point{nw.X(), se.Y()}, spatial.Point{se.X(), nw.Y()}}
+	return spatial.BBox{SW: spatial.Point{nw.X(), se.Y()}, NE: spatial.Point{se.X(), nw.Y()}}
 }
 
 func (t ID) NW() spatial.Point {

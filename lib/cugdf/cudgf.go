@@ -22,6 +22,14 @@ func Marshal(feats []spatial.Feature, w io.Writer) error {
 	return nil
 }
 
+func Unmarshal(r io.Reader) ([]spatial.Feature, error) {
+	_, err := ReadFileHeader(r)
+	if err != nil {
+		return nil, err
+	}
+	return ReadBlocks(r)
+}
+
 // geomBlocks slices a slice of geometries into slices with a max size
 func geomBlocks(size int, src []spatial.Feature) [][]spatial.Feature {
 	if len(src) <= size {

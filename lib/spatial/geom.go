@@ -279,7 +279,6 @@ func (g *Geom) BBox() BBox {
 	default:
 		panic("unimplemented type")
 	}
-	return BBox{}
 }
 
 func (g *Geom) In(bbox BBox) bool {
