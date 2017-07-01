@@ -103,8 +103,8 @@ type defaultLayerMapper struct {
 }
 
 func (dlm *defaultLayerMapper) LayerName(props map[string]interface{}) string {
-	if _, ok := props["highway"]; ok {
-		return "transportation"
+	if layerName, ok := props["@layer"]; ok {
+		return layerName.(string)
 	}
 	if dlm.defaultLayer {
 		return "default"
