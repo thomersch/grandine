@@ -26,6 +26,14 @@ type Geom struct {
 	g   interface{}
 }
 
+func MustNewGeom(g interface{}) Geom {
+	ng, err := NewGeom(g)
+	if err != nil {
+		panic(err)
+	}
+	return ng
+}
+
 func NewGeom(g interface{}) (Geom, error) {
 	switch geom := g.(type) {
 	// Point
