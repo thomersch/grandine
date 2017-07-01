@@ -1,5 +1,7 @@
 # Grandine
 
+[![GoDoc](https://godoc.org/github.com/thomersch/grandine?status.svg)](https://godoc.org/github.com/thomersch/grandine) [![Build Status](https://travis-ci.org/thomersch/grandine.svg?branch=master)](https://travis-ci.org/thomersch/grandine) 
+
 This repository contains libraries and command line tools for working with geospatial data. It aims to streamline vector tile generation and provides tooling for standardized geo data serialization.
 
 The work is partly funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany.

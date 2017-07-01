@@ -5,6 +5,6 @@ go:
 
 script:
   - go test ./...
-  - cd cmd/converter && go build
-  - cd cmd/spatialize && go build
-  - cd cmd/tiler && go build
+  - cd $GOPATH/src/github.com/thomersch/grandine/cmd/converter && go build
+  - cd $GOPATH/src/github.com/thomersch/grandine/cmd/spatialize && go build
+  - cd $GOPATH/src/github.com/thomersch/grandine/cmd/tiler && go build
