@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/thomersch/gosmparse"
@@ -70,6 +71,7 @@ func main() {
 	cond := condition{"highway", "primary"}
 
 	source := flag.String("src", "osm.pbf", "")
+	outfile := flag.String("out", "osm.cudgf", "")
 	flag.Parse()
 
 	f, err := os.Open(*source)
@@ -105,7 +107,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fc := spatial.FeatureCollection{}
+	var fc []spatial.Feature
 
 	log.Println("Assembling ways")
 	for _, wy := range dh.ways {
@@ -119,9 +121,19 @@ func main() {
 			ls = append(ls, rc.nds[nID])
 		}
 
-		fc.Features = append(fc.Features, spatial.Feature{
+		fc = append(fc, spatial.Feature{
 			Props:    props,
 			Geometry: spatial.MustNewGeom(ls),
 		})
+	}
+
+	log.Println("Writing out")
+	of, err := os.Create(*outfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = cugdf.Marshal(fc, of)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
