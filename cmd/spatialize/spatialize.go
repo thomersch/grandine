@@ -15,15 +15,32 @@ import (
 type dataHandler struct {
 	cond condition
 
+	// dependent objects, which will be collected in the second pass
 	depNodes    []int64
 	depNodesMtx sync.Mutex
 
-	ways    []gosmparse.Way
-	waysMtx sync.Mutex
+	nodes    []gosmparse.Node
+	nodesMtx sync.Mutex
+	ways     []gosmparse.Way
+	waysMtx  sync.Mutex
+	rels     []gosmparse.Relation
+	relsMtx  sync.Mutex
 }
 
-func (d *dataHandler) ReadNode(n gosmparse.Node) {}
+func (d *dataHandler) ReadNode(n gosmparse.Node) {
+	// TODO: make it possible to specify condition type (node/way/rel)
+	if v, ok := n.Tags[d.cond.key]; ok {
+		if len(d.cond.value) != 0 && d.cond.value != v {
+			return
+		}
+		d.nodesMtx.Lock()
+		d.nodes = append(d.nodes, n)
+		d.nodesMtx.Unlock()
+	}
+}
+
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
+	// TODO: make it possible to specify condition type (node/way/rel)
 	if v, ok := w.Tags[d.cond.key]; ok {
 		if len(d.cond.value) != 0 && d.cond.value != v {
 			return
@@ -38,7 +55,28 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 		d.waysMtx.Unlock()
 	}
 }
-func (d *dataHandler) ReadRelation(r gosmparse.Relation) {}
+
+func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
+	// TODO: make it possible to specify condition type (node/way/rel)
+	if v, ok := r.Tags[d.cond.key]; ok {
+		if len(d.cond.value) != 0 && d.cond.value != v {
+			return
+		}
+
+		d.relsMtx.Lock()
+		d.rels = append(d.rels, r)
+		d.relsMtx.Unlock()
+
+		for _, memb := range r.Members {
+			switch memb.Type {
+			case gosmparse.NodeType:
+				d.depNodesMtx.Lock()
+				d.depNodes = append(d.depNodes, memb.ID)
+				d.depNodesMtx.Unlock()
+			}
+		}
+	}
+}
 
 type relCollector struct {
 	nds    map[int64]spatial.Point

@@ -59,6 +59,7 @@ func main() {
 	bbox := spatial.Line(bboxPts).BBox()
 	log.Println("filtering features...")
 
+	// TODO: consider using rtree
 	features := spatial.Filter(fc.Features, bbox)
 	if len(features) == 0 {
 		log.Println("no features to be processed, exiting.")
