@@ -48,6 +48,10 @@ func main() {
 		}
 	}
 
+	if len(fc.Features) == 0 {
+		log.Fatal("no features in input file")
+	}
+
 	log.Printf("read %d features", len(fc.Features))
 
 	var bboxPts []spatial.Point
