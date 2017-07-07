@@ -218,6 +218,19 @@ func main() {
 	var fc []spatial.Feature
 
 	log.Println("Parsing completed.")
+
+	log.Println("Collecting points...")
+	for _, pt := range dh.nodes {
+		props := map[string]interface{}{}
+		for k, v := range pt.Tags {
+			props[k] = v
+		}
+		fc = append(fc, spatial.Feature{
+			Props:    props,
+			Geometry: spatial.MustNewGeom(spatial.Point{float64(pt.Lon), float64(pt.Lat)}),
+		})
+	}
+
 	log.Println("Assembling ways...")
 	// TODO: auto-detect if linestring or polygon, based on tags
 	for _, wy := range dh.ways {
@@ -244,8 +257,11 @@ func main() {
 					// TODO: allow polygons with multiple outer rings and split them
 					break
 				}
-				poly = append(poly, spatial.Line{})
+				poly = append(poly, ec.Line(memb.ID))
+			} else if memb.Role == "inner" {
+				poly = append(poly, ec.Line(memb.ID))
 			}
+
 		}
 	}
 
@@ -258,8 +274,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func wayToLine(w gosmparse.Way) spatial.Line {
-	return nil
 }
