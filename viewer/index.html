@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Viewer</title>
+	<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
+	<script src="node_modules/mapbox-gl/dist/mapbox-gl.js"></script>
+	<link href="node_modules/mapbox-gl/dist/mapbox-gl.css" rel="stylesheet"/>
+	<script src="node_modules/mapbox-gl-inspect/dist/mapbox-gl-inspect.js"></script>
+	<link href="node_modules/mapbox-gl-inspect/dist/mapbox-gl-inspect.css" rel="stylesheet"/>
+	<style>
+		body { margin:0; padding:0; font-family: sans-serif; }
+	</style>
+</head>
+<body>
+	<div id="map" style="position:absolute;top:0;bottom:0;width:100%;"></div>
+	<script>
+		var map = new mapboxgl.Map({
+			container: "map", // container id
+			style: {
+				"name": "Points",
+				"metadata": {},
+				"version": 8,
+				"sources": {
+					"mvt": {
+						"type": "vector",
+						"tiles": ["http://localhost:8080/tiles/{z}/{x}/{y}.mvt"] 
+					}
+				},
+				"layers": [
+					{
+						"id": "points",
+						"source": "mvt",
+						"source-layer": "default",
+						"type": "circle",
+						"paint": {
+							"circle-radius": 5,
+							"circle-color": "orange"
+						},
+						"filter": ["==", "$type", "Point"]
+					},
+					{
+						"id": "lines",
+						"source": "mvt",
+						"source-layer": "default",
+						"type": "line",
+						"paint": {
+							"line-width": 2,
+							"line-color": "grey"
+						},
+						"filter": ["==", "$type", "LineString"]
+					},
+					{
+						"id": "poly",
+						"source": "mvt",
+						"source-layer": "default",
+						"type": "fill",
+						"paint": {
+							"fill-color": "brown"
+						},
+						"filter": ["==", "$type", "Polygon"]
+					},
+				]
+			},
+			center: [14, 51],
+			zoom: 6
+		});
+
+		map.showTileBoundaries = true;
+
+		map.addControl(new MapboxInspect({
+			showInspectMap: true,
+		}));
+	</script>
+</body>
+</html>

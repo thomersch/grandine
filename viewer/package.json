@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"http-server": "^0.10.0",
+		"mapbox-gl": "^0.38.0",
+		"mapbox-gl-inspect": "^1.2.3"
+	},
+	"scripts": {
+		"server": "node_modules/http-server/bin/http-server -a 127.0.0.1"
+	}
+}
