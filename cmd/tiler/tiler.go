@@ -15,13 +15,34 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
-var zoomlevels = []int{6, 7, 8, 9, 10, 11}
+type zmLvl []int
+
+func (zm *zmLvl) String() string {
+	return fmt.Sprintf("%d", *zm)
+}
+
+func (zm *zmLvl) Set(value string) error {
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		return fmt.Errorf("%s (only integer values are allowed)", value)
+	}
+	*zm = append(*zm, v)
+	return nil
+}
+
+var zoomlevels zmLvl
 
 func main() {
 	source := flag.String("src", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
 	target := flag.String("target", "tiles", "path where the tiles will be written")
-	defaultLayer := flag.Bool("default-layer", true, "...")
+	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
+	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
+	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
+
+	if len(zoomlevels) == 0 {
+		log.Fatal("no zoom levels specified")
+	}
 
 	f, err := os.Open(*source)
 	if err != nil {
