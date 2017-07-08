@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
@@ -40,11 +41,21 @@ func main() {
 	target := flag.String("target", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
+	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
 
 	if len(zoomlevels) == 0 {
 		log.Fatal("no zoom levels specified")
+	}
+
+	if len(*cpuProfile) != 0 {
+		f, err := os.Create(*cpuProfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	f, err := os.Open(*source)
