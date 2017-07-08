@@ -1,6 +1,7 @@
 package tile
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/thomersch/grandine/lib/spatial"
@@ -22,6 +23,10 @@ func (t ID) NW() spatial.Point {
 	latRad := math.Atan(math.Sinh(math.Pi * (1 - 2*float64(t.Y)/n)))
 	latDeg := latRad * 180 / math.Pi
 	return spatial.Point{lonDeg, latDeg}
+}
+
+func (t ID) String() string {
+	return fmt.Sprintf("%v/%v/%v", t.Z, t.X, t.Y)
 }
 
 func TileName(p spatial.Point, zoom int) ID {

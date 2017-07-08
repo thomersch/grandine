@@ -182,7 +182,7 @@ type tileWriter interface {
 
 func generateTiles(tIDs []tile.ID, features []spatial.Feature, tw tileWriter, lm layerMapper) {
 	for _, tID := range tIDs {
-		log.Printf("Generating %v", tID)
+		log.Printf("Generating %s", tID)
 		var layers = map[string][]spatial.Feature{}
 		tileClipBBox := tID.BBox()
 		for _, feat := range spatial.Filter(features, tileClipBBox) {
