@@ -3,11 +3,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/mvt"
@@ -100,7 +103,38 @@ func main() {
 
 	dtw := diskTileWriter{basedir: *target}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
-	generateTiles(tc, features, &dtw, &dlm)
+
+	var (
+		wg sync.WaitGroup
+		ws = workerSlices(tc, *workersNumber)
+	)
+	for wrk := 0; wrk < len(ws); wrk++ {
+		wg.Add(1)
+		go func(i int) {
+			generateTiles(ws[i], features, &dtw, &dlm)
+			wg.Done()
+		}(wrk)
+	}
+	wg.Wait()
+}
+
+func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
+	var r [][]tile.ID
+	if len(tiles) <= wrkNum {
+		for t := 0; t < len(tiles); t++ {
+			r = append(r, []tile.ID{tiles[t]})
+		}
+		return r
+	}
+	for wrkr := 0; wrkr < wrkNum; wrkr++ {
+		start := (len(tiles) / wrkNum) * wrkr
+		end := (len(tiles) / wrkNum) * (wrkr + 1)
+		if wrkr == wrkNum-1 {
+			end = len(tiles)
+		}
+		r = append(r, tiles[start:end])
+	}
+	return r
 }
 
 type diskTileWriter struct {
