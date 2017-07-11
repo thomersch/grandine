@@ -17,3 +17,6 @@ The work is partly funded by the [Prototype Fund](https://prototypefund.de), pow
 * There are a few command line tools in `cmd`:
 	* `spatialize` converts OpenStreetMap data into a spatial data format as defined in `fileformat`
 	* `tiler` generates vector tiles from spatial data
+
+
+**Word of Warning:** This is very much work in progress. Please refrain from using this for anything more than experiments. If you find bugs or improvments you are welcome to contribute some :)

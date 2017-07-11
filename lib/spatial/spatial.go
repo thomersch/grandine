@@ -1,6 +1,10 @@
 package spatial
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/dhconnelly/rtreego"
+)
 
 type PropertyRetriever interface {
 	Properties() map[string]interface{}
@@ -33,6 +37,16 @@ func (f Feature) MarshalJSON() ([]byte, error) {
 	return json.Marshal(tfc)
 }
 
+// Bounds is here to satisfy rtreego's interface. This is not guaranteed to be stable.
+func (f Feature) Bounds() *rtreego.Rect {
+	bbox := f.Geometry.BBox()
+	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X(), bbox.SW.Y()}, []float64{bbox.NE.X() - bbox.SW.X(), bbox.NE.Y() - bbox.SW.Y()})
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 type FeatureCollection struct {
 	Features []Feature `json:"features"`
 }
@@ -46,6 +60,30 @@ func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
 		Features: fc.Features,
 	}
 	return json.Marshal(wfc)
+}
+
+// RTreeCollection is a FeatureCollection which is backed by a rtree.
+type RTreeCollection struct {
+	rt *rtreego.Rtree
+}
+
+func NewRTreeCollection() RTreeCollection {
+	return RTreeCollection{
+		// TODO: find out optimal branching factor
+		rt: rtreego.NewTree(2, 25, 50),
+	}
+}
+
+func (rtc *RTreeCollection) UnmarshalJSON(buf []byte) error {
+	// TODO: consider parsing progressively
+	fcoll := FeatureCollection{}
+	if err := json.Unmarshal(buf, &fcoll); err != nil {
+		return err
+	}
+	for _, ft := range fcoll.Features {
+		rtc.rt.Insert(ft)
+	}
+	return nil
 }
 
 func Filter(fcs []Feature, bbox BBox) []Feature {
