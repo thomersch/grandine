@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/mvt"
@@ -20,10 +19,7 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
-const (
-	measureFilterTiming = false
-	indexThreshold      = 100000000
-)
+const indexThreshold = 100000000
 
 type zmLvl []int
 
@@ -197,12 +193,6 @@ type tileWriter interface {
 }
 
 func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper) {
-	var (
-		filterTime int64 //nans
-		count      int64
-		dur        time.Duration
-		tStart     time.Time
-	)
 	for _, tID := range tIDs {
 		// log.Printf("Generating %s", tID)
 		var (
@@ -211,17 +201,7 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 		)
 		tileClipBBox := tID.BBox()
 
-		if measureFilterTiming {
-			tStart = time.Now()
-		}
-		fts := features.Filter(tileClipBBox)
-		if measureFilterTiming {
-			dur = time.Now().Sub(tStart)
-			filterTime += dur.Nanoseconds()
-			count += 1
-		}
-
-		for _, feat := range fts {
+		for _, feat := range features.Filter(tileClipBBox) {
 			for _, geom := range feat.Geometry.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
 				ln = lm.LayerName(feat.Props)
@@ -246,9 +226,6 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-	if measureFilterTiming {
-		log.Printf("avg duration: %v", time.Duration(filterTime/count))
 	}
 }
 
