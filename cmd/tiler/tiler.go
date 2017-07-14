@@ -89,22 +89,25 @@ func main() {
 
 	log.Printf("read %d features", len(fc.Features))
 
-	var bboxPts []spatial.Point
+	var (
+		bboxPts []spatial.Point
+		rt      = spatial.NewRTreeCollection()
+	)
 	for _, feat := range fc.Features {
 		bb := feat.Geometry.BBox()
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
+		rt.Add(feat)
 	}
 
 	bbox := spatial.Line(bboxPts).BBox()
 	log.Println("filtering features...")
 
-	// TODO: consider using rtree
-	features := spatial.Filter(fc.Features, bbox)
-	if len(features) == 0 {
-		log.Println("no features to be processed, exiting.")
-		os.Exit(2)
-	}
-	log.Printf("%d features to be processed", len(features))
+	// features := spatial.Filter(fc.Features, bbox)
+	// if len(features) == 0 {
+	// 	log.Println("no features to be processed, exiting.")
+	// 	os.Exit(2)
+	// }
+	// log.Printf("%d features to be processed", len(features))
 
 	var tc []tile.ID
 	for _, zoomlevel := range zoomlevels {
@@ -122,7 +125,7 @@ func main() {
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], features, &dtw, &dlm)
+			generateTiles(ws[i], rt, &dtw, &dlm)
 			wg.Done()
 		}(wrk)
 	}
@@ -191,7 +194,7 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte) error
 }
 
-func generateTiles(tIDs []tile.ID, features []spatial.Feature, tw tileWriter, lm layerMapper) {
+func generateTiles(tIDs []tile.ID, features spatial.RTreeCollection, tw tileWriter, lm layerMapper) {
 	for _, tID := range tIDs {
 		log.Printf("Generating %s", tID)
 		var (
@@ -199,7 +202,8 @@ func generateTiles(tIDs []tile.ID, features []spatial.Feature, tw tileWriter, lm
 			ln     string
 		)
 		tileClipBBox := tID.BBox()
-		for _, feat := range spatial.Filter(features, tileClipBBox) {
+		// for _, feat := range spatial.Filter(features, tileClipBBox) {
+		for _, feat := range features.Find(tileClipBBox) {
 			for _, geom := range feat.Geometry.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
 				ln = lm.LayerName(feat.Props)

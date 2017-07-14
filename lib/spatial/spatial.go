@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"encoding/json"
+	"math"
 
 	"github.com/dhconnelly/rtreego"
 )
@@ -37,10 +38,16 @@ func (f Feature) MarshalJSON() ([]byte, error) {
 	return json.Marshal(tfc)
 }
 
-// Bounds is here to satisfy rtreego's interface. This is not guaranteed to be stable.
-func (f Feature) Bounds() *rtreego.Rect {
-	bbox := f.Geometry.BBox()
-	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X(), bbox.SW.Y()}, []float64{bbox.NE.X() - bbox.SW.X(), bbox.NE.Y() - bbox.SW.Y()})
+func bboxToRect(bbox BBox) *rtreego.Rect {
+	dist := []float64{bbox.NE.X() - bbox.SW.X(), bbox.NE.Y() - bbox.SW.Y()}
+	// rtreego doesn't allow zero sized bboxes
+	if dist[0] == 0 {
+		dist[0] = math.SmallestNonzeroFloat64
+	}
+	if dist[1] == 0 {
+		dist[1] = math.SmallestNonzeroFloat64
+	}
+	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X(), bbox.SW.Y()}, dist)
 	if err != nil {
 		panic(err)
 	}
@@ -62,6 +69,12 @@ func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(wfc)
 }
 
+type rtreeFeat Feature
+
+func (ft rtreeFeat) Bounds() *rtreego.Rect {
+	return bboxToRect(ft.Geometry.BBox())
+}
+
 // RTreeCollection is a FeatureCollection which is backed by a rtree.
 type RTreeCollection struct {
 	rt *rtreego.Rtree
@@ -74,16 +87,16 @@ func NewRTreeCollection() RTreeCollection {
 	}
 }
 
-func (rtc *RTreeCollection) UnmarshalJSON(buf []byte) error {
-	// TODO: consider parsing progressively
-	fcoll := FeatureCollection{}
-	if err := json.Unmarshal(buf, &fcoll); err != nil {
-		return err
+func (rt *RTreeCollection) Add(feature Feature) {
+	rt.rt.Insert(rtreeFeat(feature))
+}
+
+func (rt *RTreeCollection) Find(bbox BBox) []Feature {
+	var fts []Feature
+	for _, ft := range rt.rt.SearchIntersect(bboxToRect(bbox)) {
+		fts = append(fts, Feature(ft.(rtreeFeat)))
 	}
-	for _, ft := range fcoll.Features {
-		rtc.rt.Insert(ft)
-	}
-	return nil
+	return fts
 }
 
 func Filter(fcs []Feature, bbox BBox) []Feature {
