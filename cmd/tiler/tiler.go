@@ -12,11 +12,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/mvt"
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
+)
+
+const (
+	measureFilterTiming = false
+	indexThreshold      = 100000000
 )
 
 type zmLvl []int
@@ -42,7 +48,6 @@ func main() {
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
-	indexEnabled := flag.Bool("index", false, "enable index for rendering")
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
@@ -97,20 +102,20 @@ func main() {
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
 	}
 
+	var tc []tile.ID
+	for _, zoomlevel := range zoomlevels {
+		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
+	}
+	log.Printf("attempting to generate %d tiles", len(tc))
+
 	var fts spatial.Filterable
-	if *indexEnabled {
+	if len(fc.Features)*len(tc) > indexThreshold {
 		log.Println("building index...")
 		fts = spatial.NewRTreeCollection(fc.Features...)
 		log.Println("index complete")
 	} else {
 		fts = &fc
 	}
-
-	var tc []tile.ID
-	for _, zoomlevel := range zoomlevels {
-		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
-	}
-	log.Printf("attempting to generate %d tiles", len(tc))
 
 	dtw := diskTileWriter{basedir: *target}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
@@ -192,14 +197,31 @@ type tileWriter interface {
 }
 
 func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper) {
+	var (
+		filterTime int64 //nans
+		count      int64
+		dur        time.Duration
+		tStart     time.Time
+	)
 	for _, tID := range tIDs {
-		log.Printf("Generating %s", tID)
+		// log.Printf("Generating %s", tID)
 		var (
 			layers = map[string][]spatial.Feature{}
 			ln     string
 		)
 		tileClipBBox := tID.BBox()
-		for _, feat := range features.Filter(tileClipBBox) {
+
+		if measureFilterTiming {
+			tStart = time.Now()
+		}
+		fts := features.Filter(tileClipBBox)
+		if measureFilterTiming {
+			dur = time.Now().Sub(tStart)
+			filterTime += dur.Nanoseconds()
+			count += 1
+		}
+
+		for _, feat := range fts {
 			for _, geom := range feat.Geometry.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
 				ln = lm.LayerName(feat.Props)
@@ -224,6 +246,9 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+	if measureFilterTiming {
+		log.Printf("avg duration: %v", time.Duration(filterTime/count))
 	}
 }
 
