@@ -2,7 +2,7 @@ package spatial
 
 import "container/list"
 
-// Polygon is a data type for storing simple polygons: One outer ring and an arbitrary number of inner rings.
+// Polygon is a data type for storing simple polygons.
 type Polygon []Line
 
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {

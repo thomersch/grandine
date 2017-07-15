@@ -1,8 +1,8 @@
 package mvt
 
 import (
+	"bytes"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/thomersch/grandine/lib/spatial"
@@ -142,8 +142,7 @@ func TestEncodeTile(t *testing.T) {
 
 	buf, err := EncodeTile(layers, tile.ID{X: 1, Y: 0, Z: 1})
 	assert.Nil(t, err)
-	f, err := os.Create("testtile.mvt")
-	assert.Nil(t, err)
-	defer f.Close()
-	f.Write(buf)
+
+	var b bytes.Buffer
+	b.Write(buf)
 }

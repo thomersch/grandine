@@ -151,6 +151,34 @@ func (l Line) Clockwise() bool {
 	return area >= 0
 }
 
+// Simplify returns a simplified copy of the Line using the Ramer-Douglas-Peucker algorithm.
+func (l Line) Simplify(e float64) Line {
+	if len(l) < 3 {
+		return l
+	}
+
+	var (
+		seg     = Segment{l[0], l[len(l)-1]}
+		maxDist float64
+		index   int
+	)
+	for i, pt := range l[1 : len(l)-1] {
+		dist := seg.DistanceToPt(pt)
+		if dist > maxDist {
+			maxDist = dist
+			index = (i + 1) // starting with the second point
+		}
+	}
+
+	if maxDist > e {
+		// divide line in two sublines
+		l1 := l[:index+1].Simplify(e)
+		l2 := l[index:].Simplify(e)
+		return append(l1[:len(l1)-1], l2...)
+	}
+	return Line{seg[0], seg[1]}
+}
+
 func MergeLines(l1, l2 Line) Line {
 	// head to head
 	if l1[0] == l2[0] {
@@ -316,6 +344,16 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 		(a1*c2 - a2*c1) / det,
 	}.RoundedCoords()
 	return intersection, s.HasPoint(intersection) && s2.HasPoint(intersection)
+}
+
+// DistanceToPt determines the Segment's perpendicular distance to the point.
+func (s Segment) DistanceToPt(p Point) float64 {
+	if s[0].X() == s[1].X() {
+		return math.Abs(p.X() - s[0].X())
+	}
+	slope := s[1].Y() - s[0].Y()/s[1].X() - s[0].X()
+	ict := s[0].Y() - slope*s[0].X()
+	return math.Abs(slope*p.X()-p.Y()+ict) / math.Sqrt(math.Pow(slope, 2)+1)
 }
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.

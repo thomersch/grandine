@@ -98,11 +98,11 @@ func main() {
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
 	}
 
+	log.Println("determining which tiles need to be generated")
 	var tc []tile.ID
 	for _, zoomlevel := range zoomlevels {
 		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
 	}
-	log.Printf("attempting to generate %d tiles", len(tc))
 
 	var fts spatial.Filterable
 	if len(fc.Features)*len(tc) > indexThreshold {
@@ -113,6 +113,7 @@ func main() {
 		fts = &fc
 	}
 
+	log.Printf("starting to generate %d tiles...", len(tc))
 	dtw := diskTileWriter{basedir: *target}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
 

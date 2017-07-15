@@ -33,9 +33,9 @@ func encodeCommandInt(c cmd, count uint32) uint32 {
 	return (uint32(c) & 0x7) | (count << 3)
 }
 
-// func decodeCommandInt(cmdInt uint32) (cmd, uint32) {
-// 	return cmd(cmdInt & 0x7), cmdInt >> 3
-// }
+func decodeCommandInt(cmdInt uint32) (cmd, uint32) {
+	return cmd(cmdInt & 0x7), cmdInt >> 3
+}
 
 func encodeZigZag(i int) uint32 {
 	return uint32((i << 1) ^ (i >> 31))
