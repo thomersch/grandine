@@ -285,6 +285,18 @@ func (g *Geom) In(bbox BBox) bool {
 	return g.BBox().In(bbox)
 }
 
+type simplifiable interface {
+	Simplify(e float64) interface{}
+}
+
+func (g *Geom) Simplify(e float64) Geom {
+	switch gm := g.g.(type) {
+	case Line:
+		return Geom{typ: g.typ, g: gm.Simplify(e)}
+	}
+	return *g
+}
+
 type Clippable interface {
 	// TODO: consider returning primitive geom, instead of Geom
 	ClipToBBox(BBox) []Geom

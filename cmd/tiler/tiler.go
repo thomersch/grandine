@@ -204,7 +204,8 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 
 		for _, feat := range features.Filter(tileClipBBox) {
 			for _, geom := range feat.Geometry.ClipToBBox(tileClipBBox) {
-				feat.Geometry = geom
+				sf := tile.Resolution(tID.Z, 4096) * 20
+				feat.Geometry = geom.Simplify(sf)
 				ln = lm.LayerName(feat.Props)
 				if len(ln) != 0 {
 					if _, ok := layers[ln]; !ok {

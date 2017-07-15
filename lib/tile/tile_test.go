@@ -87,5 +87,4 @@ func TestTileBBox(t *testing.T) {
 			assert.Equal(t, tc.expected, bbox)
 		})
 	}
-
 }

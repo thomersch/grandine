@@ -40,3 +40,8 @@ func TileName(p spatial.Point, zoom int) ID {
 		Z: zoom,
 	}
 }
+
+// Resolution determines the minimal describable value inside a tile.
+func Resolution(zoomlevel, extent int) float64 {
+	return 360 / (math.Pow(2, float64(zoomlevel)) * float64(extent))
+}
