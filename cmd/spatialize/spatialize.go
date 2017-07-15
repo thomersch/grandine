@@ -27,10 +27,7 @@ type dataHandler struct {
 
 func (d *dataHandler) ReadNode(n gosmparse.Node) {
 	// TODO: make it possible to specify condition type (node/way/rel)
-	if v, ok := n.Tags[d.cond.key]; ok {
-		if len(d.cond.value) != 0 && d.cond.value != v {
-			return
-		}
+	if d.cond.Matches(n.Tags) {
 		d.nodesMtx.Lock()
 		d.nodes = append(d.nodes, n)
 		d.nodesMtx.Unlock()
@@ -39,10 +36,7 @@ func (d *dataHandler) ReadNode(n gosmparse.Node) {
 
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
 	// TODO: make it possible to specify condition type (node/way/rel)
-	if v, ok := w.Tags[d.cond.key]; ok {
-		if len(d.cond.value) != 0 && d.cond.value != v {
-			return
-		}
+	if d.cond.Matches(w.Tags) {
 		d.ec.AddNodes(w.NodeIDs...)
 		d.ec.setMembers(w.ID, w.NodeIDs)
 
@@ -53,12 +47,7 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 }
 
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
-	// TODO: make it possible to specify condition type (node/way/rel)
-	if v, ok := r.Tags[d.cond.key]; ok {
-		if len(d.cond.value) != 0 && d.cond.value != v {
-			return
-		}
-
+	if d.cond.Matches(r.Tags) {
 		d.relsMtx.Lock()
 		d.rels = append(d.rels, r)
 		d.relsMtx.Unlock()
@@ -157,9 +146,26 @@ func (d *nodeCollector) ReadRelation(r gosmparse.Relation) {}
 // 	typRelation = 3
 // )
 
+type tagMapFn func(map[string]string) map[string]interface{}
+
+type mapper struct {
+	cond     condition
+	mapper   tagMapFn
+	elemType spatial.GeomType
+}
+
 type condition struct {
 	key   string
 	value string
+}
+
+func (c *condition) Matches(kv map[string]string) bool {
+	if v, ok := kv[c.key]; ok {
+		if len(c.value) == 0 || c.value == v {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -258,15 +264,8 @@ func main() {
 		for _, memb := range rl.Members {
 			if memb.Role == "outer" || memb.Role == "inner" {
 				ring := ec.Line(memb.ID)
-				if memb.Role == "outer" {
-					if !ring.Clockwise() {
-						ring.Reverse()
-					}
-				}
-				if memb.Role == "inner" {
-					if ring.Clockwise() {
-						ring.Reverse()
-					}
+				if (memb.Role == "outer" && !ring.Clockwise()) || (memb.Role == "inner" && ring.Clockwise()) {
+					ring.Reverse()
 				}
 				poly = append(poly, ring)
 			}
