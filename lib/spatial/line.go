@@ -140,6 +140,17 @@ func (l Line) Reverse() {
 	}
 }
 
+func (l Line) Clockwise() bool {
+	var (
+		area float64
+		n    = len(l)
+	)
+	for i := range l {
+		area += (l[i].Y() + l[(i+1)%n].Y()) * (l[i].X() - l[(i+1)%n].X())
+	}
+	return area >= 0
+}
+
 func MergeLines(l1, l2 Line) Line {
 	// head to head
 	if l1[0] == l2[0] {
