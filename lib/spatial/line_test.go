@@ -356,3 +356,11 @@ func TestLineSort(t *testing.T) {
 	sort.Sort(line2)
 	assert.Equal(t, line1, line2)
 }
+
+func TestLineClockwise(t *testing.T) {
+	l := Line{{-12.3046875, 45.33670}, {12.3046875, 23.72501}, {91.58203125, 35.3173}, {103.18359375, 63.54855}, {65.7421875, 74.8678}, {-3.1640625, 72.6071}}
+	assert.True(t, l.Clockwise())
+
+	l.Reverse()
+	assert.False(t, l.Clockwise())
+}
