@@ -238,9 +238,13 @@ func main() {
 		for k, v := range wy.Tags {
 			props[k] = v
 		}
+		ln := ec.Line(wy.ID)
+		if !ln.Clockwise() {
+			ln.Reverse()
+		}
 		fc = append(fc, spatial.Feature{
 			Props:    props,
-			Geometry: spatial.MustNewGeom(ec.Line(wy.ID)),
+			Geometry: spatial.MustNewGeom(ln),
 		})
 	}
 
@@ -252,16 +256,20 @@ func main() {
 		var poly spatial.Polygon
 
 		for _, memb := range rl.Members {
-			if memb.Role == "outer" {
-				if len(poly) != 0 {
-					// TODO: allow polygons with multiple outer rings and split them
-					break
+			if memb.Role == "outer" || memb.Role == "inner" {
+				ring := ec.Line(memb.ID)
+				if memb.Role == "outer" {
+					if !ring.Clockwise() {
+						ring.Reverse()
+					}
 				}
-				poly = append(poly, ec.Line(memb.ID))
-			} else if memb.Role == "inner" {
-				poly = append(poly, ec.Line(memb.ID))
+				if memb.Role == "inner" {
+					if ring.Clockwise() {
+						ring.Reverse()
+					}
+				}
+				poly = append(poly, ring)
 			}
-
 		}
 	}
 
