@@ -16,8 +16,15 @@ type nd struct {
 	Lat, Lon float64
 	Tags     map[string]interface{}
 }
-type wy gosmparse.Way
-type rl gosmparse.Relation
+type wy struct {
+	ID      int64
+	NodeIDs []int64
+	Tags    map[string]interface{}
+}
+type rl struct {
+	Members []gosmparse.RelationMember
+	Tags    map[string]interface{}
+}
 
 type dataHandler struct {
 	cond condition
@@ -50,7 +57,11 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 		d.ec.setMembers(w.ID, w.NodeIDs)
 
 		d.waysMtx.Lock()
-		d.ways = append(d.ways, wy(w))
+		d.ways = append(d.ways, wy{
+			ID:      w.ID,
+			NodeIDs: w.NodeIDs,
+			Tags:    d.cond.Map(w.Tags),
+		})
 		d.waysMtx.Unlock()
 	}
 }
@@ -58,7 +69,10 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 	if d.cond.Matches(r.Tags) {
 		d.relsMtx.Lock()
-		d.rels = append(d.rels, rl(r))
+		d.rels = append(d.rels, rl{
+			Members: r.Members,
+			Tags:    d.cond.Map(r.Tags),
+		})
 		d.relsMtx.Unlock()
 
 		for _, memb := range r.Members {
@@ -177,7 +191,12 @@ func (c *condition) Map(kv map[string]string) map[string]interface{} {
 }
 
 func main() {
-	cond := condition{"highway", "primary", func(map[string]string) map[string]interface{} { return nil }}
+	cond := condition{"highway", "primary", func(map[string]string) map[string]interface{} {
+		return map[string]interface{}{
+			"@layer": "transportation",
+			"class":  "primary",
+		}
+	}}
 
 	source := flag.String("src", "osm.pbf", "")
 	outfile := flag.String("out", "osm.cugdf", "")
