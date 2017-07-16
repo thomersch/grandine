@@ -12,36 +12,45 @@ import (
 	"github.com/thomersch/gosmparse"
 )
 
+type nd struct {
+	Lat, Lon float64
+	Tags     map[string]interface{}
+}
+type wy gosmparse.Way
+type rl gosmparse.Relation
+
 type dataHandler struct {
 	cond condition
 
 	ec *elemCache
 
-	nodes    []gosmparse.Node
+	nodes    []nd
 	nodesMtx sync.Mutex
-	ways     []gosmparse.Way
+	ways     []wy
 	waysMtx  sync.Mutex
-	rels     []gosmparse.Relation
+	rels     []rl
 	relsMtx  sync.Mutex
 }
 
 func (d *dataHandler) ReadNode(n gosmparse.Node) {
-	// TODO: make it possible to specify condition type (node/way/rel)
 	if d.cond.Matches(n.Tags) {
 		d.nodesMtx.Lock()
-		d.nodes = append(d.nodes, n)
+		d.nodes = append(d.nodes, nd{
+			Lat:  n.Lat,
+			Lon:  n.Lon,
+			Tags: d.cond.Map(n.Tags),
+		})
 		d.nodesMtx.Unlock()
 	}
 }
 
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
-	// TODO: make it possible to specify condition type (node/way/rel)
 	if d.cond.Matches(w.Tags) {
 		d.ec.AddNodes(w.NodeIDs...)
 		d.ec.setMembers(w.ID, w.NodeIDs)
 
 		d.waysMtx.Lock()
-		d.ways = append(d.ways, w)
+		d.ways = append(d.ways, wy(w))
 		d.waysMtx.Unlock()
 	}
 }
@@ -49,7 +58,7 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 	if d.cond.Matches(r.Tags) {
 		d.relsMtx.Lock()
-		d.rels = append(d.rels, r)
+		d.rels = append(d.rels, rl(r))
 		d.relsMtx.Unlock()
 
 		for _, memb := range r.Members {
@@ -139,13 +148,6 @@ func (d *nodeCollector) ReadNode(n gosmparse.Node) {
 func (d *nodeCollector) ReadWay(w gosmparse.Way)           {}
 func (d *nodeCollector) ReadRelation(r gosmparse.Relation) {}
 
-// const (
-// 	typAny      = 0
-// 	typNode     = 1
-// 	typWay      = 2
-// 	typRelation = 3
-// )
-
 type tagMapFn func(map[string]string) map[string]interface{}
 
 type mapper struct {
@@ -155,8 +157,10 @@ type mapper struct {
 }
 
 type condition struct {
-	key   string
-	value string
+	// TODO: make it possible to specify condition type (node/way/rel)
+	key    string
+	value  string
+	mapper tagMapFn
 }
 
 func (c *condition) Matches(kv map[string]string) bool {
@@ -168,8 +172,12 @@ func (c *condition) Matches(kv map[string]string) bool {
 	return false
 }
 
+func (c *condition) Map(kv map[string]string) map[string]interface{} {
+	return c.mapper(kv)
+}
+
 func main() {
-	cond := condition{"building", ""}
+	cond := condition{"highway", "primary", func(map[string]string) map[string]interface{} { return nil }}
 
 	source := flag.String("src", "osm.pbf", "")
 	outfile := flag.String("out", "osm.cugdf", "")
