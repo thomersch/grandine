@@ -27,6 +27,8 @@ var (
 	vtLine         = vt.Tile_LINESTRING
 	vtPoly         = vt.Tile_POLYGON
 	vtLayerVersion = uint32(2)
+
+	skipAtKeys = true // if enabled keys that start with "@" will be ignored
 )
 
 func encodeCommandInt(c cmd, count uint32) uint32 {
@@ -129,6 +131,9 @@ func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, erro
 		var tileFeat vt.Tile_Feature
 
 		for k, v := range feat.Properties() {
+			if skipAtKeys && k[0] == '@' {
+				continue
+			}
 			kpos := keys.Index(k)
 			vpos := vals.Index(v)
 			tileFeat.Tags = append(tileFeat.Tags, uint32(kpos), uint32(vpos))

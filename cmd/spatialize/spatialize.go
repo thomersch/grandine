@@ -27,7 +27,7 @@ type rl struct {
 }
 
 type dataHandler struct {
-	cond condition
+	conds []condition
 
 	ec *elemCache
 
@@ -40,46 +40,52 @@ type dataHandler struct {
 }
 
 func (d *dataHandler) ReadNode(n gosmparse.Node) {
-	if d.cond.Matches(n.Tags) {
-		d.nodesMtx.Lock()
-		d.nodes = append(d.nodes, nd{
-			Lat:  n.Lat,
-			Lon:  n.Lon,
-			Tags: d.cond.Map(n.Tags),
-		})
-		d.nodesMtx.Unlock()
+	for _, cond := range d.conds {
+		if cond.Matches(n.Tags) {
+			d.nodesMtx.Lock()
+			d.nodes = append(d.nodes, nd{
+				Lat:  n.Lat,
+				Lon:  n.Lon,
+				Tags: cond.Map(n.Tags),
+			})
+			d.nodesMtx.Unlock()
+		}
 	}
 }
 
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
-	if d.cond.Matches(w.Tags) {
-		d.ec.AddNodes(w.NodeIDs...)
-		d.ec.setMembers(w.ID, w.NodeIDs)
+	for _, cond := range d.conds {
+		if cond.Matches(w.Tags) {
+			d.ec.AddNodes(w.NodeIDs...)
+			d.ec.setMembers(w.ID, w.NodeIDs)
 
-		d.waysMtx.Lock()
-		d.ways = append(d.ways, wy{
-			ID:      w.ID,
-			NodeIDs: w.NodeIDs,
-			Tags:    d.cond.Map(w.Tags),
-		})
-		d.waysMtx.Unlock()
+			d.waysMtx.Lock()
+			d.ways = append(d.ways, wy{
+				ID:      w.ID,
+				NodeIDs: w.NodeIDs,
+				Tags:    cond.Map(w.Tags),
+			})
+			d.waysMtx.Unlock()
+		}
 	}
 }
 
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
-	if d.cond.Matches(r.Tags) {
-		d.relsMtx.Lock()
-		d.rels = append(d.rels, rl{
-			Members: r.Members,
-			Tags:    d.cond.Map(r.Tags),
-		})
-		d.relsMtx.Unlock()
+	for _, cond := range d.conds {
+		if cond.Matches(r.Tags) {
+			d.relsMtx.Lock()
+			d.rels = append(d.rels, rl{
+				Members: r.Members,
+				Tags:    cond.Map(r.Tags),
+			})
+			d.relsMtx.Unlock()
 
-		for _, memb := range r.Members {
-			switch memb.Type {
-			case gosmparse.WayType:
-				d.ec.AddWay(memb.ID)
-			} // TODO: check if relations of nodes/relations are necessary
+			for _, memb := range r.Members {
+				switch memb.Type {
+				case gosmparse.WayType:
+					d.ec.AddWay(memb.ID)
+				} // TODO: check if relations of nodes/relations are necessary
+			}
 		}
 	}
 }
@@ -191,12 +197,22 @@ func (c *condition) Map(kv map[string]string) map[string]interface{} {
 }
 
 func main() {
-	cond := condition{"highway", "primary", func(map[string]string) map[string]interface{} {
+	highwayMapFn := func(kv map[string]string) map[string]interface{} {
+		var cl string
+		if class, ok := kv["highway"]; ok {
+			cl = class
+		}
 		return map[string]interface{}{
 			"@layer": "transportation",
-			"class":  "primary",
+			"class":  cl,
 		}
-	}}
+	}
+
+	conds := []condition{
+		condition{"highway", "primary", highwayMapFn},
+		condition{"highway", "secondary", highwayMapFn},
+		condition{"highway", "tertiary", highwayMapFn},
+	}
 
 	source := flag.String("src", "osm.pbf", "")
 	outfile := flag.String("out", "osm.cugdf", "")
@@ -211,8 +227,8 @@ func main() {
 	// First pass
 	ec := NewElemCache()
 	dh := dataHandler{
-		cond: cond,
-		ec:   ec,
+		conds: conds,
+		ec:    ec,
 	}
 	log.Println("Starting 3 step parsing")
 	log.Println("Reading data (1/3)...")

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	cookie  = "ABCD"
+	cookie  = "SPAT"
 	version = 0
 )
 
