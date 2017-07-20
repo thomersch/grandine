@@ -197,7 +197,7 @@ func (c *condition) Map(kv map[string]string) map[string]interface{} {
 }
 
 func main() {
-	highwayMapFn := func(kv map[string]string) map[string]interface{} {
+	transportationMapFn := func(kv map[string]string) map[string]interface{} {
 		var cl string
 		if class, ok := kv["highway"]; ok {
 			cl = class
@@ -208,10 +208,19 @@ func main() {
 		}
 	}
 
+	landuseMapFn := func(kv map[string]string) map[string]interface{} {
+		return map[string]interface{}{
+			"__type":    "area",
+			"landcover": "wood",
+		}
+	}
+
 	conds := []condition{
-		condition{"highway", "primary", highwayMapFn},
-		condition{"highway", "secondary", highwayMapFn},
-		condition{"highway", "tertiary", highwayMapFn},
+		condition{"highway", "primary", transportationMapFn},
+		condition{"highway", "secondary", transportationMapFn},
+		condition{"highway", "tertiary", transportationMapFn},
+		condition{"railway", "rail", transportationMapFn},
+		condition{"landuse", "forest", landuseMapFn},
 	}
 
 	source := flag.String("src", "osm.pbf", "")
@@ -283,17 +292,31 @@ func main() {
 	log.Println("Assembling ways...")
 	// TODO: auto-detect if linestring or polygon, based on tags
 	for _, wy := range dh.ways {
-		props := map[string]interface{}{}
+		var (
+			area  bool
+			props = map[string]interface{}{}
+			geom  interface{}
+		)
 		for k, v := range wy.Tags {
+			if k == "__type" && v == "area" {
+				area = true
+				continue
+			}
 			props[k] = v
 		}
 		ln := ec.Line(wy.ID)
 		if !ln.Clockwise() {
 			ln.Reverse()
 		}
+		if area {
+			geom = spatial.Polygon{ln}
+		} else {
+			geom = ln
+		}
+
 		fc = append(fc, spatial.Feature{
 			Props:    props,
-			Geometry: spatial.MustNewGeom(ln),
+			Geometry: spatial.MustNewGeom(geom),
 		})
 	}
 
