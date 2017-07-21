@@ -210,17 +210,55 @@ func main() {
 
 	landuseMapFn := func(kv map[string]string) map[string]interface{} {
 		return map[string]interface{}{
-			"__type":    "area",
-			"landcover": "wood",
+			"__type": "area",
+			"@layer": "landcover",
+			"class":  "wood",
+		}
+	}
+
+	aerowayMapFn := func(kv map[string]string) map[string]interface{} {
+		var cl string
+		if class, ok := kv["aeroway"]; ok {
+			cl = class
+		}
+		return map[string]interface{}{
+			"@layer": "aeroway",
+			"class":  cl,
+		}
+	}
+
+	buildingMapFn := func(kv map[string]string) map[string]interface{} {
+		return map[string]interface{}{
+			"@layer":    "building",
+			"@zoom:min": 14,
+		}
+	}
+
+	waterwayMapFn := func(kv map[string]string) map[string]interface{} {
+		var cl string
+		if class, ok := kv["waterway"]; ok {
+			cl = class
+		}
+		return map[string]interface{}{
+			"@layer": "waterway",
+			"class":  cl,
 		}
 	}
 
 	conds := []condition{
+		condition{"aeroway", "aerodrome", aerowayMapFn},
+		condition{"aeroway", "apron", aerowayMapFn},
+		condition{"aeroway", "heliport", aerowayMapFn},
+		condition{"aeroway", "runway", aerowayMapFn},
+		condition{"aeroway", "helipad", aerowayMapFn},
+		condition{"aeroway", "taxiway", aerowayMapFn},
 		condition{"highway", "primary", transportationMapFn},
 		condition{"highway", "secondary", transportationMapFn},
 		condition{"highway", "tertiary", transportationMapFn},
-		condition{"railway", "rail", transportationMapFn},
+		condition{"building", "", buildingMapFn},
 		condition{"landuse", "forest", landuseMapFn},
+		condition{"railway", "rail", transportationMapFn},
+		condition{"waterway", "river", waterwayMapFn},
 	}
 
 	source := flag.String("src", "osm.pbf", "")
