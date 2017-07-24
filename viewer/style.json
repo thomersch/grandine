@@ -1,0 +1,63 @@
+{
+	"name": "Points",
+	"metadata": {},
+	"version": 8,
+	"sources": {
+		"mvt": {
+			"type": "vector",
+			"tiles": ["http://localhost:8080/tiles/{z}/{x}/{y}.mvt"],
+			"maxzoom": 14
+		}
+	},
+	"layers": [
+	{
+		"id": "lines",
+		"source": "mvt",
+		"source-layer": "default",
+		"type": "line",
+		"paint": {
+			"line-width": 2,
+			"line-color": "grey"
+		},
+		"filter": ["==", "$type", "LineString"]
+	}, {
+		"id": "transportation-primary",
+		"source": "mvt",
+		"source-layer": "transportation",
+		"type": "line",
+		"paint": {
+			"line-width": 3,
+			"line-color": "orange"
+		},
+		"filter": ["==", "class", "primary"]
+	}, {
+		"id": "transportation-secondary",
+		"source": "mvt",
+		"source-layer": "transportation",
+		"type": "line",
+		"paint": {
+			"line-width": 1,
+			"line-color": "orange"
+		},
+		"filter": ["==", "class", "secondary"]
+	}, {
+		"id": "transportation-tertiary",
+		"source": "mvt",
+		"source-layer": "transportation",
+		"type": "line",
+		"paint": {
+			"line-width": 1,
+			"line-color": "#CFCFCF"
+		},
+		"filter": ["==", "class", "tertiary"]
+	}, {
+		"id": "poly",
+		"source": "mvt",
+		"source-layer": "default",
+		"type": "fill",
+		"paint": {
+			"fill-color": "brown"
+		},
+		"filter": ["==", "$type", "Polygon"]
+	}]
+}
