@@ -13,11 +13,17 @@ func init() {
 		"string": func(s interface{}) ([]byte, Tag_ValueType, error) {
 			return []byte(s.(string)), Tag_STRING, nil
 		},
+		"int": func(s interface{}) ([]byte, Tag_ValueType, error) {
+			var buf = make([]byte, 8)
+			binary.LittleEndian.PutUint64(buf, uint64(s.(int)))
+			return buf, Tag_INT, nil
+		},
 		"float64": func(f interface{}) ([]byte, Tag_ValueType, error) {
 			var (
 				v   float64
 				buf bytes.Buffer
 			)
+			// TODO: replace with math.Float64fromBits
 			err := binary.Write(&buf, binary.LittleEndian, v)
 			return buf.Bytes(), Tag_DOUBLE, err
 		},
@@ -40,6 +46,8 @@ func KeyValue(t *Tag) (string, interface{}, error) {
 	switch t.GetType() {
 	case Tag_STRING:
 		return t.Key, string(t.GetValue()), nil
+	case Tag_INT:
+		return t.Key, int(binary.LittleEndian.Uint64(t.GetValue())), nil
 	case Tag_DOUBLE:
 		var (
 			buf = bytes.NewBuffer(t.GetValue())
