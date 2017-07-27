@@ -58,7 +58,8 @@ func assembleTile(features map[string][]spatial.Feature, tid tile.ID) (vt.Tile, 
 		if err != nil {
 			return vtile, err
 		}
-		layer.Name = &layerName
+		var ln = layerName
+		layer.Name = &ln // &layerName can't be used directly, because pointers are reused in for range loops
 		layer.Version = &vtLayerVersion
 		vtile.Layers = append(vtile.Layers, &layer)
 	}
