@@ -199,7 +199,9 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 		case spatial.GeomTypePolygon:
 			// TODO: inner ring handling
 			poly, _ := geom.Polygon()
-			commands = append(commands, encodeLine(poly[0], cur, extent, xScale, yScale, xOffset, yOffset)...)
+			outer := poly[0]
+			outer.Reverse()
+			commands = append(commands, encodeLine(outer, cur, extent, xScale, yScale, xOffset, yOffset)...)
 			commands = append(commands, encodeCommandInt(cmdClosePath, 1))
 		}
 	}
