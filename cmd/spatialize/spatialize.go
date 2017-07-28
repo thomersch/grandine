@@ -261,7 +261,7 @@ func main() {
 		condition{"waterway", "river", waterwayMapFn},
 	}
 
-	source := flag.String("src", "osm.pbf", "")
+	source := flag.String("in", "osm.pbf", "")
 	outfile := flag.String("out", "osm.cugdf", "")
 	flag.Parse()
 
@@ -343,7 +343,7 @@ func main() {
 			props[k] = v
 		}
 		ln := ec.Line(wy.ID)
-		if !ln.Clockwise() {
+		if ln.Clockwise() {
 			ln.Reverse()
 		}
 		if area {
