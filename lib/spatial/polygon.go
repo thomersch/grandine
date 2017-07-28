@@ -1,9 +1,20 @@
 package spatial
 
-import "container/list"
+import (
+	"container/list"
+	"fmt"
+)
 
 // Polygon is a data type for storing simple polygons.
 type Polygon []Line
+
+func (p Polygon) String() string {
+	s := "Polygon{"
+	for _, line := range p {
+		s += fmt.Sprintf("%v", line)
+	}
+	return s + "}"
+}
 
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	// Is outer ring fully inside?
@@ -42,11 +53,13 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	}
 
 	// build intersections
+	var nIntsct = 0
 	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
 		subjSeg := Segment{subjPt.Value.(refPoint).pt, nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt}
 		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
 			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
 			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
+				nIntsct += 1
 				// log.Println(">>>>>>>>", intsct)
 				clipRef := clipLL.InsertAfter(intsct, clipPt)
 				clipPt = clipPt.Next()
@@ -68,6 +81,11 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 				}
 			}
 		}
+	}
+
+	if nIntsct == 0 {
+		// Polygons don't intersect at all and polygon is not fully inside.
+		return nil
 	}
 
 	var (

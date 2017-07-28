@@ -67,6 +67,11 @@ type geoJSONGeom struct {
 	Coordinates json.RawMessage `json:"coordinates"`
 }
 
+func (g *Geom) String() string {
+	// TODO: this could probably be replaced with a type assertion and direct call to g.g.String()
+	return fmt.Sprintf("%v", g.g)
+}
+
 func (g *Geom) UnmarshalJSON(buf []byte) error {
 	var wg geoJSONGeom
 	err := json.Unmarshal(buf, &wg)
@@ -95,6 +100,7 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
 			return err
 		}
+		// NOTE: the geojson decoder assumes OGC/RFC 7946 compliant winding order
 		for pos := range poly {
 			// remove last element from every ring as it is unnecessary
 			poly[pos] = poly[pos][:len(poly[pos])-1]

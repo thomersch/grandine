@@ -62,4 +62,6 @@ func TestClipPolygon(t *testing.T) {
 	t.Run("triangle cut", func(t *testing.T) {
 		poly3.ClipToBBox(BBox{Point{5, -5}, Point{20, 20}})
 	})
+
+	// TODO: test cut where the bbox of the polygon overlaps with cut bbox, but isn't actually inside
 }
