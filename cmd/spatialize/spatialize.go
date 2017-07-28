@@ -368,7 +368,7 @@ func main() {
 		for _, memb := range rl.Members {
 			if memb.Role == "outer" || memb.Role == "inner" {
 				ring := ec.Line(memb.ID)
-				if (memb.Role == "outer" && !ring.Clockwise()) || (memb.Role == "inner" && ring.Clockwise()) {
+				if (memb.Role == "outer" && ring.Clockwise()) || (memb.Role == "inner" && !ring.Clockwise()) {
 					ring.Reverse()
 				}
 				poly = append(poly, ring)
