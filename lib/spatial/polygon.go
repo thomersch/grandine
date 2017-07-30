@@ -34,15 +34,22 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	//         This is repeated until the starting intersection is reached.
 
 	// TODO: inner ring handling
-	clipLn := NewLinesFromSegments(BBoxBorders(bbox.SW, bbox.NE))[0]
+	var (
+		clipLn = NewLinesFromSegments(BBoxBorders(bbox.SW, bbox.NE))[0]
+		subjLn = p[0]
+	)
+	// weiler-atherton needs clockwise ordering
+	if !subjLn.Clockwise() {
+		subjLn.Reverse()
+	}
+	clipLn.Reverse()
 
 	var (
 		subjLL = list.New()
 		clipLL = list.New()
 	)
-
 	// convert subj and clip slices into linked lists
-	for _, subjPt := range p[0] {
+	for _, subjPt := range subjLn {
 		subjLL.PushBack(refPoint{pt: subjPt.RoundedCoords()})
 		// log.Printf("subjpt: %v", subjPt.RoundedCoords())
 
@@ -138,6 +145,10 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 
 	var geoms []Geom
 	for _, ln := range lines {
+		if len(ln) < 3 {
+			continue
+		}
+		ln.Reverse() // invert back to counter-clockwise order
 		ng, _ := NewGeom(Polygon{ln})
 		geoms = append(geoms, ng)
 	}
