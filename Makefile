@@ -1,5 +1,6 @@
 GO          := go
 GOBUILDOPTS := -v
+GOTESTOPTS  := -v
 BINPATH     := bin
 
 build: build-converter build-spatialize build-tiler
@@ -13,5 +14,12 @@ build-spatialize:
 build-tiler:
 	$(GO) build $(GOBUILDOPTS) -o "$(BINPATH)/grandine-tiler" cmd/tiler/*.go 
 
+clean:
+	rm '$(BINPATH)'/*
+
 test:
-	$(GO) test ./...
+	$(GO) test $(GOTESTOPTS) ./...
+
+# retrieves deps for tests
+test-deps:
+	$(GO) get -t -u -v ./...

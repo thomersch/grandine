@@ -4,7 +4,6 @@ go:
   - 1.8
 
 script:
-  - go test ./...
-  - cd $TRAVIS_BUILD_DIR/cmd/converter && go build
-  - cd $TRAVIS_BUILD_DIR/cmd/spatialize && go build
-  - cd $TRAVIS_BUILD_DIR/cmd/tiler && go build
+  - make build # needs to work with already vendored deps
+  - make test-deps
+  - make test
