@@ -21,6 +21,12 @@ type Feature struct {
 	Geometry Geom
 }
 
+func NewFeature() Feature {
+	return Feature{
+		Props: map[string]interface{}{},
+	}
+}
+
 func (f *Feature) Properties() map[string]interface{} {
 	return f.Props
 }
