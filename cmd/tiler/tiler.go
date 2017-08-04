@@ -39,8 +39,8 @@ func (zm *zmLvl) Set(value string) error {
 var zoomlevels zmLvl
 
 func main() {
-	source := flag.String("src", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
-	target := flag.String("target", "tiles", "path where the tiles will be written")
+	source := flag.String("in", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
+	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")

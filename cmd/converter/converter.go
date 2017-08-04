@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-	source := flag.String("src", "geo.geojson", "")
-	dest := flag.String("dest", "geo.unnamed", "")
+	source := flag.String("in", "geo.geojson", "")
+	dest := flag.String("out", "geo.unnamed", "")
 	flag.Parse()
 
 	f, err := os.Open(*source)
