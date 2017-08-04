@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "yqF125xVSkmfLpIVGrLlfE05IUk=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "748d386b5c1ea99658fd69fe9f03991ce86a90c1",
+			"revisionTime": "2017-07-26T21:28:29Z"
+		},
+		{
+			"checksumSHA1": "qm6IKSVeo3TLZcAmNlmBm9uPliE=",
+			"path": "github.com/thomersch/gosmparse",
+			"revision": "868a6f151a1ca3f5fd950e618b86883d6055d462",
+			"revisionTime": "2017-07-16T12:49:31Z"
+		},
+		{
+			"checksumSHA1": "AZUoZ2q4UB+2eyTu1WxUxwIKNTI=",
+			"path": "github.com/thomersch/gosmparse/OSMPBF",
+			"revision": "868a6f151a1ca3f5fd950e618b86883d6055d462",
+			"revisionTime": "2017-07-16T12:49:31Z"
+		}
+	],
+	"rootPath": "github.com/thomersch/grandine/cmd/spatialize"
+}

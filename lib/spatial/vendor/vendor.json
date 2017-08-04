@@ -9,6 +9,12 @@
 			"revisionTime": "2016-10-29T20:57:26Z"
 		},
 		{
+			"checksumSHA1": "mYDCdiT+SQcOvGE+g1ROrXIVxU4=",
+			"path": "github.com/dhconnelly/rtreego",
+			"revision": "1323b09fe8f32430ea7e16ea1df99e106e3e6250",
+			"revisionTime": "2017-03-04T15:04:46Z"
+		},
+		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
