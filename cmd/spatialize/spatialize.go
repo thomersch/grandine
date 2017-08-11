@@ -381,7 +381,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = cugdf.Marshal(fc, of)
+	var outCodec cugdf.Codec
+	err = outCodec.Encode(of, &spatial.FeatureCollection{fc})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -74,17 +74,8 @@ func main() {
 
 	log.Println("parsing input...")
 	fc := spatial.FeatureCollection{}
-
-	if strings.HasSuffix(strings.ToLower(*source), "geojson") {
-		if err := json.NewDecoder(f).Decode(&fc); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		fc.Features, err = cugdf.Unmarshal(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	codec := cugdf.Codec{}
+	codec.Decode(f, &fc)
 
 	if len(fc.Features) == 0 {
 		log.Fatal("no features in input file")
