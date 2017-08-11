@@ -16,6 +16,7 @@ type Codec struct {
 func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 	csvrdr := csv.NewReader(r)
 	csvrdr.Comma = '	'
+	csvrdr.LazyQuotes = true
 
 	for {
 		record, err := csvrdr.Read()
@@ -48,5 +49,5 @@ func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 }
 
 func (c *Codec) Extensions() []string {
-	return []string{"csv"}
+	return []string{"csv", "txt"}
 }

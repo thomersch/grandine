@@ -21,7 +21,7 @@ func TestCSVDecode(t *testing.T) {
 		},
 	}
 	fcoll := spatial.FeatureCollection{}
-	err = csvr.Decode(f, fcoll)
+	err = csvr.Decode(f, &fcoll)
 	assert.Nil(t, err)
 	assert.Equal(t, "les Escaldes", fcoll.Features[0].Props["name"])
 	pt, err := fcoll.Features[0].Geometry.Point()
