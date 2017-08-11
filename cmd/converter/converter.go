@@ -1,90 +1,102 @@
 package main
 
 import (
-	"encoding/json"
+	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/thomersch/grandine/lib/csv"
 	"github.com/thomersch/grandine/lib/cugdf"
+	"github.com/thomersch/grandine/lib/geojson"
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
+type filelist []string
+
+func (fl *filelist) String() string {
+	return fmt.Sprintf("%s", *fl)
+}
+
+func (fl *filelist) Set(value string) error {
+	for _, s := range strings.Split(value, ",") {
+		*fl = append(*fl, strings.TrimSpace(s))
+	}
+	return nil
+}
+
+var codecs = []spatial.Codec{
+	&geojson.Codec{},
+	&cugdf.Codec{},
+	&csv.Codec{
+		//TODO: make configurable via flags
+		LatCol: 4,
+		LonCol: 5,
+		ColPropMap: map[int]string{
+			1: "name",
+		},
+	},
+}
+
 func main() {
-	source := flag.String("in", "geo.geojson", "")
-	dest := flag.String("out", "geo.unnamed", "")
+	var infiles filelist
+	dest := flag.String("out", "geo.spaten", "")
+	flag.Var(&infiles, "in", "infile(s)")
 	flag.Parse()
 
-	f, err := os.Open(*source)
+	enc, err := guessCodec(*dest, codecs)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("file type of %s is not supported (please check for correct file extension)", *dest)
 	}
-	defer f.Close()
+	encoder, ok := enc.(spatial.Encoder)
+	if !ok {
+		log.Fatalf("%v codec does not support writing", enc)
+	}
+
+	var fc spatial.FeatureCollection
+	for _, infileName := range infiles {
+		dec, err := guessCodec(infileName, codecs)
+		if err != nil {
+			log.Fatalf("file type of %s is not supported (please check for correct file extension)", infileName)
+		}
+		decoder, ok := dec.(spatial.Decoder)
+		if !ok {
+			log.Fatalf("%T codec does not support reading", decoder)
+		}
+
+		r, err := os.Open(infileName)
+		if err != nil {
+			log.Fatalf("could not open %v for reading: %v", infileName, err)
+		}
+		defer r.Close()
+		err = decoder.Decode(r, &fc)
+		if err != nil {
+			log.Fatalf("could not decode %v: %v", infileName, err)
+		}
+	}
 
 	out, err := os.Create(*dest)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer out.Close()
-
-	if strings.HasSuffix(*source, ".geojson") || strings.HasSuffix(*source, ".json") {
-		log.Println("Decoding geojson, encoding .unnamed")
-		err := cugdf.WriteFileHeader(out)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fc := spatial.FeatureCollection{}
-		if err := json.NewDecoder(f).Decode(&fc); err != nil {
-			log.Fatal(err)
-		}
-
-		for _, featBlock := range geomBlocks(100, fc.Features) {
-			cugdf.WriteBlock(out, featBlock)
-		}
-	} else {
-		log.Println("Decoding .unnamed, writing geojson")
-		_, err = cugdf.ReadFileHeader(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		var fcoll spatial.FeatureCollection
-		blks, err := cugdf.ReadBlocks(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for _, ft := range blks {
-			fcoll.Features = append(fcoll.Features, ft)
-		}
-		buf, err := fcoll.MarshalJSON()
-		if err != nil {
-			log.Fatal(err)
-		}
-		out.Write(buf)
+	// spew.Dump(fc)
+	err = encoder.Encode(out, &fc)
+	if err != nil {
+		log.Fatalf("could not encode %v: %v", dest, err)
 	}
 }
 
-// geomBlocks slices a slice of geometries into slices with a max size
-func geomBlocks(size int, src []spatial.Feature) [][]spatial.Feature {
-	if len(src) <= size {
-		return [][]spatial.Feature{src}
-	}
-
-	var (
-		i   int
-		res [][]spatial.Feature
-		end int
-	)
-	for end < len(src) {
-		end = (i + 1) * size
-		if end > len(src) {
-			end = len(src)
+func guessCodec(filename string, codecs []spatial.Codec) (spatial.Codec, error) {
+	fn := strings.ToLower(filename)
+	for _, cd := range codecs {
+		for _, ext := range cd.Extensions() {
+			if strings.HasSuffix(fn, "."+ext) {
+				return cd, nil
+			}
 		}
-		res = append(res, src[i*size:end])
-		i++
 	}
-	return res
+	return nil, errors.New("file type not supported")
 }
