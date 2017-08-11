@@ -60,36 +60,7 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	}
 
 	// build intersections
-	var nIntsct = 0
-	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
-		subjSeg := Segment{subjPt.Value.(refPoint).pt, nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt}
-		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
-			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
-			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
-				nIntsct += 1
-				// log.Println(">>>>>>>>", intsct)
-				clipRef := clipLL.InsertAfter(intsct, clipPt)
-				clipPt = clipPt.Next()
-
-				if existingElem := hasPointElement(subjLL, refPoint{pt: intsct}); existingElem == nil {
-					subjLL.InsertAfter(refPoint{
-						pt:      intsct,
-						clipRef: clipRef,
-					}, subjPt)
-				} else {
-					existingElem.Value = refPoint{
-						pt:      intsct,
-						clipRef: clipRef,
-					}
-				}
-
-				if subjPt.Next() != nil {
-					subjPt = subjPt.Next()
-				}
-			}
-		}
-	}
-
+	nIntsct := insertIntersections(subjLL, clipLL)
 	if nIntsct == 0 {
 		// Polygons don't intersect at all and polygon is not fully inside.
 		return nil
@@ -153,6 +124,39 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 		geoms = append(geoms, ng)
 	}
 	return geoms
+}
+
+func insertIntersections(subjLL, clipLL *list.List) int {
+	var nIntsct = 0
+	for subjPt := subjLL.Front(); subjPt != nil; subjPt = subjPt.Next() {
+		subjSeg := Segment{subjPt.Value.(refPoint).pt, nextElemOrWrap(subjLL, subjPt).Value.(refPoint).pt}
+		for clipPt := clipLL.Front(); clipPt != nil; clipPt = clipPt.Next() {
+			clipSeg := Segment{clipPt.Value.(Point), nextElemOrWrap(clipLL, clipPt).Value.(Point)}
+			if intsct, isIntsct := subjSeg.Intersection(clipSeg); isIntsct {
+				nIntsct += 1
+				// log.Println(">>>>>>>>", intsct)
+				clipRef := clipLL.InsertAfter(intsct, clipPt)
+				clipPt = clipPt.Next()
+
+				if existingElem := hasPointElement(subjLL, refPoint{pt: intsct}); existingElem == nil {
+					subjLL.InsertAfter(refPoint{
+						pt:      intsct,
+						clipRef: clipRef,
+					}, subjPt)
+				} else {
+					existingElem.Value = refPoint{
+						pt:      intsct,
+						clipRef: clipRef,
+					}
+				}
+
+				if subjPt.Next() != nil {
+					subjPt = subjPt.Next()
+				}
+			}
+		}
+	}
+	return nIntsct
 }
 
 func nextElemOrWrap(l *list.List, elem *list.Element) *list.Element {

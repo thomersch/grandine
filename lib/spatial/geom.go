@@ -67,7 +67,7 @@ type geoJSONGeom struct {
 	Coordinates json.RawMessage `json:"coordinates"`
 }
 
-func (g *Geom) String() string {
+func (g Geom) String() string {
 	// TODO: this could probably be replaced with a type assertion and direct call to g.g.String()
 	return fmt.Sprintf("%v", g.g)
 }
