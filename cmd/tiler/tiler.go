@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/thomersch/grandine/lib/cugdf"
@@ -26,11 +27,13 @@ func (zm *zmLvl) String() string {
 }
 
 func (zm *zmLvl) Set(value string) error {
-	v, err := strconv.Atoi(value)
-	if err != nil {
-		return fmt.Errorf("%s (only integer values are allowed)", value)
+	for _, s := range strings.Split(value, ",") {
+		v, err := strconv.Atoi(strings.TrimSpace(s))
+		if err != nil {
+			return fmt.Errorf("%s (only integer values are allowed)", value)
+		}
+		*zm = append(*zm, v)
 	}
-	*zm = append(*zm, v)
 	return nil
 }
 
