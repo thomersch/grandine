@@ -7,6 +7,11 @@ import (
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
+const (
+	wgs84LatMax = 85.0511287
+	wgs84LonMax = 180
+)
+
 type ID struct {
 	X, Y, Z int
 }
@@ -32,11 +37,13 @@ func (t ID) String() string {
 func TileName(p spatial.Point, zoom int) ID {
 	var (
 		zf     = float64(zoom)
-		latDeg = float64(p.Y() * math.Pi / 180)
+		latDeg = float64(floatBetween(-1*wgs84LatMax, wgs84LatMax, p.Y()) * math.Pi / 180)
 	)
 	return ID{
-		X: int(math.Floor((float64(p.X()) + 180) / 360 * math.Exp2(zf))),
-		Y: int(math.Floor((1 - math.Log(math.Tan(latDeg)+1/math.Cos(latDeg))/math.Pi) / 2 * math.Exp2(zf))),
+		X: between(0, int(math.Exp2(zf)-1),
+			int(math.Floor((float64(p.X())+180)/360*math.Exp2(zf)))),
+		Y: between(0, int(math.Exp2(zf)-1),
+			int(math.Floor((1-math.Log(math.Tan(latDeg)+1/math.Cos(latDeg))/math.Pi)/2*math.Exp2(zf)))),
 		Z: zoom,
 	}
 }
@@ -44,4 +51,12 @@ func TileName(p spatial.Point, zoom int) ID {
 // Resolution determines the minimal describable value inside a tile.
 func Resolution(zoomlevel, extent int) float64 {
 	return 360 / (math.Pow(2, float64(zoomlevel)) * float64(extent))
+}
+
+func between(min, max, v int) int {
+	return int(math.Max(math.Min(float64(v), float64(max)), float64(min)))
+}
+
+func floatBetween(min, max, v float64) float64 {
+	return math.Max(math.Min(v, max), min)
 }
