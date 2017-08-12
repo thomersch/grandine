@@ -9,6 +9,7 @@
 			"maxzoom": 14
 		}
 	},
+	"glyphs": "http://localhost:8080/fonts/{fontstack}/{range}.pbf",
 	"layers": [
 	{
 		"id": "lines",
@@ -59,5 +60,14 @@
 			"fill-color": "brown"
 		},
 		"filter": ["==", "$type", "Polygon"]
+	}, {
+		"id": "pts",
+		"source": "mvt",
+		"source-layer": "default",
+		"type": "circle",
+		"paint": {
+			"circle-radius": 1
+		},
+		"filter": ["==", "$type", "Point"]
 	}]
 }
