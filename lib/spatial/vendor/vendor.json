@@ -15,6 +15,12 @@
 			"revisionTime": "2017-03-04T15:04:46Z"
 		},
 		{
+			"checksumSHA1": "Oss8SmA5WU4ukkRbZ0zlQjOFw78=",
+			"path": "github.com/paulsmith/gogeos/geos",
+			"revision": "21f81b2ea5af44d3f6029cc3e5bbbd26b2425236",
+			"revisionTime": "2014-05-29T17:55:45Z"
+		},
+		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",

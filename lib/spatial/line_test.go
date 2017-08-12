@@ -2,7 +2,6 @@ package spatial
 
 import (
 	"math"
-	"sort"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -343,18 +342,6 @@ func TestLineCenter(t *testing.T) {
 	l2ctr := line2.Center()
 	l2ctr[0] = math.Ceil(l2ctr[0])
 	assert.Equal(t, Point{6, 5}, l2ctr)
-}
-
-func TestLineSort(t *testing.T) {
-	line1 := newOrderableLine(Line{
-		{1, 0}, {0, 0}, {0, 1}, {1, 1},
-	})
-	line2 := newOrderableLine(Line{
-		{0, 0}, {1, 0}, {1, 1}, {0, 1},
-	})
-	sort.Sort(line1)
-	sort.Sort(line2)
-	assert.Equal(t, line1, line2)
 }
 
 func TestLineClockwise(t *testing.T) {

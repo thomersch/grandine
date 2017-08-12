@@ -210,41 +210,6 @@ func newOrderableLine(l Line) orderableLine {
 	return orderableLine{ln: l, center: l.Center()}
 }
 
-// Methods for sorting in a clockwise order
-// TODO: Probably broken, reinvestigate!
-func (l orderableLine) Len() int      { return len(l.ln) }
-func (l orderableLine) Swap(i, j int) { l.ln[i], l.ln[j] = l.ln[j], l.ln[i] }
-func (l orderableLine) Less(i, j int) bool {
-	// inspired by https://stackoverflow.com/a/6989383/552651
-	var (
-		center = l.center
-		b      = l.ln[i]
-		a      = l.ln[j]
-	)
-	if a.X()-center.X() >= 0 && b.X()-center.X() < 0 {
-		return true
-	}
-	if a.X()-center.X() < 0 && b.X()-center.X() >= 0 {
-		return false
-	}
-	if a.X()-center.X() == 0 && b.X()-center.X() == 0 {
-		if a.Y()-center.Y() >= 0 || b.Y()-center.Y() >= 0 {
-			return a.Y() > b.Y()
-		}
-		return b.Y() > a.Y()
-	}
-	det := (a.X()-center.X())*(b.Y()-center.Y()) - (b.X()-center.X())*(a.Y()-center.Y())
-	if det < 0 {
-		return true
-	}
-	if det > 0 {
-		return false
-	}
-	d1 := (a.X()-center.X())*(a.X()-center.X()) + (a.Y()-center.Y())*(a.Y()-center.Y())
-	d2 := (b.X()-center.X())*(b.X()-center.X()) + (b.Y()-center.Y())*(b.Y()-center.Y())
-	return d1 > d2
-}
-
 type Segment [2]Point
 
 func (s *Segment) HasPoint(pt Point) bool {
