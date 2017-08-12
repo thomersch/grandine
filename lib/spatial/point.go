@@ -1,6 +1,9 @@
 package spatial
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type Point [2]float64
 
@@ -23,6 +26,10 @@ func (p Point) ClipToBBox(b BBox) []Geom {
 		return []Geom{g}
 	}
 	return []Geom{}
+}
+
+func (p Point) String() string {
+	return fmt.Sprintf("(X: %v, Y: %v)", p.X(), p.Y())
 }
 
 const pointPrecision = 8

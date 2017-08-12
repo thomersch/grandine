@@ -23,16 +23,18 @@ func (p *pointList) InsertAfter(v interface{}, mark *list.Element) *list.Element
 	return p.l.InsertAfter(v, mark)
 }
 
-func (p *pointList) PushBack(v interface{}) *list.Element {
+func (p *pointList) PushBack(v refPoint) *list.Element {
 	return p.l.PushBack(v)
 }
 
 func (p *pointList) String() string {
+	const sep = ", "
+
 	var buf string
 	for elem := p.l.Front(); elem != nil; elem = elem.Next() {
-		buf += elem.Value.(refPoint).pt.String() + ", "
+		buf += elem.Value.(refPoint).pt.String() + sep
 	}
-	return buf[:len(buf)-1]
+	return buf[:len(buf)-len(sep)]
 }
 
 // Polygon is a data type for storing simple polygons.
