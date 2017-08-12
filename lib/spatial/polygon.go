@@ -5,6 +5,36 @@ import (
 	"fmt"
 )
 
+type pointList struct {
+	l *list.List
+}
+
+func newPointList() *pointList {
+	return &pointList{
+		l: list.New(),
+	}
+}
+
+func (p *pointList) Front() *list.Element {
+	return p.l.Front()
+}
+
+func (p *pointList) InsertAfter(v interface{}, mark *list.Element) *list.Element {
+	return p.l.InsertAfter(v, mark)
+}
+
+func (p *pointList) PushBack(v interface{}) *list.Element {
+	return p.l.PushBack(v)
+}
+
+func (p *pointList) String() string {
+	var buf string
+	for elem := p.l.Front(); elem != nil; elem = elem.Next() {
+		buf += elem.Value.(refPoint).pt.String() + ", "
+	}
+	return buf[:len(buf)-1]
+}
+
 // Polygon is a data type for storing simple polygons.
 type Polygon []Line
 
