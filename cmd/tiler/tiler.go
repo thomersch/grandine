@@ -37,7 +37,10 @@ func (zm *zmLvl) Set(value string) error {
 	return nil
 }
 
-var zoomlevels zmLvl
+var (
+	zoomlevels zmLvl
+	quiet      *bool
+)
 
 func main() {
 	source := flag.String("in", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
@@ -45,6 +48,7 @@ func main() {
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
+	quiet = flag.Bool("q", false, "argument to use if program should be run in quiet mode with reduced logging")
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
@@ -187,7 +191,9 @@ type tileWriter interface {
 
 func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper) {
 	for _, tID := range tIDs {
-		// log.Printf("Generating %s", tID)
+		if !*quiet {
+			log.Printf("Generating %s", tID)
+		}
 		var (
 			layers = map[string][]spatial.Feature{}
 			ln     string

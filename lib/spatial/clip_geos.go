@@ -2,19 +2,13 @@
 
 package spatial
 
-import (
-	"fmt"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/paulsmith/gogeos/geos"
-)
+import "github.com/paulsmith/gogeos/geos"
 
 func (p Polygon) clipToBBox(b BBox) []Geom {
 	gpoly := p.geos()
 
 	var bboxLine []geos.Coord
 	for _, pt := range NewLinesFromSegments(BBoxBorders(b.SW, b.NE))[0] {
-		spew.Dump(pt)
 		bboxLine = append(bboxLine, geos.NewCoord(pt.X(), pt.Y()))
 	}
 	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
@@ -68,11 +62,10 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 		p    Polygon
 		ring []Point
 	)
-
-	fmt.Print("{{{{ ")
-	spew.Dump(g.Type())
-
-	crds, _ := geos.Must(g.Shell()).Coords()
+	crds, err := geos.Must(g.Shell()).Coords()
+	if err != nil {
+		panic(err)
+	}
 	for _, crd := range crds {
 		ring = append(ring, Point{crd.X, crd.Y})
 	}
@@ -80,7 +73,10 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 
 	holes, _ := g.Holes()
 	for _, hole := range holes {
-		crds, _ = hole.Coords()
+		crds, err = hole.Coords()
+		if err != nil {
+			panic(err)
+		}
 		ring = []Point{}
 		for _, crd := range crds {
 			ring = append(ring, Point{crd.X, crd.Y})

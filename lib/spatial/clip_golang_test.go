@@ -1,3 +1,5 @@
+// +build golangclip
+
 package spatial
 
 import (
