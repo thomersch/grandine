@@ -85,7 +85,7 @@ func main() {
 	// spew.Dump(fc)
 	err = encoder.Encode(out, &fc)
 	if err != nil {
-		log.Fatalf("could not encode %v: %v", dest, err)
+		log.Fatalf("could not encode %v: %v", *dest, err)
 	}
 }
 

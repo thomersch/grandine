@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -34,6 +35,32 @@ func (zm *zmLvl) Set(value string) error {
 		}
 		*zm = append(*zm, v)
 	}
+	return nil
+}
+
+type bbox spatial.BBox
+
+func (b *bbox) String() string {
+	return fmt.Sprintf("%v", *b)
+}
+
+func (b *bbox) Set(value string) error {
+	var (
+		fl    [4]float64
+		parts = strings.Split(value, ",")
+		err   error
+	)
+	if len(parts) != 4 {
+		return errors.New("bbox takes exactly 4 parameters: SW Lon, SW Lat, NE Lon, NE Lat")
+	}
+	for i, s := range parts {
+		fl[i], err = strconv.ParseFloat(s, 64)
+		if err != nil {
+			return fmt.Errorf("could not parse bbox expression: %v", err)
+		}
+	}
+	b.SW = spatial.Point{fl[0], fl[1]}
+	b.NE = spatial.Point{fl[2], fl[3]}
 	return nil
 }
 
