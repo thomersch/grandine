@@ -1,5 +1,10 @@
 language: go
 
+addons:
+  apt:
+    packages:
+      - proj-bin
+
 go:
   - 1.8
 
