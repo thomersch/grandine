@@ -8,6 +8,12 @@ The work is partly funded by the [Prototype Fund](https://prototypefund.de), pow
 
 ![](https://files.skowron.eu/grandine/logo-prototype.svg) ![](https://files.skowron.eu/grandine/logo-bmbf.svg) ![](https://files.skowron.eu/grandine/logo-okfn.svg)
 
+## Requirements
+
+* Go ≥ 1.8
+* GEOS
+* Proj4
+
 ## Structure
 
 * `fileformat` contains a draft spec for a new geo data format that aims to be flexible, with a big focus on being very fast to serialize/deserialize.

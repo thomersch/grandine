@@ -2,10 +2,17 @@
 
 package spatial
 
-import "github.com/pmezard/gogeos/geos"
+import (
+	"log"
+
+	"github.com/pmezard/gogeos/geos"
+)
 
 func (p Polygon) clipToBBox(b BBox) []Geom {
 	gpoly := p.geos()
+	if gpoly == nil {
+		return nil
+	}
 
 	var bboxLine []geos.Coord
 	for _, pt := range NewLinesFromSegments(BBoxBorders(b.SW, b.NE))[0] {
@@ -13,7 +20,11 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 	}
 
 	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
-	res, _ := bboxPoly.Intersection(gpoly)
+	res, err := bboxPoly.Intersection(gpoly)
+	if err != nil {
+		log.Printf("clipping failed: %v", err)
+		return nil
+	}
 
 	var resGeoms []Geom
 	for _, poly := range geosToPolygons(res) {
@@ -34,9 +45,12 @@ func (p Polygon) geos() *geos.Geometry {
 	}
 	var gpoly *geos.Geometry
 	if len(rings) > 1 {
-		gpoly = geos.Must(geos.NewPolygon(rings[0], rings[1:]...))
-	} else {
-		gpoly = geos.Must(geos.NewPolygon(rings[0]))
+		return geos.Must(geos.NewPolygon(rings[0], rings[1:]...))
+	}
+	gpoly, err := geos.NewPolygon(rings[0])
+	if err != nil {
+		log.Printf("invalid polygon: %v", err)
+		return nil
 	}
 	return gpoly
 }
