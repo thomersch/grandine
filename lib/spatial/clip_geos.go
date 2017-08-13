@@ -2,7 +2,7 @@
 
 package spatial
 
-import "github.com/paulsmith/gogeos/geos"
+import "github.com/pmezard/gogeos/geos"
 
 func (p Polygon) clipToBBox(b BBox) []Geom {
 	gpoly := p.geos()
@@ -11,8 +11,8 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 	for _, pt := range NewLinesFromSegments(BBoxBorders(b.SW, b.NE))[0] {
 		bboxLine = append(bboxLine, geos.NewCoord(pt.X(), pt.Y()))
 	}
-	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
 
+	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
 	res, _ := bboxPoly.Intersection(gpoly)
 
 	var resGeoms []Geom
