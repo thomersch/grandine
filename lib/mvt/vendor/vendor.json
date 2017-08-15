@@ -7,12 +7,6 @@
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "748d386b5c1ea99658fd69fe9f03991ce86a90c1",
 			"revisionTime": "2017-07-26T21:28:29Z"
-		},
-		{
-			"checksumSHA1": "MEftcXyF0yOpH+GoOVJQipzINyY=",
-			"path": "github.com/pebbe/go-proj-4/proj",
-			"revision": "45cf9999ad026d0b668f454fa3725c0f2d2c70d4",
-			"revisionTime": "2016-03-15T18:21:25Z"
 		}
 	],
 	"rootPath": "github.com/thomersch/grandine/lib/mvt"

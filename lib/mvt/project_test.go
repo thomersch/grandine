@@ -30,6 +30,11 @@ func TestScalePoint(t *testing.T) {
 	assert.Equal(t, 0, tY)
 }
 
+func TestProj4326To3857(t *testing.T) {
+	assert.Equal(t, spatial.Point{4.57523107160354e+06, 2.28488107006733e+06}, proj4326To3857(spatial.Point{41.1, 20.1}).RoundedCoords())
+	assert.Equal(t, spatial.Point{4.57523107160354e+06, -2.28488107006733e+06}, proj4326To3857(spatial.Point{41.1, -20.1}).RoundedCoords())
+}
+
 func scalePointToTileBothInterface(pt point, extent int, xScale, yScale float64, xOffset, yOffset float64) point {
 	return spatial.Point{
 		(pt.X() - xOffset) / (xScale / float64(extent)) * float64(extent),
