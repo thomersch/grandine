@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/thomersch/grandine/lib/cugdf/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +17,8 @@ func TestCSVDecode(t *testing.T) {
 	csvr := Codec{
 		LatCol: 4,
 		LonCol: 5,
-		ColPropMap: map[int]string{
-			1: "name",
+		ColPropMap: map[int]TagMapping{
+			1: {"name", fileformat.Tag_STRING},
 		},
 	}
 	fcoll := spatial.FeatureCollection{}
