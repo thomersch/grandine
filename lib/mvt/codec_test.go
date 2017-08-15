@@ -21,14 +21,14 @@ func TestEncodeGeometry(t *testing.T) {
 				spatial.Point{1, 1},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 44, 8096},
+			expectedResult: []uint32{9, 44, 8148},
 		},
 		{
 			geom: []interface{}{
 				spatial.Point{25, 17},
 			},
 			// TODO: validate coordinates
-			expectedResult: []uint32{9, 1136, 6556},
+			expectedResult: []uint32{9, 1136, 7408},
 		},
 	}
 
