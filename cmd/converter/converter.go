@@ -10,6 +10,7 @@ import (
 
 	"github.com/thomersch/grandine/lib/csv"
 	"github.com/thomersch/grandine/lib/cugdf"
+	"github.com/thomersch/grandine/lib/cugdf/fileformat"
 	"github.com/thomersch/grandine/lib/geojson"
 	"github.com/thomersch/grandine/lib/spatial"
 )
@@ -34,8 +35,9 @@ var codecs = []spatial.Codec{
 		//TODO: make configurable via flags
 		LatCol: 4,
 		LonCol: 5,
-		ColPropMap: map[int]string{
-			1: "name",
+		ColPropMap: map[int]csv.TagMapping{
+			1:  {"name", fileformat.Tag_STRING},
+			14: {"population", fileformat.Tag_INT},
 		},
 	},
 }

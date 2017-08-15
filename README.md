@@ -12,7 +12,6 @@ The work is partly funded by the [Prototype Fund](https://prototypefund.de), pow
 
 * Go ≥ 1.8
 * GEOS
-* Proj4
 
 ## Structure
 

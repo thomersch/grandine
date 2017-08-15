@@ -3,14 +3,21 @@ package csv
 import (
 	"encoding/csv"
 	"io"
+	"log"
 	"strconv"
 
+	"github.com/thomersch/grandine/lib/cugdf/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
+type TagMapping struct {
+	Name string
+	Type fileformat.Tag_ValueType
+}
+
 type Codec struct {
 	LatCol, LonCol int
-	ColPropMap     map[int]string
+	ColPropMap     map[int]TagMapping
 }
 
 func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
@@ -40,8 +47,21 @@ func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 			return err
 		}
 		ft.Geometry = spatial.MustNewGeom(pt)
-		for i, keyName := range c.ColPropMap {
-			ft.Props[keyName] = record[i]
+		for i, mapping := range c.ColPropMap {
+			var (
+				v   interface{}
+				err error
+			)
+			switch mapping.Type {
+			case fileformat.Tag_STRING:
+				v = record[i]
+			case fileformat.Tag_INT:
+				v, err = strconv.Atoi(record[i])
+			}
+			if err != nil {
+				log.Println("could not parse '%s': %v", record[i], err)
+			}
+			ft.Props[mapping.Name] = v
 		}
 		fs.Features = append(fs.Features, ft)
 	}
