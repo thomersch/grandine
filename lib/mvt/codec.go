@@ -195,20 +195,21 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
 		case spatial.GeomTypeLineString:
 			ln, _ := geom.LineString()
-			commands = append(commands, encodeLine(ln, cur, extent, xScale, yScale, xOffset, yOffset)...)
+			commands = append(commands, encodeLine(ln, &cur, extent, xScale, yScale, xOffset, yOffset)...)
 		case spatial.GeomTypePolygon:
-			// TODO: inner ring handling
 			poly, _ := geom.Polygon()
-			outer := poly[0]
 
-			commands = append(commands, encodeLine(outer, cur, extent, xScale, yScale, xOffset, yOffset)...)
-			commands = append(commands, encodeCommandInt(cmdClosePath, 1))
+			for _, ring := range poly {
+				// log.Println(encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset))
+				commands = append(commands, encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)...)
+				commands = append(commands, encodeCommandInt(cmdClosePath, 1))
+			}
 		}
 	}
 	return commands, nil
 }
 
-func encodeLine(ln spatial.Line, cur [2]int, extent int, xScale, yScale, xOffset, yOffset float64) (commands []uint32) {
+func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) (commands []uint32) {
 	tX, tY := tileCoord(ln[0], extent, xScale, yScale, xOffset, yOffset)
 	dx := tX - int(cur[0])
 	dy := tY - int(cur[1])
@@ -218,6 +219,7 @@ func encodeLine(ln spatial.Line, cur [2]int, extent int, xScale, yScale, xOffset
 	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
 		encodeCommandInt(cmdLineTo, uint32(len(ln)-1)))
 
+	// TODO: skip points if they're 0/0
 	for _, pt := range ln[1:] {
 		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
 		dx = tX - int(cur[0])

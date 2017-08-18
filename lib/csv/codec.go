@@ -23,7 +23,7 @@ type Codec struct {
 func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 	csvrdr := csv.NewReader(r)
 	csvrdr.Comma = '	'
-	csvrdr.LazyQuotes = true
+	csvrdr.LazyQuotes = false
 
 	for {
 		record, err := csvrdr.Read()
