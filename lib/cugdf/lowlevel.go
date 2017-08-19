@@ -64,9 +64,7 @@ func ReadFileHeader(r io.Reader) (Header, error) {
 func WriteBlock(w io.Writer, fs []spatial.Feature) error {
 	blockBody := &fileformat.Body{}
 	for _, f := range fs {
-		var (
-			tags []*fileformat.Tag
-		)
+		var tags []*fileformat.Tag
 		for k, v := range f.Properties() {
 			val, typ, err := fileformat.ValueType(v)
 			if err != nil {

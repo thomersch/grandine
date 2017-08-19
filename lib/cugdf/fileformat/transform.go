@@ -27,6 +27,9 @@ func init() {
 			err := binary.Write(&buf, binary.LittleEndian, v)
 			return buf.Bytes(), Tag_DOUBLE, err
 		},
+		"<nil>": func(f interface{}) ([]byte, Tag_ValueType, error) {
+			return []byte{}, Tag_STRING, nil
+		},
 	}
 }
 
@@ -36,7 +39,7 @@ func ValueType(i interface{}) ([]byte, Tag_ValueType, error) {
 	t := fmt.Sprintf("%T", i)
 	vt, ok := vtypers[t]
 	if !ok {
-		return nil, Tag_STRING, fmt.Errorf("unknown type: %s", t)
+		return nil, Tag_STRING, fmt.Errorf("unknown type: %s (value: %v)", t, i)
 	}
 	return vt(i)
 }
