@@ -1,9 +1,6 @@
 package spatial
 
-import (
-	"log"
-	"math"
-)
+import "math"
 
 type Line []Point
 
@@ -96,7 +93,6 @@ func (l Line) ClipToBBox(bbox BBox) []Geom {
 
 	// Is linestring fully outside the bbox?
 	if lsBBox.NE[0] < bbox.SW[0] || lsBBox.NE[1] < bbox.SW[1] || lsBBox.SW[0] > bbox.NE[0] || lsBBox.SW[1] > bbox.NE[1] {
-		log.Println("empty return")
 		return []Geom{}
 	}
 
