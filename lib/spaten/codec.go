@@ -1,4 +1,4 @@
-package cugdf
+package spaten
 
 import (
 	"io"

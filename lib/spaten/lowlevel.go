@@ -1,4 +1,4 @@
-package cugdf
+package spaten
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/thomersch/grandine/lib/cugdf/fileformat"
+	"github.com/thomersch/grandine/lib/spaten/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/golang/protobuf/proto"

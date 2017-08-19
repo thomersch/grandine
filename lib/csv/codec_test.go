@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/thomersch/grandine/lib/cugdf/fileformat"
+	"github.com/thomersch/grandine/lib/spaten/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/stretchr/testify/assert"

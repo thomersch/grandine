@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/thomersch/grandine/lib/cugdf/fileformat"
+	"github.com/thomersch/grandine/lib/spaten/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 )
 

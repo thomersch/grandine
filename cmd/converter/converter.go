@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/thomersch/grandine/lib/csv"
-	"github.com/thomersch/grandine/lib/cugdf"
-	"github.com/thomersch/grandine/lib/cugdf/fileformat"
 	"github.com/thomersch/grandine/lib/geojson"
+	"github.com/thomersch/grandine/lib/spaten"
+	"github.com/thomersch/grandine/lib/spaten/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
@@ -30,7 +30,7 @@ func (fl *filelist) Set(value string) error {
 
 var codecs = []spatial.Codec{
 	&geojson.Codec{},
-	&cugdf.Codec{},
+	&spaten.Codec{},
 	&csv.Codec{
 		//TODO: make configurable via flags
 		LatCol: 4,

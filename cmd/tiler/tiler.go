@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/thomersch/grandine/lib/cugdf"
 	"github.com/thomersch/grandine/lib/mvt"
+	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
 )
@@ -70,7 +70,7 @@ var (
 )
 
 func main() {
-	source := flag.String("in", "geo.geojson", "file to read from, supported formats: geojson, cugdf")
+	source := flag.String("in", "geo.geojson", "file to read from, supported format: spaten")
 	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
@@ -106,7 +106,7 @@ func main() {
 
 	log.Println("parsing input...")
 	fc := spatial.FeatureCollection{}
-	codec := cugdf.Codec{}
+	codec := spaten.Codec{}
 	codec.Decode(f, &fc)
 
 	if len(fc.Features) == 0 {

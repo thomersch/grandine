@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/thomersch/grandine/lib/cugdf"
+	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 
 	"github.com/thomersch/gosmparse"
@@ -264,7 +264,7 @@ func main() {
 	}
 
 	source := flag.String("in", "osm.pbf", "")
-	outfile := flag.String("out", "osm.cugdf", "")
+	outfile := flag.String("out", "osm.spaten", "")
 	flag.Parse()
 
 	f, err := os.Open(*source)
@@ -383,7 +383,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var outCodec cugdf.Codec
+	var outCodec spaten.Codec
 	err = outCodec.Encode(of, &spatial.FeatureCollection{fc})
 	if err != nil {
 		log.Fatal(err)
