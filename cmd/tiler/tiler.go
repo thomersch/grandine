@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"errors"
 	"flag"
 	"fmt"
@@ -75,6 +76,7 @@ func main() {
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
+	compressTiles := flag.Bool("compress", false, "compress tiles with gzip")
 	quiet = flag.Bool("q", false, "argument to use if program should be run in quiet mode with reduced logging")
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
@@ -137,7 +139,7 @@ func main() {
 	}
 
 	log.Printf("starting to generate %d tiles...", len(tc))
-	dtw := diskTileWriter{basedir: *target}
+	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
 
 	var (
@@ -174,7 +176,8 @@ func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
 }
 
 type diskTileWriter struct {
-	basedir string
+	basedir       string
+	compressTiles bool
 }
 
 func (tw *diskTileWriter) WriteTile(tID tile.ID, buf []byte) error {
@@ -187,7 +190,12 @@ func (tw *diskTileWriter) WriteTile(tID tile.ID, buf []byte) error {
 		return err
 	}
 	defer tf.Close()
-	_, err = tf.Write(buf)
+
+	if tw.compressTiles {
+		_, err = gzip.NewWriter(tf).Write(buf)
+	} else {
+		_, err = tf.Write(buf)
+	}
 	if err != nil {
 		return err
 	}
