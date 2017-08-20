@@ -6,12 +6,21 @@ This repository contains libraries and command line tools for working with geosp
 
 The work is partly funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany.
 
-![](https://files.skowron.eu/grandine/logo-prototype.svg) ![](https://files.skowron.eu/grandine/logo-bmbf.svg) ![](https://files.skowron.eu/grandine/logo-okfn.svg)
+![Prototype Fund](https://files.skowron.eu/grandine/logo-prototype.svg) ![Bundesministerium für Bildung und Forschung](https://files.skowron.eu/grandine/logo-bmbf.svg) ![Open Knowledge Foundation Deutschland](https://files.skowron.eu/grandine/logo-okfn.svg)
 
 ## Requirements
 
 * Go ≥ 1.8
 * GEOS
+
+## Quickstart
+
+If you have built a Go project before, you probably already know what to do. If not:
+
+* Make sure you have Go installed. Preferably version 1.8 or higher.
+* Execute `go get -u github.com/thomersch/grandine`. This will checkout a current version of the code into `~/go/src/github.com/thomersch/grandine`
+* Go to the checkout directory. Execute `make build`, this will put all executables into the `bin` directory.
+* All the executables can be called with the `-help` flag which will print out basic usage info.
 
 ## Structure
 
@@ -20,8 +29,6 @@ The work is partly funded by the [Prototype Fund](https://prototypefund.de), pow
 	* `lib/spatial` contains functionality for handling points/lines/polygons and basic transformation operations. If you miss functionality, feel free to send a Pull Request, it would be greatly appreciated.
 	* `lib/mvt` contains code for serializing Mapbox Vector Tiles.
 * There are a few command line tools in `cmd`:
-	* `spatialize` converts OpenStreetMap data into a spatial data format as defined in `fileformat`
+	* `converter` is a helper tool for converting and concatenating geo data files
+	* `spatialize` converts OpenStreetMap data into a Spaten data file as defined in `fileformat`
 	* `tiler` generates vector tiles from spatial data
-
-
-**Word of Warning:** This is very much work in progress. Please refrain from using this for anything more than experiments. If you find bugs or improvements you are welcome to contribute some :)
