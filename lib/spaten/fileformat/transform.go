@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 )
 
 var vtypers map[string]valueTyper
@@ -19,13 +20,9 @@ func init() {
 			return buf, Tag_INT, nil
 		},
 		"float64": func(f interface{}) ([]byte, Tag_ValueType, error) {
-			var (
-				v   float64
-				buf bytes.Buffer
-			)
-			// TODO: replace with math.Float64fromBits
-			err := binary.Write(&buf, binary.LittleEndian, v)
-			return buf.Bytes(), Tag_DOUBLE, err
+			var buf = make([]byte, 8)
+			binary.LittleEndian.PutUint64(buf, math.Float64bits(f.(float64)))
+			return buf, Tag_DOUBLE, nil
 		},
 		"<nil>": func(f interface{}) ([]byte, Tag_ValueType, error) {
 			return []byte{}, Tag_STRING, nil

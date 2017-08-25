@@ -77,6 +77,7 @@ func WriteBlock(w io.Writer, fs []spatial.Feature) error {
 			})
 		}
 
+		// TODO: make encoder configurable
 		wkbBuf, err := f.MarshalWKB()
 		if err != nil {
 			return err
