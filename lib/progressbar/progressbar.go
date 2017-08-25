@@ -2,6 +2,10 @@ package progressbar
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -42,4 +46,18 @@ func (b *bar) clearLine() {
 func (b *bar) draw() {
 	b.clearLine()
 	fmt.Printf("%v/%v", b.curPos, b.taskCount)
+}
+
+func maxWidth() int {
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	sttyOut, err := cmd.Output()
+	if err != nil {
+		return 80
+	}
+	width, err := strconv.Atoi(strings.Split(string(sttyOut), " ")[0])
+	if err != nil {
+		return 80
+	}
+	return width
 }
