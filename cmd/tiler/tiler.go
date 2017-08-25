@@ -13,8 +13,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/thomersch/grandine/lib/mvt"
+	"github.com/thomersch/grandine/lib/progressbar"
 	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
@@ -145,11 +147,12 @@ func main() {
 	var (
 		wg sync.WaitGroup
 		ws = workerSlices(tc, *workersNumber)
+		pb = progressbar.NewBar(len(tc), len(ws))
 	)
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], fts, &dtw, &dlm)
+			generateTiles(ws[i], fts, &dtw, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
@@ -224,11 +227,11 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte) error
 }
 
-func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper) {
+func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
-		if !*quiet {
-			log.Printf("Generating %s", tID)
-		}
+		// if !*quiet {
+		// 	log.Printf("Generating %s", tID)
+		// }
 		var (
 			layers = map[string][]spatial.Feature{}
 			ln     string
@@ -251,6 +254,7 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 			}
 		}
 		if !anyFeatures(layers) {
+			pb <- struct{}{}
 			continue
 		}
 		buf, err := mvt.EncodeTile(layers, tID)
@@ -262,7 +266,9 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 		if err != nil {
 			log.Fatal(err)
 		}
+		pb <- struct{}{}
 	}
+	time.Sleep(100 * time.Millisecond)
 }
 
 func anyFeatures(layers map[string][]spatial.Feature) bool {
