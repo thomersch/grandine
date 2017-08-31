@@ -2,6 +2,7 @@ package geojson
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 
 	"github.com/thomersch/grandine/lib/spatial"
@@ -16,7 +17,14 @@ func (c *Codec) Decode(r io.Reader, fc *spatial.FeatureCollection) error {
 		return err
 	}
 	fc.Features = append(fc.Features, gjfc.Features...)
-	// TODO: set SRID
+	if srid, ok := ogcSRID[gjfc.CRS.Properties.Name]; ok {
+		if len(fc.SRID) == 0 {
+			fc.SRID = srid
+		}
+		if len(srid) != 0 && fc.SRID != srid {
+			return errors.New("incompatible projections: ")
+		}
+	}
 	return nil
 }
 
