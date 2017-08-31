@@ -384,7 +384,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var outCodec spaten.Codec
-	err = outCodec.Encode(of, &spatial.FeatureCollection{fc})
+	err = outCodec.Encode(of, &spatial.FeatureCollection{fc, ""})
 	if err != nil {
 		log.Fatal(err)
 	}
