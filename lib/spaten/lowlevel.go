@@ -63,47 +63,57 @@ func ReadFileHeader(r io.Reader) (Header, error) {
 
 func WriteBlock(w io.Writer, fs []spatial.Feature) error {
 	blockBody := &fileformat.Body{}
+	// blockBody.Meta.Tags
+	// TODO: block meta tags
+	var err error
 	for _, f := range fs {
-		var tags []*fileformat.Tag
-		for k, v := range f.Properties() {
-			val, typ, err := fileformat.ValueType(v)
-			if err != nil {
-				return err
-			}
-			tags = append(tags, &fileformat.Tag{
-				Key:   k,
-				Value: val,
-				Type:  typ,
-			})
-		}
-
-		// TODO: make encoder configurable
-		wkbBuf, err := f.MarshalWKB()
+		var nf fileformat.Feature
+		nf.Tags, err = propertiesToTags(f.Properties())
 		if err != nil {
 			return err
 		}
 
-		blockBody.Feature = append(blockBody.Feature, &fileformat.Feature{
-			Geom: wkbBuf,
-			Tags: tags,
-		})
+		// TODO: make encoder configurable
+		nf.Geom, err = f.MarshalWKB()
+		if err != nil {
+			return err
+		}
+
+		blockBody.Feature = append(blockBody.Feature, &nf)
 	}
 	bodyBuf, err := proto.Marshal(blockBody)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Body Length (fill later)
-	binary.Write(w, binary.LittleEndian, uint32(len(bodyBuf)))
+	blockHeaderBuf := make([]byte, 8)
+	// Body Length
+	binary.LittleEndian.PutUint32(blockHeaderBuf[:4], uint32(len(bodyBuf)))
 	// Flags
-	binary.Write(w, binary.LittleEndian, uint16(0))
+	binary.LittleEndian.PutUint16(blockHeaderBuf[4:6], 0)
 	// Compression
-	binary.Write(w, binary.LittleEndian, uint8(0))
+	blockHeaderBuf[6] = 0
 	// Message Type
-	binary.Write(w, binary.LittleEndian, uint8(0))
+	blockHeaderBuf[7] = 0
 
-	w.Write(bodyBuf)
+	w.Write(append(blockHeaderBuf, bodyBuf...))
 	return nil
+}
+
+func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
+	var tags []*fileformat.Tag
+	for k, v := range props {
+		val, typ, err := fileformat.ValueType(v)
+		if err != nil {
+			return nil, err
+		}
+		tags = append(tags, &fileformat.Tag{
+			Key:   k,
+			Value: val,
+			Type:  typ,
+		})
+	}
+	return tags, nil
 }
 
 // ReadBlocks is a high-level interface for reading all features from a file at once.

@@ -3,6 +3,7 @@ package spaten
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -65,4 +66,21 @@ func TestBlockSelfTest(t *testing.T) {
 	err = ReadBlocks(&buf, &fcollRead)
 	assert.Nil(t, err)
 	assert.Equal(t, fcoll, fcollRead)
+}
+
+func TestBlockHeaderEncoding(t *testing.T) {
+	var (
+		buf bytes.Buffer
+		fs  = []spatial.Feature{
+			{
+				Geometry: spatial.MustNewGeom(spatial.Point{1, 2}),
+			},
+		}
+	)
+
+	err := WriteBlock(&buf, fs)
+	// This is not the most robust test, but will fail if you accidentaly break the encoder.
+	assert.Nil(t, err)
+	assert.Equal(t, "1900000000000000", fmt.Sprintf("%x", buf.Bytes()[:8]))
+	fmt.Printf("%x", buf.Bytes())
 }
