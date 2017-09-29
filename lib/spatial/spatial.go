@@ -67,7 +67,7 @@ func bboxToRect(bbox BBox) *rtreego.Rect {
 type FeatureCollection struct {
 	Features []Feature `json:"features"`
 	SRID     string    `json:"-"`
-}
+} // TODO: consider adding properties field
 
 // Deprecated. Please use geojson.Codec.
 func (fc FeatureCollection) MarshalJSON() ([]byte, error) {

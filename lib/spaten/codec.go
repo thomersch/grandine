@@ -15,7 +15,14 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	}
 
 	for _, ftBlk := range geomBlocks(100, fc.Features) {
-		err = WriteBlock(w, ftBlk)
+		var meta map[string]interface{}
+		if len(fc.SRID) != 0 {
+			meta = map[string]interface{}{
+				"@srid": fc.SRID,
+			}
+		}
+
+		err = WriteBlock(w, ftBlk, meta)
 		if err != nil {
 			return err
 		}

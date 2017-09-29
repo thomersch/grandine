@@ -2,6 +2,7 @@ package spaten
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -59,7 +60,7 @@ func TestBlockSelfTest(t *testing.T) {
 		}
 	)
 
-	err := WriteBlock(&buf, fcoll.Features)
+	err := WriteBlock(&buf, fcoll.Features, nil)
 	assert.Nil(t, err)
 
 	var fcollRead spatial.FeatureCollection
@@ -78,9 +79,11 @@ func TestBlockHeaderEncoding(t *testing.T) {
 		}
 	)
 
-	err := WriteBlock(&buf, fs)
-	// This is not the most robust test, but will fail if you accidentaly break the encoder.
+	err := WriteBlock(&buf, fs, nil)
 	assert.Nil(t, err)
-	assert.Equal(t, "1900000000000000", fmt.Sprintf("%x", buf.Bytes()[:8]))
-	fmt.Printf("%x", buf.Bytes())
+
+	const headerLength = 8 // TODO: consider exporting this
+	// Compare buffer size with size written in header.
+	assert.Equal(t, buf.Len()-headerLength, int(binary.LittleEndian.Uint32(buf.Bytes()[:4])))
+	assert.Equal(t, "00000000", fmt.Sprintf("%x", buf.Bytes()[4:8]))
 }

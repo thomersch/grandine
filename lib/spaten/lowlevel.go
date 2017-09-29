@@ -61,11 +61,18 @@ func ReadFileHeader(r io.Reader) (Header, error) {
 	return hd, nil
 }
 
-func WriteBlock(w io.Writer, fs []spatial.Feature) error {
+// WriteBlock writes a block of spatial data (note that every valid Spaten file needs a file header in front).
+// meta may be nil, if you don't wish to add any block meta.
+func WriteBlock(w io.Writer, fs []spatial.Feature, meta map[string]interface{}) error {
 	blockBody := &fileformat.Body{}
-	// blockBody.Meta.Tags
-	// TODO: block meta tags
-	var err error
+	props, err := propertiesToTags(meta)
+	if err != nil {
+		return err
+	}
+	blockBody.Meta = &fileformat.Meta{
+		Tags: props,
+	}
+
 	for _, f := range fs {
 		var nf fileformat.Feature
 		nf.Tags, err = propertiesToTags(f.Properties())
@@ -102,6 +109,9 @@ func WriteBlock(w io.Writer, fs []spatial.Feature) error {
 
 func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
 	var tags []*fileformat.Tag
+	if props == nil {
+		return tags, nil
+	}
 	for k, v := range props {
 		val, typ, err := fileformat.ValueType(v)
 		if err != nil {
