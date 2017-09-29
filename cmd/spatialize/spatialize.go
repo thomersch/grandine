@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/thomersch/grandine/cmd/spatialize/mapping"
 	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 
@@ -27,7 +28,7 @@ type rl struct {
 }
 
 type dataHandler struct {
-	conds []condition
+	conds []mapping.Condition
 
 	ec *elemCache
 
@@ -168,104 +169,16 @@ func (d *nodeCollector) ReadNode(n gosmparse.Node) {
 func (d *nodeCollector) ReadWay(w gosmparse.Way)           {}
 func (d *nodeCollector) ReadRelation(r gosmparse.Relation) {}
 
-type tagMapFn func(map[string]string) map[string]interface{}
-
-type mapper struct {
-	cond     condition
-	mapper   tagMapFn
-	elemType spatial.GeomType
-}
-
-type condition struct {
-	// TODO: make it possible to specify condition type (node/way/rel)
-	key    string
-	value  string
-	mapper tagMapFn
-}
-
-func (c *condition) Matches(kv map[string]string) bool {
-	if v, ok := kv[c.key]; ok {
-		if len(c.value) == 0 || c.value == v {
-			return true
-		}
-	}
-	return false
-}
-
-func (c *condition) Map(kv map[string]string) map[string]interface{} {
-	return c.mapper(kv)
-}
-
 func main() {
-	transportationMapFn := func(kv map[string]string) map[string]interface{} {
-		var cl string
-		if class, ok := kv["highway"]; ok {
-			cl = class
-		}
-		return map[string]interface{}{
-			"@layer": "transportation",
-			"class":  cl,
-		}
-	}
-
-	landuseMapFn := func(kv map[string]string) map[string]interface{} {
-		return map[string]interface{}{
-			"__type": "area",
-			"@layer": "landcover",
-			"class":  "wood",
-		}
-	}
-
-	aerowayMapFn := func(kv map[string]string) map[string]interface{} {
-		var cl string
-		if class, ok := kv["aeroway"]; ok {
-			cl = class
-		}
-		return map[string]interface{}{
-			"@layer": "aeroway",
-			"class":  cl,
-		}
-	}
-
-	buildingMapFn := func(kv map[string]string) map[string]interface{} {
-		return map[string]interface{}{
-			"@layer":    "building",
-			"@zoom:min": 14,
-		}
-	}
-
-	waterwayMapFn := func(kv map[string]string) map[string]interface{} {
-		var cl string
-		if class, ok := kv["waterway"]; ok {
-			cl = class
-		}
-		return map[string]interface{}{
-			"@layer": "waterway",
-			"class":  cl,
-		}
-	}
-
-	conds := []condition{
-		condition{"aeroway", "aerodrome", aerowayMapFn},
-		condition{"aeroway", "apron", aerowayMapFn},
-		condition{"aeroway", "heliport", aerowayMapFn},
-		condition{"aeroway", "runway", aerowayMapFn},
-		condition{"aeroway", "helipad", aerowayMapFn},
-		condition{"aeroway", "taxiway", aerowayMapFn},
-		condition{"highway", "motorway", transportationMapFn},
-		condition{"highway", "primary", transportationMapFn},
-		condition{"highway", "trunk", transportationMapFn},
-		condition{"highway", "secondary", transportationMapFn},
-		condition{"highway", "tertiary", transportationMapFn},
-		condition{"building", "", buildingMapFn},
-		condition{"landuse", "forest", landuseMapFn},
-		condition{"railway", "rail", transportationMapFn},
-		condition{"waterway", "river", waterwayMapFn},
-	}
-
 	source := flag.String("in", "osm.pbf", "")
 	outfile := flag.String("out", "osm.spaten", "")
+	mappingPath := flag.String("mapping", "", "path to mapping file. default mapping will be applied if none is specified")
 	flag.Parse()
+
+	var conds []mapping.Condition
+	if len(*mappingPath) == 0 {
+		conds = mapping.Default
+	}
 
 	f, err := os.Open(*source)
 	if err != nil {

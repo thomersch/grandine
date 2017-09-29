@@ -126,7 +126,7 @@ func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
 	return tags, nil
 }
 
-// ReadBlocks is a high-level interface for reading all features from a file at once.
+// ReadBlocks is an interface for reading all features from a file at once.
 func ReadBlocks(r io.Reader, fs *spatial.FeatureCollection) error {
 	for {
 		var (
