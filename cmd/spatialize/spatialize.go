@@ -177,6 +177,7 @@ func main() {
 
 	var conds []mapping.Condition
 	if len(*mappingPath) == 0 {
+		log.Println("No mapping specified. Using default tag mapping.")
 		conds = mapping.Default
 	}
 
@@ -297,7 +298,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var outCodec spaten.Codec
-	err = outCodec.Encode(of, &spatial.FeatureCollection{fc, ""})
+	err = outCodec.Encode(of, &spatial.FeatureCollection{fc, "4326"})
 	if err != nil {
 		log.Fatal(err)
 	}

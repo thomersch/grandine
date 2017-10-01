@@ -1,0 +1,13 @@
+- src:
+    key: highway
+    value: primary
+  dest:
+    - {key: "@layer", value: "transportation"}
+    - {key: "class", value: "$highway"}
+
+- src:
+    key: building
+    value: "*"
+  dest:
+    - {key: "@layer", value: "building"}
+    - {key: "@zoom:min", value: 14}
