@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/thomersch/grandine/lib/mvt"
 	"github.com/thomersch/grandine/lib/progressbar"
@@ -140,14 +139,14 @@ func main() {
 		fts = &fc
 	}
 
-	log.Printf("starting to generate %d tiles...", len(tc))
+	log.Printf("starting to generate %d tiles...", len(tc)-1)
 	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
 
 	var (
-		wg sync.WaitGroup
-		ws = workerSlices(tc, *workersNumber)
-		pb = progressbar.NewBar(len(tc), len(ws))
+		wg       sync.WaitGroup
+		ws       = workerSlices(tc, *workersNumber)
+		pb, done = progressbar.NewBar(len(tc)-1, len(ws))
 	)
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
@@ -157,6 +156,7 @@ func main() {
 		}(wrk)
 	}
 	wg.Wait()
+	done()
 }
 
 func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
@@ -268,7 +268,6 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 		}
 		pb <- struct{}{}
 	}
-	time.Sleep(100 * time.Millisecond)
 }
 
 func anyFeatures(layers map[string][]spatial.Feature) bool {

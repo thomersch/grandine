@@ -17,7 +17,7 @@ type bar struct {
 
 const line = "                                                            "
 
-func NewBar(taskCount int, workers int) chan<- struct{} {
+func NewBar(taskCount int, workers int) (chan<- struct{}, func()) {
 	var ch = make(chan struct{})
 	b := &bar{
 		taskCount: taskCount,
@@ -29,13 +29,17 @@ func NewBar(taskCount int, workers int) chan<- struct{} {
 			b.draw()
 		}
 	}()
-	return ch
+	return ch, b.done
+}
+
+func (b *bar) done() {
+	b.draw()
+	fmt.Println(" ✅")
 }
 
 func (b *bar) consume(c <-chan struct{}) {
 	for range c {
 		b.curPos++
-		// b.draw()
 	}
 }
 
