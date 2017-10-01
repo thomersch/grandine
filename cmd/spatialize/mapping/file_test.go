@@ -31,31 +31,16 @@ func TestParseMapping(t *testing.T) {
 		"@layer": "transportation",
 		"class":  "primary",
 	}, conds[0].Map(srcKV))
-}
 
-// o, err := yaml.Marshal(fileMappings{
-// 	{
-// 		Src: fileMapKV{
-// 			Key:   "sk",
-// 			Value: "sv",
-// 		},
-// 		Dest: []fileMapKV{
-// 			fileMapKV{Key: "dk1", Value: "dv"},
-// 			fileMapKV{Key: "dk2", Value: "dv"},
-// 		},
-// 	},
-// 	{
-// 		Src: fileMapKV{
-// 			Key:   "sk",
-// 			Value: "sv",
-// 		},
-// 		Dest: []fileMapKV{
-// 			fileMapKV{Key: "dk1", Value: "dv"},
-// 			fileMapKV{Key: "dk2", Value: "dv"},
-// 		},
-// 	},
-// })
-// if err != nil {
-// 	return nil, err
-// }
-// fmt.Printf("%s\n", o)
+	srcKV = map[string]string{
+		"railway":  "rail",
+		"maxspeed": "300",
+	}
+	assert.True(t, conds[2].Matches(srcKV))
+	assert.Equal(t, map[string]interface{}{
+		"@layer":   "transportation",
+		"class":    "railway",
+		"maxspeed": 300,
+	}, conds[2].Map(srcKV))
+
+}

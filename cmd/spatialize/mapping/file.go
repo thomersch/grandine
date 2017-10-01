@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"strconv"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -12,6 +13,7 @@ import (
 type fileMapKV struct {
 	Key   string      `yaml:"key"`
 	Value interface{} `yaml:"value"`
+	Typ   string      `yaml:"type"`
 }
 
 type fileMap struct {
@@ -20,6 +22,11 @@ type fileMap struct {
 }
 
 type fileMappings []fileMap
+
+type typedField struct {
+	Name string
+	Typ  string
+}
 
 func ParseMapping(r io.Reader) ([]Condition, error) {
 	buf, err := ioutil.ReadAll(r)
@@ -45,7 +52,7 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 
 		var (
 			staticKV  = map[string]interface{}{}
-			dynamicKV = map[string]string{}
+			dynamicKV = map[string]typedField{}
 		)
 		for _, kvm := range fm.Dest {
 			if dv, ok := kvm.Value.(string); !ok {
@@ -54,7 +61,7 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 				if dv[0:1] != "$" {
 					staticKV[kvm.Key] = dv
 				} else {
-					dynamicKV[kvm.Key] = dv[1:]
+					dynamicKV[kvm.Key] = typedField{Name: dv[1:], Typ: kvm.Typ}
 				}
 			}
 		}
@@ -85,7 +92,7 @@ func (sm *staticMapper) Map(_ map[string]string) map[string]interface{} {
 
 type dynamicMapper struct {
 	staticElems  map[string]interface{}
-	dynamicElems map[string]string
+	dynamicElems map[string]typedField
 }
 
 func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
@@ -93,11 +100,18 @@ func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
 	for k, v := range dm.staticElems {
 		vals[k] = v
 	}
-	for keyName, fieldName := range dm.dynamicElems {
-		if srcV, ok := src[fieldName]; ok {
-			vals[keyName] = srcV
+	for keyName, field := range dm.dynamicElems {
+		if srcV, ok := src[field.Name]; ok {
+			if field.Typ == "int" {
+				v, err := strconv.Atoi(srcV)
+				if err == nil {
+					vals[keyName] = v
+				}
+			} else {
+				vals[keyName] = srcV
+			}
 		} else {
-			log.Printf("field '%s' does not exist", fieldName)
+			log.Printf("field '%s' does not exist", field.Name)
 		}
 	}
 	return vals

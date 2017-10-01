@@ -11,3 +11,11 @@
   dest:
     - {key: "@layer", value: "building"}
     - {key: "@zoom:min", value: 14}
+
+- src:
+    key: railway
+    value: "*"
+  dest:
+    - {key: "@layer", value: "transportation"}
+    - {key: "class", value: "railway"}
+    - {key: "maxspeed", value: "$maxspeed", type: int}
