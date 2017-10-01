@@ -59,21 +59,46 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 			}
 		}
 
-		conds = append(conds, Condition{
+		cond := Condition{
 			key:   fm.Src.Key,
 			value: sv,
-			mapper: func(srcElems map[string]string) map[string]interface{} {
-				var vals = staticKV
-				for keyName, fieldName := range dynamicKV {
-					if srcV, ok := srcElems[fieldName]; ok {
-						vals[keyName] = srcV
-					} else {
-						log.Printf("field '%s' does not exist", fieldName)
-					}
-				}
-				return vals
-			},
-		})
+		}
+		if len(dynamicKV) == 0 {
+			sm := staticMapper{staticElems: staticKV}
+			cond.mapper = sm.Map
+		} else {
+			dm := dynamicMapper{staticElems: staticKV, dynamicElems: dynamicKV}
+			cond.mapper = dm.Map
+		}
+		conds = append(conds, cond)
 	}
 	return conds, nil
+}
+
+type staticMapper struct {
+	staticElems map[string]interface{}
+}
+
+func (sm *staticMapper) Map(_ map[string]string) map[string]interface{} {
+	return sm.staticElems
+}
+
+type dynamicMapper struct {
+	staticElems  map[string]interface{}
+	dynamicElems map[string]string
+}
+
+func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
+	var vals = map[string]interface{}{}
+	for k, v := range dm.staticElems {
+		vals[k] = v
+	}
+	for keyName, fieldName := range dm.dynamicElems {
+		if srcV, ok := src[fieldName]; ok {
+			vals[keyName] = srcV
+		} else {
+			log.Printf("field '%s' does not exist", fieldName)
+		}
+	}
+	return vals
 }
