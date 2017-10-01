@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -50,10 +51,10 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 			if dv, ok := kvm.Value.(string); !ok {
 				staticKV[kvm.Key] = dv
 			} else {
-				if dv != "$" {
+				if dv[0:1] != "$" {
 					staticKV[kvm.Key] = dv
 				} else {
-					dynamicKV[kvm.Key] = dv
+					dynamicKV[kvm.Key] = dv[1:]
 				}
 			}
 		}
@@ -61,9 +62,16 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 		conds = append(conds, Condition{
 			key:   fm.Src.Key,
 			value: sv,
-			mapper: func(map[string]string) map[string]interface{} {
-				// TODO: auto-detect if there are any dynamic mappings and apply more specific (and faster) functions
-				return nil
+			mapper: func(srcElems map[string]string) map[string]interface{} {
+				var vals = staticKV
+				for keyName, fieldName := range dynamicKV {
+					if srcV, ok := srcElems[fieldName]; ok {
+						vals[keyName] = srcV
+					} else {
+						log.Printf("field '%s' does not exist", fieldName)
+					}
+				}
+				return vals
 			},
 		})
 	}
