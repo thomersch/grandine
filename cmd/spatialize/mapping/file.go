@@ -49,7 +49,7 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 		)
 		for _, kvm := range fm.Dest {
 			if dv, ok := kvm.Value.(string); !ok {
-				staticKV[kvm.Key] = dv
+				staticKV[kvm.Key] = kvm.Value
 			} else {
 				if dv[0:1] != "$" {
 					staticKV[kvm.Key] = dv
