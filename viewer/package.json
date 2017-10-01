@@ -1,8 +1,8 @@
 {
 	"dependencies": {
 		"http-server": "^0.10.0",
-		"mapbox-gl": "^0.38.0",
-		"mapbox-gl-inspect": "^1.2.3"
+		"mapbox-gl": "^0.40.1",
+		"mapbox-gl-inspect": "^1.2.4"
 	},
 	"scripts": {
 		"server": "node_modules/http-server/bin/http-server -a 127.0.0.1"

@@ -179,6 +179,15 @@ func main() {
 	if len(*mappingPath) == 0 {
 		log.Println("No mapping specified. Using default tag mapping.")
 		conds = mapping.Default
+	} else {
+		mappingf, err := os.Open(*mappingPath)
+		if err != nil {
+			log.Fatalf("could not open mapping file: %v", err)
+		}
+		conds, err = mapping.ParseMapping(mappingf)
+		if err != nil {
+			log.Fatalf("could not parse mapping file: %v", err)
+		}
 	}
 
 	f, err := os.Open(*source)
