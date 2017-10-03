@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "RjVSf5TWAnI7Mg9PWMsNE9RoyVw=",
+			"path": "github.com/ctessum/polyclip-go",
+			"revision": "b21f39a8c20d5c40675eb4460465de71d81a64cc",
+			"revisionTime": "2017-06-12T22:11:17Z"
+		},
+		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
