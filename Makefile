@@ -1,7 +1,10 @@
 GO          := go
-GOBUILDOPTS := -v
+GOBUILDOPTS ?= -v
 GOTESTOPTS  := -v
 BINPATH     := bin
+
+export CGO_CFLAGS=-I. -I/usr/local/include
+export CGO_LDFLAGS=-L/usr/local/lib
 
 build: build-converter build-spatialize build-tiler
 
