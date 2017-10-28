@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strconv"
 
 	yaml "gopkg.in/yaml.v2"
@@ -110,8 +109,6 @@ func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
 			} else {
 				vals[keyName] = srcV
 			}
-		} else {
-			log.Printf("field '%s' does not exist", field.Name)
 		}
 	}
 	return vals
