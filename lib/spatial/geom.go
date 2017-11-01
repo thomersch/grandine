@@ -261,6 +261,14 @@ func (g *Geom) LineString() (Line, error) {
 	return geom, nil
 }
 
+func (g *Geom) MustLineString() Line {
+	l, err := g.LineString()
+	if err != nil {
+		panic(err)
+	}
+	return l
+}
+
 func (g *Geom) Polygon() (Polygon, error) {
 	geom, ok := g.g.(Polygon)
 	if !ok {

@@ -175,6 +175,7 @@ func (l Line) Simplify(e float64) Line {
 	return Line{seg[0], seg[1]}
 }
 
+// MergeLines is deprecated.
 func MergeLines(l1, l2 Line) Line {
 	// head to head
 	if l1[0] == l2[0] {
