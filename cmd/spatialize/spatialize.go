@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"runtime/pprof"
 	"sync"
 
 	"github.com/thomersch/grandine/cmd/spatialize/mapping"
@@ -173,6 +174,7 @@ func main() {
 	source := flag.String("in", "osm.pbf", "")
 	outfile := flag.String("out", "osm.spaten", "")
 	mappingPath := flag.String("mapping", "", "path to mapping file. default mapping will be applied if none is specified")
+	memprofile := flag.String("memprofile", "", "write memory profile to this file")
 	flag.Parse()
 
 	var conds []mapping.Condition
@@ -234,6 +236,15 @@ func main() {
 	err = dec.Parse(&rc)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if len(*memprofile) != 0 {
+		mp, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.WriteHeapProfile(mp)
+		mp.Close()
 	}
 
 	var fc []spatial.Feature
@@ -307,7 +318,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var outCodec spaten.Codec
-	err = outCodec.Encode(of, &spatial.FeatureCollection{fc, "4326"})
+	err = outCodec.Encode(of, &spatial.FeatureCollection{Features: fc, SRID: "4326"})
 	if err != nil {
 		log.Fatal(err)
 	}
