@@ -82,22 +82,16 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 	switch strings.ToLower(wg.Type) {
 	case "point":
 		g.typ = GeomTypePoint
-		var p [2]float64
-		if err = json.Unmarshal(wg.Coordinates, &p); err != nil {
+		var pt Point
+		if err = json.Unmarshal(wg.Coordinates, &pt); err != nil {
 			return err
 		}
-		g.g = Point{X: p[0], Y: p[1]}
+		g.g = pt
 	case "linestring":
 		g.typ = GeomTypeLineString
-		var (
-			ils [][2]float64
-			ls  Line
-		)
-		if err = json.Unmarshal(wg.Coordinates, &ils); err != nil {
+		var ls Line
+		if err = json.Unmarshal(wg.Coordinates, &ls); err != nil {
 			return err
-		}
-		for _, pt := range ils {
-			ls = append(ls, Point{X: pt[0], Y: pt[1]})
 		}
 		g.g = ls
 	case "polygon":

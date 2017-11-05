@@ -1,6 +1,7 @@
 package spatial
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 )
@@ -22,6 +23,16 @@ func (p Point) ClipToBBox(b BBox) []Geom {
 
 func (p Point) String() string {
 	return fmt.Sprintf("(X: %v, Y: %v)", p.X, p.Y)
+}
+
+func (p *Point) UnmarshalJSON(buf []byte) error {
+	var arrayPt [2]float64
+	if err := json.Unmarshal(buf, &arrayPt); err != nil {
+		return err
+	}
+	p.X = arrayPt[0]
+	p.Y = arrayPt[1]
+	return nil
 }
 
 const pointPrecision = 8
