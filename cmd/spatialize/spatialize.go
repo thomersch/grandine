@@ -120,11 +120,11 @@ func (d *elemCache) AddWay(wID int64) {
 	d.waysMtx.Unlock()
 }
 
-func (d *elemCache) SetCoord(nID int64, coord spatial.Point) {
+func (d *elemCache) SetCoord(nID int64, x, y float64) {
 	d.nodesMtx.Lock()
 	if d.nodes[nID] != nil {
-		d.nodes[nID].SetX(coord.X)
-		d.nodes[nID].SetY(coord.Y)
+		d.nodes[nID].SetX(x)
+		d.nodes[nID].SetY(y)
 	}
 	d.nodesMtx.Unlock()
 }
@@ -168,7 +168,7 @@ type nodeCollector struct {
 }
 
 func (d *nodeCollector) ReadNode(n gosmparse.Node) {
-	d.ec.SetCoord(n.ID, spatial.Point{float64(n.Lon), float64(n.Lat)})
+	d.ec.SetCoord(n.ID, n.Lon, n.Lat)
 }
 func (d *nodeCollector) ReadWay(w gosmparse.Way)           {}
 func (d *nodeCollector) ReadRelation(r gosmparse.Relation) {}
