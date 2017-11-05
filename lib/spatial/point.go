@@ -25,6 +25,10 @@ func (p Point) String() string {
 	return fmt.Sprintf("(X: %v, Y: %v)", p.X, p.Y)
 }
 
+func (p Point) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]float64{p.X, p.Y})
+}
+
 func (p *Point) UnmarshalJSON(buf []byte) error {
 	var arrayPt [2]float64
 	if err := json.Unmarshal(buf, &arrayPt); err != nil {

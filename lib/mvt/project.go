@@ -8,11 +8,6 @@ import (
 
 const earthRadius = 6378137
 
-type point interface {
-	X() float64
-	Y() float64
-}
-
 // flip axis
 func flip(v int, extent int) int {
 	if v == 0 {

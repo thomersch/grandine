@@ -27,6 +27,6 @@ func TestCSVDecode(t *testing.T) {
 	assert.Equal(t, "les Escaldes", fcoll.Features[0].Props["name"])
 	pt, err := fcoll.Features[0].Geometry.Point()
 	assert.Nil(t, err)
-	assert.Equal(t, 1.53414, pt.X())
-	assert.Equal(t, 42.50729, pt.Y())
+	assert.Equal(t, 1.53414, pt.X)
+	assert.Equal(t, 42.50729, pt.Y)
 }

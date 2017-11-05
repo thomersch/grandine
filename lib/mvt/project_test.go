@@ -35,24 +35,10 @@ func TestProj4326To3857(t *testing.T) {
 	assert.Equal(t, spatial.Point{4.57523107160354e+06, -2.28488107006733e+06}, proj4326To3857(spatial.Point{41.1, -20.1}).RoundedCoords())
 }
 
-func scalePointToTileBothInterface(pt point, extent int, xScale, yScale float64, xOffset, yOffset float64) point {
-	return spatial.Point{
-		(pt.X() - xOffset) / (xScale / float64(extent)) * float64(extent),
-		(pt.Y() - yOffset) / (yScale / float64(extent)) * float64(extent),
-	}
-}
-
 func scalePointToTileBarePoint(pt spatial.Point, extent int, xScale, yScale float64, xOffset, yOffset float64) spatial.Point {
 	return spatial.Point{
-		(pt.X() - xOffset) / (xScale / float64(extent)) * float64(extent),
-		(pt.Y() - yOffset) / (yScale / float64(extent)) * float64(extent),
-	}
-}
-
-func scalePointToTileInterfaceInput(pt point, extent int, xScale, yScale float64, xOffset, yOffset float64) spatial.Point {
-	return spatial.Point{
-		(pt.X() - xOffset) / (xScale / float64(extent)) * float64(extent),
-		(pt.Y() - yOffset) / (yScale / float64(extent)) * float64(extent),
+		(pt.X - xOffset) / (xScale / float64(extent)) * float64(extent),
+		(pt.Y - yOffset) / (yScale / float64(extent)) * float64(extent),
 	}
 }
 
@@ -63,25 +49,5 @@ func BenchmarkPointBare(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		scalePointToTileBarePoint(pt, 4096, 1000, 1000, 3, 6)
-	}
-}
-
-func BenchmarkPointInterfaceInputAndOutput(b *testing.B) {
-	pt := spatial.Point{1, 2}
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		scalePointToTileBothInterface(pt, 4096, 1000, 1000, 3, 6)
-	}
-}
-
-func BenchmarkPointInterfaceInput(b *testing.B) {
-	pt := spatial.Point{1, 2}
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		scalePointToTileInterfaceInput(pt, 4096, 1000, 1000, 3, 6)
 	}
 }
