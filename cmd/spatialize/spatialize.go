@@ -93,7 +93,7 @@ func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 }
 
 type elemCache struct {
-	nodes    map[int64]spatial.Point
+	nodes    map[int64]*spatial.Point
 	nodesMtx sync.Mutex
 	ways     map[int64][]int64
 	waysMtx  sync.Mutex
@@ -101,7 +101,7 @@ type elemCache struct {
 
 func NewElemCache() *elemCache {
 	return &elemCache{
-		nodes: map[int64]spatial.Point{},
+		nodes: map[int64]*spatial.Point{},
 		ways:  map[int64][]int64{},
 	}
 }
@@ -109,7 +109,7 @@ func NewElemCache() *elemCache {
 func (d *elemCache) AddNodes(nIDs ...int64) {
 	d.nodesMtx.Lock()
 	for _, nID := range nIDs {
-		d.nodes[nID] = spatial.Point{}
+		d.nodes[nID] = &spatial.Point{}
 	}
 	d.nodesMtx.Unlock()
 }
@@ -122,7 +122,10 @@ func (d *elemCache) AddWay(wID int64) {
 
 func (d *elemCache) SetCoord(nID int64, coord spatial.Point) {
 	d.nodesMtx.Lock()
-	d.nodes[nID] = coord
+	if d.nodes[nID] != nil {
+		d.nodes[nID].SetX(coord.X)
+		d.nodes[nID].SetY(coord.Y)
+	}
 	d.nodesMtx.Unlock()
 }
 
@@ -151,7 +154,7 @@ func (d *elemCache) Line(wID int64) spatial.Line {
 
 	var l spatial.Line
 	for _, memb := range membs {
-		l = append(l, d.nodes[memb])
+		l = append(l, *d.nodes[memb])
 	}
 	return l
 }

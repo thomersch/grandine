@@ -29,6 +29,14 @@ func (p Point) MarshalJSON() ([]byte, error) {
 	return json.Marshal([2]float64{p.X, p.Y})
 }
 
+func (p *Point) SetX(x float64) {
+	p.X = x
+}
+
+func (p *Point) SetY(y float64) {
+	p.Y = y
+}
+
 func (p *Point) UnmarshalJSON(buf []byte) error {
 	var arrayPt [2]float64
 	if err := json.Unmarshal(buf, &arrayPt); err != nil {
