@@ -49,7 +49,7 @@ func (f Feature) MarshalJSON() ([]byte, error) {
 }
 
 func bboxToRect(bbox BBox) *rtreego.Rect {
-	dist := []float64{bbox.NE.X() - bbox.SW.X(), bbox.NE.Y() - bbox.SW.Y()}
+	dist := []float64{bbox.NE.X - bbox.SW.X, bbox.NE.Y - bbox.SW.Y}
 	// rtreego doesn't allow zero sized bboxes
 	if dist[0] == 0 {
 		dist[0] = math.SmallestNonzeroFloat64
@@ -57,7 +57,7 @@ func bboxToRect(bbox BBox) *rtreego.Rect {
 	if dist[1] == 0 {
 		dist[1] = math.SmallestNonzeroFloat64
 	}
-	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X(), bbox.SW.Y()}, dist)
+	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X, bbox.SW.Y}, dist)
 	if err != nil {
 		panic(err)
 	}

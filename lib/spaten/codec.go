@@ -30,6 +30,8 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	return nil
 }
 
+// func (c *Codec) StreamEncode(w io.Writer) (chan spatial.Feature, chan )
+
 func (c *Codec) Decode(r io.Reader, fc *spatial.FeatureCollection) error {
 	_, err := ReadFileHeader(r)
 	if err != nil {

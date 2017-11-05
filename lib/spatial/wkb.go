@@ -28,8 +28,8 @@ func wkbWritePoint(w io.Writer, p Point) error {
 		err error
 		buf = make([]byte, wkbRawPointSize)
 	)
-	endianness.PutUint64(buf[:8], math.Float64bits(p.X()))
-	endianness.PutUint64(buf[8:16], math.Float64bits(p.Y()))
+	endianness.PutUint64(buf[:8], math.Float64bits(p.X))
+	endianness.PutUint64(buf[8:16], math.Float64bits(p.Y))
 	_, err = w.Write(buf)
 	if err != nil {
 		return err
@@ -83,8 +83,8 @@ func wkbReadPoint(r io.Reader) (p Point, err error) {
 	if err != nil {
 		return
 	}
-	p[0] = math.Float64frombits(endianness.Uint64(buf[:8]))
-	p[1] = math.Float64frombits(endianness.Uint64(buf[8:16]))
+	p.X = math.Float64frombits(endianness.Uint64(buf[:8]))
+	p.Y = math.Float64frombits(endianness.Uint64(buf[8:16]))
 	return
 }
 

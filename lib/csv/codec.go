@@ -38,11 +38,11 @@ func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 			ft = spatial.NewFeature()
 			pt spatial.Point
 		)
-		pt[0], err = strconv.ParseFloat(record[c.LonCol], 64)
+		pt.X, err = strconv.ParseFloat(record[c.LonCol], 64)
 		if err != nil {
 			return err
 		}
-		pt[1], err = strconv.ParseFloat(record[c.LatCol], 64)
+		pt.Y, err = strconv.ParseFloat(record[c.LatCol], 64)
 		if err != nil {
 			return err
 		}

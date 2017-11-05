@@ -16,7 +16,7 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 
 	var bboxLine []geos.Coord
 	for _, pt := range NewLinesFromSegments(BBoxBorders(b.SW, b.NE))[0] {
-		bboxLine = append(bboxLine, geos.NewCoord(pt.X(), pt.Y()))
+		bboxLine = append(bboxLine, geos.NewCoord(pt.X, pt.Y))
 	}
 
 	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
@@ -38,7 +38,7 @@ func (p Polygon) geos() *geos.Geometry {
 	for _, ring := range p {
 		var rg []geos.Coord
 		for _, pt := range ring {
-			rg = append(rg, geos.NewCoord(pt.X(), pt.Y()))
+			rg = append(rg, geos.NewCoord(pt.X, pt.Y))
 		}
 		rg = append(rg, rg[0])
 		rings = append(rings, rg)

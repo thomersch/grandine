@@ -15,10 +15,10 @@ func twkbWriteHeader(w io.Writer, gt GeomType, precision int) error {
 
 func twkbWritePoint(w io.Writer, p Point, previous Point, precision int) error {
 	var (
-		xi  = int(p[0] * math.Pow10(precision))
-		yi  = int(p[1] * math.Pow10(precision))
-		xpi = int(previous[0] * math.Pow10(precision))
-		ypi = int(previous[1] * math.Pow10(precision))
+		xi  = int(p.X * math.Pow10(precision))
+		yi  = int(p.Y * math.Pow10(precision))
+		xpi = int(previous.X * math.Pow10(precision))
+		ypi = int(previous.Y * math.Pow10(precision))
 
 		buf = make([]byte, 20) // up to 10 bytes per varint
 	)
@@ -109,8 +109,8 @@ func twkbReadPoint(r io.Reader, previous Point, precision int) (Point, error) {
 	xΔ := float64(xe) / math.Pow10(precision)
 	yΔ := float64(ye) / math.Pow10(precision)
 
-	pt[0] = xΔ + previous[0]
-	pt[1] = yΔ + previous[1]
+	pt.X = xΔ + previous.X
+	pt.Y = yΔ + previous.Y
 	return pt, nil
 }
 
