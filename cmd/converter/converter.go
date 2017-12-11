@@ -73,9 +73,21 @@ func main() {
 			log.Fatalf("could not open %v for reading: %v", infileName, err)
 		}
 		defer r.Close()
-		err = decoder.Decode(r, &fc)
-		if err != nil {
-			log.Fatalf("could not decode %v: %v", infileName, err)
+
+		switch d := dec.(type) {
+		case spatial.ChunkedDecoder:
+			chunks, err := d.ChunkedDecode(r)
+			if err != nil {
+				log.Fatalf("could not decode %v: %v", infileName, err)
+			}
+			for chunks.Next() {
+				chunks.Scan(&fc)
+			}
+		case spatial.Decoder:
+			err = decoder.Decode(r, &fc)
+			if err != nil {
+				log.Fatalf("could not decode %v: %v", infileName, err)
+			}
 		}
 	}
 

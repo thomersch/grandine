@@ -2,8 +2,17 @@ package spatial
 
 import "io"
 
+type Chunks interface {
+	Next() bool
+	Scan(fc *FeatureCollection) error
+}
+
 type Decoder interface {
 	Decode(io.Reader, *FeatureCollection) error
+}
+
+type ChunkedDecoder interface {
+	ChunkedDecode(io.Reader) (Chunks, error)
 }
 
 type Encoder interface {
