@@ -30,7 +30,18 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	return nil
 }
 
-// func (c *Codec) StreamEncode(w io.Writer) (chan spatial.Feature, chan )
+// ChunkedDecode is the preferred method for reading large datasets. It retrieves a file block
+// at a time, making it possible to traverse the file in a streaming manner without allocating
+// enough memory to fit the whole file.
+func (c *Codec) ChunkedDecode(r io.Reader) (*Chunks, error) {
+	_, err := ReadFileHeader(r)
+	if err != nil {
+		return nil, err
+	}
+	return &Chunks{
+		reader: r,
+	}, nil
+}
 
 func (c *Codec) Decode(r io.Reader, fc *spatial.FeatureCollection) error {
 	_, err := ReadFileHeader(r)
