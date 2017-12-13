@@ -7,7 +7,7 @@ import (
 	"runtime/pprof"
 	"sync"
 
-	"github.com/thomersch/grandine/cmd/spatialize/mapping"
+	"github.com/thomersch/grandine/lib/mapping"
 	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 

@@ -60,6 +60,7 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 				if dv[0:1] != "$" {
 					staticKV[kvm.Key] = dv
 				} else {
+					// TODO: this can probably be optimized by generating more specific methods at parse time
 					dynamicKV[kvm.Key] = typedField{Name: dv[1:], Typ: kvm.Typ}
 				}
 			}
