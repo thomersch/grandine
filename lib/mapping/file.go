@@ -12,7 +12,7 @@ import (
 type fileMapKV struct {
 	Key   string      `yaml:"key"`
 	Value interface{} `yaml:"value"`
-	Typ   string      `yaml:"type"`
+	Typ   mapType     `yaml:"type"`
 }
 
 type fileMap struct {
@@ -24,7 +24,7 @@ type fileMappings []fileMap
 
 type typedField struct {
 	Name string
-	Typ  string
+	Typ  mapType
 }
 
 func ParseMapping(r io.Reader) ([]Condition, error) {
@@ -102,12 +102,13 @@ func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
 	}
 	for keyName, field := range dm.dynamicElems {
 		if srcV, ok := src[field.Name]; ok {
-			if field.Typ == "int" {
+			switch field.Typ {
+			case mapTypeInt:
 				v, err := strconv.Atoi(srcV)
 				if err == nil {
 					vals[keyName] = v
 				}
-			} else {
+			default:
 				vals[keyName] = srcV
 			}
 		}

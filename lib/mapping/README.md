@@ -29,6 +29,7 @@ In `dest` one can specify one or more output tags. Those can be either static fo
 Any output element can have a `type` element, which defines the data type. Currently supported:
 
 * `int`, casting to integer
+* `string`, a series of bytes, no conversion, equivalent to not specifying any type
 * no type, just interpreting as string
 
 ## Full Example
