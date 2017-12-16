@@ -25,3 +25,10 @@ func (mt *mapType) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	return nil
 }
+
+func InterfaceMap(i map[string]string) (om map[string]interface{}) {
+	for k, v := range i {
+		om[k] = v
+	}
+	return
+}

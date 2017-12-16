@@ -43,12 +43,12 @@ type dataHandler struct {
 
 func (d *dataHandler) ReadNode(n gosmparse.Node) {
 	for _, cond := range d.conds {
-		if cond.Matches(n.Tags) {
+		if cond.Matches(mapping.InterfaceMap(n.Tags)) {
 			d.nodesMtx.Lock()
 			d.nodes = append(d.nodes, nd{
 				Lat:  n.Lat,
 				Lon:  n.Lon,
-				Tags: cond.Map(n.Tags),
+				Tags: cond.Map(mapping.InterfaceMap(n.Tags)),
 			})
 			d.nodesMtx.Unlock()
 		}
@@ -57,7 +57,7 @@ func (d *dataHandler) ReadNode(n gosmparse.Node) {
 
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
 	for _, cond := range d.conds {
-		if cond.Matches(w.Tags) {
+		if cond.Matches(mapping.InterfaceMap(w.Tags)) {
 			d.ec.AddNodes(w.NodeIDs...)
 			d.ec.setMembers(w.ID, w.NodeIDs)
 
@@ -65,7 +65,7 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 			d.ways = append(d.ways, wy{
 				ID:      w.ID,
 				NodeIDs: w.NodeIDs,
-				Tags:    cond.Map(w.Tags),
+				Tags:    cond.Map(mapping.InterfaceMap(w.Tags)),
 			})
 			d.waysMtx.Unlock()
 		}
@@ -74,11 +74,11 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 	for _, cond := range d.conds {
-		if cond.Matches(r.Tags) {
+		if cond.Matches(mapping.InterfaceMap(r.Tags)) {
 			d.relsMtx.Lock()
 			d.rels = append(d.rels, rl{
 				Members: r.Members,
-				Tags:    cond.Map(r.Tags),
+				Tags:    cond.Map(mapping.InterfaceMap(r.Tags)),
 			})
 			d.relsMtx.Unlock()
 
