@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"strconv"
 
 	yaml "gopkg.in/yaml.v2"
@@ -86,7 +87,7 @@ type staticMapper struct {
 	staticElems map[string]interface{}
 }
 
-func (sm *staticMapper) Map(_ map[string]string) map[string]interface{} {
+func (sm *staticMapper) Map(_ map[string]interface{}) map[string]interface{} {
 	return sm.staticElems
 }
 
@@ -95,8 +96,11 @@ type dynamicMapper struct {
 	dynamicElems map[string]typedField
 }
 
-func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
-	var vals = map[string]interface{}{}
+func (dm *dynamicMapper) Map(src map[string]interface{}) map[string]interface{} {
+	var (
+		vals = map[string]interface{}{}
+		err  error
+	)
 	for k, v := range dm.staticElems {
 		vals[k] = v
 	}
@@ -104,14 +108,27 @@ func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
 		if srcV, ok := src[field.Name]; ok {
 			switch field.Typ {
 			case mapTypeInt:
-				v, err := strconv.Atoi(srcV)
-				if err == nil {
-					vals[keyName] = v
-				}
+				vals[keyName], err = dm.toInt(srcV)
 			default:
 				vals[keyName] = srcV
+			}
+			if err != nil {
+				log.Println(err) // Not sure if this won't get too verbose. Let's keep it for some time here.
+				vals[keyName] = srcV
+				err = nil
 			}
 		}
 	}
 	return vals
+}
+
+func (dm *dynamicMapper) toInt(i interface{}) (int, error) {
+	switch v := i.(type) {
+	case string:
+		return strconv.Atoi(v)
+	case int:
+		return v, nil
+	default:
+		return 0, fmt.Errorf("cannot convert %v (type %T) to int", v, v)
+	}
 }

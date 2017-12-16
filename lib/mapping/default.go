@@ -1,10 +1,10 @@
 package mapping
 
 var (
-	transportationMapFn = func(kv map[string]string) map[string]interface{} {
+	transportationMapFn = func(kv map[string]interface{}) map[string]interface{} {
 		var cl string
 		if class, ok := kv["highway"]; ok {
-			cl = class
+			cl = class.(string)
 		}
 		return map[string]interface{}{
 			"@layer": "transportation",
@@ -12,7 +12,7 @@ var (
 		}
 	}
 
-	landuseMapFn = func(kv map[string]string) map[string]interface{} {
+	landuseMapFn = func(kv map[string]interface{}) map[string]interface{} {
 		return map[string]interface{}{
 			"__type": "area",
 			"@layer": "landcover",
@@ -20,10 +20,10 @@ var (
 		}
 	}
 
-	aerowayMapFn = func(kv map[string]string) map[string]interface{} {
+	aerowayMapFn = func(kv map[string]interface{}) map[string]interface{} {
 		var cl string
 		if class, ok := kv["aeroway"]; ok {
-			cl = class
+			cl = class.(string)
 		}
 		return map[string]interface{}{
 			"@layer": "aeroway",
@@ -31,17 +31,17 @@ var (
 		}
 	}
 
-	buildingMapFn = func(kv map[string]string) map[string]interface{} {
+	buildingMapFn = func(kv map[string]interface{}) map[string]interface{} {
 		return map[string]interface{}{
 			"@layer":    "building",
 			"@zoom:min": 14,
 		}
 	}
 
-	waterwayMapFn = func(kv map[string]string) map[string]interface{} {
+	waterwayMapFn = func(kv map[string]interface{}) map[string]interface{} {
 		var cl string
 		if class, ok := kv["waterway"]; ok {
-			cl = class
+			cl = class.(string)
 		}
 		return map[string]interface{}{
 			"@layer": "waterway",
