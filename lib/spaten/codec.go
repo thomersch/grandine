@@ -6,7 +6,9 @@ import (
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
-type Codec struct{}
+type Codec struct {
+	headerWritten bool
+}
 
 func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	err := WriteFileHeader(w)
@@ -27,6 +29,21 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (c *Codec) EncodeChunk(w io.Writer, fc *spatial.FeatureCollection) error {
+	if !c.headerWritten {
+		err := WriteFileHeader(w)
+		if err != nil {
+			return err
+		}
+		c.headerWritten = true
+	}
+	return WriteBlock(w, fc.Features, nil)
+}
+
+func (c *Codec) Close() error {
 	return nil
 }
 
