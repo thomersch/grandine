@@ -3,7 +3,6 @@ package csv
 import (
 	"encoding/csv"
 	"io"
-	"log"
 	"strconv"
 
 	"github.com/thomersch/grandine/lib/spaten/fileformat"
@@ -17,13 +16,22 @@ type TagMapping struct {
 
 type Codec struct {
 	LatCol, LonCol int
-	ColPropMap     map[int]TagMapping
+	Delim          rune
 }
 
 func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 	csvrdr := csv.NewReader(r)
-	csvrdr.Comma = '	'
+	if c.Delim == 0 {
+		csvrdr.Comma = '	'
+	} else {
+		csvrdr.Comma = c.Delim
+	}
 	csvrdr.LazyQuotes = false
+
+	keys, err := csvrdr.Read()
+	if err != nil {
+		return err
+	}
 
 	for {
 		record, err := csvrdr.Read()
@@ -47,21 +55,8 @@ func (c *Codec) Decode(r io.Reader, fs *spatial.FeatureCollection) error {
 			return err
 		}
 		ft.Geometry = spatial.MustNewGeom(pt)
-		for i, mapping := range c.ColPropMap {
-			var (
-				v   interface{}
-				err error
-			)
-			switch mapping.Type {
-			case fileformat.Tag_STRING:
-				v = record[i]
-			case fileformat.Tag_INT:
-				v, err = strconv.Atoi(record[i])
-			}
-			if err != nil {
-				log.Println("could not parse '%s': %v", record[i], err)
-			}
-			ft.Props[mapping.Name] = v
+		for i, val := range record {
+			ft.Props[keys[i]] = val
 		}
 		fs.Features = append(fs.Features, ft)
 	}
