@@ -29,16 +29,6 @@ func (fl *filelist) Set(value string) error {
 	return nil
 }
 
-var codecs = []spatial.Codec{
-	&geojson.Codec{},
-	&spaten.Codec{},
-	&csv.Codec{
-		//TODO: make configurable via flags
-		LatCol: 4,
-		LonCol: 5,
-	},
-}
-
 func main() {
 	var (
 		infiles filelist
@@ -46,6 +36,8 @@ func main() {
 	)
 	dest := flag.String("out", "geo.spaten", "")
 	mapFilePath := flag.String("mapping", "", "Path to mapping file which will be used to transform data.")
+	csvLatColumn := flag.Int("csv-lat", 1, "If parsing CSV, which column contains the Latitude. Zero-indexed.")
+	csvLonColumn := flag.Int("csv-lon", 2, "If parsing CSV, which column contains the Longitude. Zero-indexed.")
 	flag.Var(&infiles, "in", "infile(s)")
 	flag.Parse()
 
@@ -64,7 +56,16 @@ func main() {
 		}
 	}
 
-	enc, err := guessCodec(*dest, codecs)
+	availableCodecs := []spatial.Codec{
+		&geojson.Codec{},
+		&spaten.Codec{},
+		&csv.Codec{
+			LatCol: *csvLatColumn,
+			LonCol: *csvLonColumn,
+		},
+	}
+
+	enc, err := guessCodec(*dest, availableCodecs)
 	if err != nil {
 		log.Fatalf("file type of %s is not supported (please check for correct file extension)", *dest)
 	}
@@ -81,7 +82,7 @@ func main() {
 
 	var fc spatial.FeatureCollection
 	for _, infileName := range infiles {
-		dec, err := guessCodec(infileName, codecs)
+		dec, err := guessCodec(infileName, availableCodecs)
 		if err != nil {
 			log.Fatalf("file type of %s is not supported (please check for correct file extension)", infileName)
 		}
