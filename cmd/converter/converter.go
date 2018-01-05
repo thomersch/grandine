@@ -38,8 +38,13 @@ func main() {
 	mapFilePath := flag.String("mapping", "", "Path to mapping file which will be used to transform data.")
 	csvLatColumn := flag.Int("csv-lat", 1, "If parsing CSV, which column contains the Latitude. Zero-indexed.")
 	csvLonColumn := flag.Int("csv-lon", 2, "If parsing CSV, which column contains the Longitude. Zero-indexed.")
+	csvDelimiter := flag.String("csv-delim", ",", "If parsing CSV, what is the delimiter between values")
 	flag.Var(&infiles, "in", "infile(s)")
 	flag.Parse()
+
+	if len(*csvDelimiter) > 1 {
+		log.Fatal("CSV Delimiter: only single character delimiters are allowed")
+	}
 
 	if len(*mapFilePath) != 0 {
 		mf, err := os.Open(*mapFilePath)
@@ -62,6 +67,7 @@ func main() {
 		&csv.Codec{
 			LatCol: *csvLatColumn,
 			LonCol: *csvLonColumn,
+			Delim:  rune((*csvDelimiter)[0]),
 		},
 	}
 
@@ -110,6 +116,7 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
+				fc.Features = []spatial.Feature{}
 			}
 			err = finished()
 			if err != nil {
