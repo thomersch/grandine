@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -72,7 +73,8 @@ var (
 )
 
 func main() {
-	source := flag.String("in", "geo.geojson", "file to read from, supported format: spaten")
+	source := flag.String("in", "", "file to read from, supported format: spaten")
+	sourceStdIn := flag.Bool("std-in", false, "will read the incoming file from stdin")
 	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
@@ -82,6 +84,13 @@ func main() {
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
+
+	if len(*source) != 0 && *sourceStdIn {
+		log.Fatal("please specify only one input: either by filename or from stdin")
+	}
+	if len(*source) == 0 && !*sourceStdIn {
+		log.Fatal("no input specified")
+	}
 
 	if len(zoomlevels) == 0 {
 		log.Fatal("no zoom levels specified")
@@ -96,11 +105,20 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	f, err := os.Open(*source)
-	if err != nil {
-		log.Fatal(err)
+	var (
+		f   io.Reader
+		err error
+	)
+
+	if len(*source) != 0 {
+		f, err = os.Open(*source)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.(io.Closer).Close()
+	} else {
+		f = os.Stdin
 	}
-	defer f.Close()
 
 	err = os.MkdirAll(*target, 0777)
 	if err != nil {
