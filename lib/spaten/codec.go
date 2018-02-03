@@ -10,13 +10,15 @@ type Codec struct {
 	headerWritten bool
 }
 
+const blockSize = 1000
+
 func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	err := WriteFileHeader(w)
 	if err != nil {
 		return err
 	}
 
-	for _, ftBlk := range geomBlocks(100, fc.Features) {
+	for _, ftBlk := range geomBlocks(blockSize, fc.Features) {
 		var meta map[string]interface{}
 		if len(fc.SRID) != 0 {
 			meta = map[string]interface{}{
@@ -40,6 +42,7 @@ func (c *Codec) EncodeChunk(w io.Writer, fc *spatial.FeatureCollection) error {
 		}
 		c.headerWritten = true
 	}
+	// TODO: consider splitting up incoming chunks into blocks
 	return WriteBlock(w, fc.Features, nil)
 }
 
