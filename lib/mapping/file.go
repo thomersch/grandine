@@ -125,7 +125,17 @@ func (dm *dynamicMapper) Map(src map[string]interface{}) map[string]interface{} 
 func (dm *dynamicMapper) toInt(i interface{}) (int, error) {
 	switch v := i.(type) {
 	case string:
-		return strconv.Atoi(v)
+		k, err := strconv.Atoi(v)
+		if err == nil {
+			return k, nil
+		}
+		if v == "yes" {
+			return 1, nil
+		}
+		if v == "no" {
+			return 0, nil
+		}
+		return 0, err
 	case int:
 		return v, nil
 	default:
