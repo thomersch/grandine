@@ -315,6 +315,10 @@ func main() {
 				poly = append(poly, ring)
 			}
 		}
+		fc = append(fc, spatial.Feature{
+			Props:    rl.Tags,
+			Geometry: spatial.MustNewGeom(poly),
+		})
 	}
 
 	log.Println("Writing out")
