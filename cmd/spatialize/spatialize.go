@@ -300,7 +300,9 @@ func main() {
 	log.Println("Assembling relations...")
 	for _, rl := range dh.rels {
 		if v, ok := rl.Tags["type"]; !ok || v != "multipolygon" {
-			continue
+			if v, ok := rl.Tags["__type"]; !ok || v != "area" {
+				continue
+			}
 		}
 		var poly spatial.Polygon
 
