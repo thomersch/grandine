@@ -203,6 +203,7 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 				// log.Println(encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset))
 				commands = append(commands, encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)...)
 				commands = append(commands, encodeCommandInt(cmdClosePath, 1))
+				log.Println(commands)
 			}
 		}
 	}
@@ -216,17 +217,18 @@ func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffse
 	cur[0] = cur[0] + dx
 	cur[1] = cur[1] + dy
 
-	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
-		encodeCommandInt(cmdLineTo, uint32(len(ln)-1)))
+	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
 
-	// TODO: skip points if they're 0/0
+	var ncmd []uint32
+
 	for _, pt := range ln[1:] {
 		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
 		dx = tX - int(cur[0])
 		dy = tY - int(cur[1])
-		commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
+		ncmd = append(ncmd, encodeZigZag(dx), encodeZigZag(dy))
 		cur[0] = cur[0] + dx
 		cur[1] = cur[1] + dy
 	}
-	return commands
+	commands = append(commands, encodeCommandInt(cmdLineTo, uint32(len(ncmd)/2)))
+	return append(commands, ncmd...)
 }

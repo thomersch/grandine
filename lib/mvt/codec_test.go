@@ -146,3 +146,9 @@ func TestEncodeTile(t *testing.T) {
 	var b bytes.Buffer
 	b.Write(buf)
 }
+
+func TestEncodeLine(t *testing.T) {
+	var cur [2]int
+	ln := encodeLine(spatial.Line{{0, 1}, {3, 4}, {10, 1}}, &cur, 10, 100000, 100000, 0, 0)
+	assert.Equal(t, []uint32{9, 0, 1, 18, 666, 7, 1560, 8}, ln)
+}
