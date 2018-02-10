@@ -203,32 +203,30 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 				// log.Println(encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset))
 				commands = append(commands, encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)...)
 				commands = append(commands, encodeCommandInt(cmdClosePath, 1))
-				log.Println(commands)
 			}
 		}
 	}
 	return commands, nil
 }
 
-func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) (commands []uint32) {
+func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) []uint32 {
 	tX, tY := tileCoord(ln[0], extent, xScale, yScale, xOffset, yOffset)
 	dx := tX - int(cur[0])
 	dy := tY - int(cur[1])
 	cur[0] = cur[0] + dx
 	cur[1] = cur[1] + dy
 
-	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
-
-	var ncmd []uint32
+	var commands = make([]uint32, 0, len(ln)*2+2)
+	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy), 0)
 
 	for _, pt := range ln[1:] {
 		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
 		dx = tX - int(cur[0])
 		dy = tY - int(cur[1])
-		ncmd = append(ncmd, encodeZigZag(dx), encodeZigZag(dy))
+		commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
 		cur[0] = cur[0] + dx
 		cur[1] = cur[1] + dy
 	}
-	commands = append(commands, encodeCommandInt(cmdLineTo, uint32(len(ncmd)/2)))
-	return append(commands, ncmd...)
+	commands[3] = encodeCommandInt(cmdLineTo, uint32(len(commands)-4)/2)
+	return commands
 }

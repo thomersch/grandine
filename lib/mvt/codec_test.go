@@ -152,3 +152,14 @@ func TestEncodeLine(t *testing.T) {
 	ln := encodeLine(spatial.Line{{0, 1}, {3, 4}, {10, 1}}, &cur, 10, 100000, 100000, 0, 0)
 	assert.Equal(t, []uint32{9, 0, 1, 18, 666, 7, 1560, 8}, ln)
 }
+
+func BenchmarkEncodeLine(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	ln := spatial.Line{{0, 0}, {3, 5}, {1, 2}, {3, 4}, {10, 9}}
+	for i := 0; i < b.N; i++ {
+		var cur [2]int
+		encodeLine(ln, &cur, 10, 100000, 100000, 0, 0)
+	}
+}
