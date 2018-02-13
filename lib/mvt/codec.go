@@ -31,6 +31,16 @@ var (
 	skipAtKeys = true // if enabled keys that start with "@" will be ignored
 )
 
+type Codec struct{}
+
+func (c *Codec) EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, error) {
+	return EncodeTile(features, tid)
+}
+
+func (c *Codec) Extension() string {
+	return "mvt"
+}
+
 func encodeCommandInt(c cmd, count uint32) uint32 {
 	return (uint32(c) & 0x7) | (count << 3)
 }
