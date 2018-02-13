@@ -216,7 +216,7 @@ func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffse
 	cur[0] = cur[0] + dx
 	cur[1] = cur[1] + dy
 
-	var commands = make([]uint32, 0, len(ln)*2+2)
+	var commands = make([]uint32, 0, len(ln)*2+2) // len=number of coordinates + initial move to + size
 	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy), 0)
 
 	for _, pt := range ln[1:] {

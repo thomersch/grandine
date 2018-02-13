@@ -309,6 +309,10 @@ func main() {
 		for _, memb := range rl.Members {
 			if memb.Role == "outer" || memb.Role == "inner" {
 				ring := ec.Line(memb.ID)
+				if len(ring) < 3 {
+					log.Println("rings with less than 3 points are currently unsupported")
+					continue
+				}
 				if (memb.Role == "outer" && ring.Clockwise()) || (memb.Role == "inner" && !ring.Clockwise()) {
 					ring.Reverse()
 				}

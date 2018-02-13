@@ -160,6 +160,9 @@ func main() {
 	log.Printf("starting to generate %d tiles...", len(tc)-1)
 	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
+	tileCodec := mvt.Codec{}
+	// TODO: make codec switchable
+	// tileCodec := tile.GeoJSONCodec{}
 
 	var (
 		wg       sync.WaitGroup
@@ -169,7 +172,7 @@ func main() {
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], fts, &dtw, &dlm, pb)
+			generateTiles(ws[i], fts, &dtw, &tileCodec, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
@@ -245,7 +248,7 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte) error
 }
 
-func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper, pb chan<- struct{}) {
+func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
 		// if !*quiet {
 		// 	log.Printf("Generating %s", tID)
@@ -275,7 +278,7 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 			pb <- struct{}{}
 			continue
 		}
-		buf, err := mvt.EncodeTile(layers, tID)
+		buf, err := encoder.EncodeTile(layers, tID)
 		if err != nil {
 			log.Fatal(err)
 		}
