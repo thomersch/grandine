@@ -49,5 +49,5 @@ type featureColl struct {
 			Name string
 		}
 	} `json:"crs"`
-	Features []spatial.Feature
+	Features []spatial.Feature `json:"features"`
 }

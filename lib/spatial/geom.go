@@ -138,10 +138,12 @@ func (g Geom) MarshalJSON() ([]byte, error) {
 		}
 	case GeomTypePolygon:
 		wg.Type = "Polygon"
-		// TODO: each ring must end with first point in ring
 		poly, err := g.Polygon()
 		if err != nil {
 			return nil, err
+		}
+		for ringN := range poly {
+			poly[ringN] = append(poly[ringN], poly[ringN][0])
 		}
 		wg.Coordinates, err = json.Marshal(poly)
 		if err != nil {
