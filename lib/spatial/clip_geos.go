@@ -83,7 +83,7 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 	for _, crd := range crds {
 		ring = append(ring, Point{crd.X, crd.Y})
 	}
-	p = append(p, ring)
+	p = append(p, ring[:len(ring)-1])
 
 	holes, _ := g.Holes()
 	for _, hole := range holes {
@@ -95,7 +95,7 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 		for _, crd := range crds {
 			ring = append(ring, Point{crd.X, crd.Y})
 		}
-		p = append(p, ring)
+		p = append(p, ring[:len(ring)-1])
 	}
 	return p
 }
