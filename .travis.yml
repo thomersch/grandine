@@ -1,8 +1,9 @@
 language: go
 
 go:
-  - 1.8
-  - 1.9
+  - "1.8"
+  - "1.9"
+  - "1.10"
 
 script:
   - make build # needs to work with already vendored deps
