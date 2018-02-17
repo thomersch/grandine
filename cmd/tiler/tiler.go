@@ -22,8 +22,6 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
-const indexThreshold = 100000000
-
 type zmLvl []int
 
 func (zm *zmLvl) String() string {
@@ -136,8 +134,16 @@ func main() {
 
 	log.Printf("read %d features", len(fc.Features))
 
-	var bboxPts []spatial.Point
-	for _, feat := range fc.Features {
+	var (
+		bboxPts []spatial.Point
+		ft      = featureTable(zoomlevels)
+	)
+	for featID, feat := range fc.Features {
+		for _, zl := range zoomlevels {
+			for _, tid := range tile.Coverage(feat.Geometry.BBox(), zl) {
+				ft[zl][tid.X][tid.Y] = append(ft[zl][tid.X][tid.Y], &fc.Features[featID])
+			}
+		}
 		bb := feat.Geometry.BBox()
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
 	}
@@ -148,16 +154,8 @@ func main() {
 		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
 	}
 
-	var fts spatial.Filterable
-	if len(fc.Features)*len(tc) > indexThreshold {
-		log.Println("building index...")
-		fts = spatial.NewRTreeCollection(fc.Features...)
-		log.Println("index complete")
-	} else {
-		fts = &fc
-	}
+	log.Printf("starting to generate %d tiles...", len(tc))
 
-	log.Printf("starting to generate %d tiles...", len(tc)-1)
 	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
 	tileCodec := mvt.Codec{}
@@ -167,17 +165,29 @@ func main() {
 	var (
 		wg       sync.WaitGroup
 		ws       = workerSlices(tc, *workersNumber)
-		pb, done = progressbar.NewBar(len(tc)-1, len(ws))
+		pb, done = progressbar.NewBar(len(tc), len(ws))
 	)
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], fts, &dtw, &tileCodec, &dlm, pb)
+			generateTiles(ws[i], ft, &dtw, &tileCodec, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
 	wg.Wait()
 	done()
+}
+
+func featureTable(zls []int) map[int][][][]*spatial.Feature {
+	r := map[int][][][]*spatial.Feature{}
+	for _, zl := range zls {
+		l := pow(2, zl)
+		r[zl] = make([][][]*spatial.Feature, l)
+		for x := range r[zl] {
+			r[zl][x] = make([][]*spatial.Feature, l)
+		}
+	}
+	return r
 }
 
 func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
@@ -248,19 +258,17 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte) error
 }
 
-func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
+func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
-		// if !*quiet {
-		// 	log.Printf("Generating %s", tID)
-		// }
 		var (
-			layers = map[string][]spatial.Feature{}
-			ln     string
+			layers       = map[string][]spatial.Feature{}
+			ln           string
+			tileClipBBox = tID.BBox()
 		)
-		tileClipBBox := tID.BBox()
 
-		for _, feat := range features.Filter(tileClipBBox) {
-			sf := tile.Resolution(tID.Z, 4096) * 20
+		for _, ft := range features[tID.Z][tID.X][tID.Y] {
+			feat := *ft
+			sf := tile.Resolution(tID.Z, 4096) * 10
 			gm := feat.Geometry.Simplify(sf)
 			for _, geom := range gm.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
@@ -292,10 +300,18 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, e
 }
 
 func anyFeatures(layers map[string][]spatial.Feature) bool {
-	for _, ly := range layers {
-		if len(ly) > 0 {
+	for i := range layers {
+		if len(layers[i]) > 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func pow(x, y int) int {
+	var res = 1
+	for i := 1; i <= y; i++ {
+		res *= x
+	}
+	return res
 }
