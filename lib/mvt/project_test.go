@@ -13,20 +13,21 @@ func TestScalePoint(t *testing.T) {
 		spatial.Point{50, 10},
 		spatial.Point{52, 12},
 	}
-	ext := 4096
-	xScale, yScale := tileScalingFactor(bb, ext)
-	xOffset, yOffset := tileOffset(bb)
+	var tp tileParams
+	tp.extent = 4096
+	tp.xScale, tp.yScale = tileScalingFactor(bb, tp.extent)
+	tp.xOffset, tp.yOffset = tileOffset(bb)
 
-	tX, tY := tileCoord(spatial.Point{50, 10}, ext, xScale, yScale, xOffset, yOffset)
+	tX, tY := tileCoord(spatial.Point{50, 10}, tp)
 	assert.Equal(t, 0, tX)
-	assert.Equal(t, ext, tY)
+	assert.Equal(t, tp.extent, tY)
 
-	tX, tY = tileCoord(spatial.Point{51, 10}, ext, xScale, yScale, xOffset, yOffset)
-	assert.Equal(t, ext/2, tX)
-	assert.Equal(t, ext, tY)
+	tX, tY = tileCoord(spatial.Point{51, 10}, tp)
+	assert.Equal(t, tp.extent/2, tX)
+	assert.Equal(t, tp.extent, tY)
 
-	tX, tY = tileCoord(spatial.Point{52, 12}, ext, xScale, yScale, xOffset, yOffset)
-	assert.Equal(t, ext, tX)
+	tX, tY = tileCoord(spatial.Point{52, 12}, tp)
+	assert.Equal(t, tp.extent, tX)
 	assert.Equal(t, 0, tY)
 }
 

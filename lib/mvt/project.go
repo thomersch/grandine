@@ -38,10 +38,10 @@ func proj4326To3857(pt spatial.Point) spatial.Point {
 	}
 }
 
-func tileCoord(p spatial.Point, extent int, xScale, yScale float64, xOffset, yOffset float64) (x, y int) {
+func tileCoord(p spatial.Point, tp tileParams) (x, y int) {
 	pt := proj4326To3857(p)
-	return int((pt.X - xOffset) / (xScale / float64(extent)) * float64(extent)),
-		flip(int((pt.Y-yOffset)/(yScale/float64(extent))*float64(extent)), extent)
+	return int((pt.X - tp.xOffset) / (tp.xScale / float64(tp.extent)) * float64(tp.extent)),
+		flip(int((pt.Y-tp.yOffset)/(tp.yScale/float64(tp.extent))*float64(tp.extent)), tp.extent)
 }
 
 func degToRad(v float64) float64 {
@@ -50,4 +50,10 @@ func degToRad(v float64) float64 {
 
 func radToDeg(v float64) float64 {
 	return v * (180 / math.Pi)
+}
+
+type tileParams struct {
+	xScale, yScale   float64
+	xOffset, yOffset float64
+	extent           int
 }
