@@ -33,6 +33,14 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 	return resGeoms
 }
 
+func (p Polygon) Simplify(e float64) Polygon {
+	gpoly := p.geos()
+	if gpoly == nil {
+		return nil
+	}
+	return geosToPolygon(geos.Must(gpoly.SimplifyP(e)))
+}
+
 func (p Polygon) geos() *geos.Geometry {
 	rings := [][]geos.Coord{}
 	for _, ring := range p {

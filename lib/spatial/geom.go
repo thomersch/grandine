@@ -279,6 +279,14 @@ func (g *Geom) Polygon() (Polygon, error) {
 	return geom, nil
 }
 
+func (g *Geom) MustPolygon() Polygon {
+	p, err := g.Polygon()
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
 func (g *Geom) BBox() BBox {
 	switch gm := g.g.(type) {
 	case Point:

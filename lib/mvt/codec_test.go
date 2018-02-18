@@ -30,6 +30,12 @@ func TestEncodeGeometry(t *testing.T) {
 			// TODO: validate coordinates
 			expectedResult: []uint32{9, 1136, 7408},
 		},
+		{
+			geom: []interface{}{
+				spatial.Line{{0, 1}, {23, 3}},
+			},
+			expectedResult: []uint32{9, 0, 8148, 10, 1046, 91},
+		},
 	}
 
 	for n, tc := range tcs {
@@ -77,45 +83,47 @@ func TestEncodeTile(t *testing.T) {
 				16.171875,
 				58.07787626787517,
 			},
+			spatial.Point{
+				-1.0546875,
+				55.97379820507658,
+			},
 		},
-		spatial.Polygon{spatial.Line{
-			spatial.Point{
-				2.8125,
-				54.77534585936447,
+		spatial.Polygon{
+			spatial.Line{
+				spatial.Point{
+					2.8125,
+					54.77534585936447,
+				},
+				spatial.Point{
+					1.23046875,
+					47.87214396888731,
+				},
+				spatial.Point{
+					7.207031249999999,
+					37.020098201368114,
+				},
+				spatial.Point{
+					21.26953125,
+					40.97989806962013,
+				},
+				spatial.Point{
+					29.8828125,
+					48.69096039092549,
+				},
+				spatial.Point{
+					31.113281249999996,
+					53.12040528310657,
+				},
+				spatial.Point{
+					23.90625,
+					60.413852350464914,
+				},
+				spatial.Point{
+					10.01953125,
+					60.84491057364915,
+				},
 			},
-			spatial.Point{
-				1.23046875,
-				47.87214396888731,
-			},
-			spatial.Point{
-				7.207031249999999,
-				37.020098201368114,
-			},
-			spatial.Point{
-				21.26953125,
-				40.97989806962013,
-			},
-			spatial.Point{
-				29.8828125,
-				48.69096039092549,
-			},
-			spatial.Point{
-				31.113281249999996,
-				53.12040528310657,
-			},
-			spatial.Point{
-				23.90625,
-				60.413852350464914,
-			},
-			spatial.Point{
-				10.01953125,
-				60.84491057364915,
-			},
-			spatial.Point{
-				2.8125,
-				54.77534585936447,
-			},
-		}},
+		},
 	}
 
 	for _, geom := range geoms {
@@ -140,6 +148,11 @@ func TestEncodeTile(t *testing.T) {
 		"main": features,
 	}
 
+	tid := tile.ID{X: 1, Y: 0, Z: 1}
+	tl, err := assembleTile(layers, tid)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, len(tl.Layers[0].Features))
+
 	buf, err := EncodeTile(layers, tile.ID{X: 1, Y: 0, Z: 1})
 	assert.Nil(t, err)
 
@@ -158,7 +171,8 @@ func TestEncodeLine(t *testing.T) {
 			yOffset: 0,
 		}
 	)
-	ln := encodeLine(spatial.Line{{0, 1}, {3, 4}, {10, 1}}, &cur, tp)
+	tcs := lineToTileCoords(spatial.Line{{0, 1}, {3, 4}, {10, 1}}, tp)
+	ln := encodeLine(tcs, &cur)
 	assert.Equal(t, []uint32{9, 0, 1, 18, 666, 7, 1560, 8}, ln)
 }
 
@@ -176,6 +190,7 @@ func BenchmarkEncodeLine(b *testing.B) {
 	ln := spatial.Line{{0, 0}, {3, 5}, {1, 2}, {3, 4}, {10, 9}}
 	for i := 0; i < b.N; i++ {
 		var cur [2]int
-		encodeLine(ln, &cur, tp)
+		tcs := lineToTileCoords(ln, tp)
+		encodeLine(tcs, &cur)
 	}
 }

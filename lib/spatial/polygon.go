@@ -16,3 +16,15 @@ func (p Polygon) String() string {
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	return p.clipToBBox(bbox)
 }
+
+func (p Polygon) Valid() bool {
+	if len(p) == 0 {
+		return false
+	}
+	for _, ring := range p {
+		if len(ring) < 3 {
+			return false
+		}
+	}
+	return true
+}
