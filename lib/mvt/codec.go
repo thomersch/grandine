@@ -237,15 +237,14 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 
 func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) []uint32 {
 	var (
-		tlCrds = make([]int, 0, len(ln)*2)
+		tlCrds = make(spatial.Line, 0, len(ln))
 		tx, ty int
 	)
 	for _, pt := range ln {
 		tx, ty = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
-		tlCrds = append(tlCrds, tx, ty)
+		tlCrds = append(tlCrds, spatial.Point{float64(tx), float64(ty)})
 	}
-	if tlCrds[0] == tlCrds[len(tlCrds)-2] && tlCrds[1] == tlCrds[len(tlCrds)-1] {
-		// First coordinate equals last coordinate. This is probably a broken polygon.
+	if tlCrds[0] == tlCrds[len(tlCrds)-1] {
 		return nil
 	}
 
@@ -255,19 +254,18 @@ func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffse
 	)
 	commands[0] = encodeCommandInt(cmdMoveTo, 1)
 	commands[3] = encodeCommandInt(cmdLineTo, uint32(len(commands)-4)/2)
-	for i := 0; i < len(tlCrds); i = i + 2 {
-		dx = tlCrds[i] - cur[0]
-		dy = tlCrds[i+1] - cur[1]
-		cur[0] = tlCrds[i]
-		cur[1] = tlCrds[i+1]
-		tlCrds[i] = int(encodeZigZag(dx))
-		tlCrds[i+1] = int(encodeZigZag(dy))
-	}
-	commands[1] = uint32(tlCrds[0])
-	commands[2] = uint32(tlCrds[1])
-
-	for i, tlCrd := range tlCrds[2:] {
-		commands[i+4] = uint32(tlCrd)
+	for i, tc := range tlCrds {
+		dx = int(tc.X) - cur[0]
+		dy = int(tc.Y) - cur[1]
+		cur[0] = int(tc.X)
+		cur[1] = int(tc.Y)
+		if i == 0 {
+			commands[1] = encodeZigZag(int(dx))
+			commands[2] = encodeZigZag(int(dy))
+		} else {
+			commands[i+i+2] = encodeZigZag(int(dx))
+			commands[i+i+3] = encodeZigZag(int(dy))
+		}
 	}
 	return commands
 }
