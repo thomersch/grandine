@@ -29,6 +29,8 @@ var (
 	vtLayerVersion = uint32(2)
 
 	skipAtKeys = true // if enabled keys that start with "@" will be ignored
+
+	errNoGeom = errors.New("no valid geometries")
 )
 
 type Codec struct{}
@@ -58,6 +60,10 @@ func EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
+	if len(vtile.Layers) == 0 {
+		log.Println("no layers")
+		return nil, nil
+	}
 	return proto.Marshal(&vtile)
 }
 
@@ -67,6 +73,10 @@ func assembleTile(features map[string][]spatial.Feature, tid tile.ID) (vt.Tile, 
 		layer, err := assembleLayer(layerFeats, tid)
 		if err != nil {
 			return vtile, err
+		}
+		if len(layer.Features) == 0 {
+			log.Println("no features")
+			continue
 		}
 		var ln = layerName
 		layer.Name = &ln // &layerName can't be used directly, because pointers are reused in for range loops
@@ -151,6 +161,9 @@ func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, erro
 		}
 
 		tileFeat.Geometry, err = encodeGeometry([]spatial.Geom{feat.Geometry}, tid)
+		if len(tileFeat.Geometry) == 0 || err == errNoGeom {
+			continue
+		}
 		if err != nil {
 			return tl, err
 		}
@@ -210,8 +223,11 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 			poly, _ := geom.Polygon()
 
 			for _, ring := range poly {
-				// log.Println(encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset))
-				commands = append(commands, encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)...)
+				l := encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)
+				if l == nil {
+					return nil, errNoGeom
+				}
+				commands = append(commands, l...)
 				commands = append(commands, encodeCommandInt(cmdClosePath, 1))
 			}
 		}
@@ -220,23 +236,38 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 }
 
 func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) []uint32 {
-	tX, tY := tileCoord(ln[0], extent, xScale, yScale, xOffset, yOffset)
-	dx := tX - int(cur[0])
-	dy := tY - int(cur[1])
-	cur[0] = cur[0] + dx
-	cur[1] = cur[1] + dy
-
-	var commands = make([]uint32, 0, len(ln)*2+2) // len=number of coordinates + initial move to + size
-	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy), 0)
-
-	for _, pt := range ln[1:] {
-		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
-		dx = tX - int(cur[0])
-		dy = tY - int(cur[1])
-		commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
-		cur[0] = cur[0] + dx
-		cur[1] = cur[1] + dy
+	var (
+		tlCrds = make([]int, 0, len(ln)*2)
+		tx, ty int
+	)
+	for _, pt := range ln {
+		tx, ty = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
+		tlCrds = append(tlCrds, tx, ty)
 	}
+	if tlCrds[0] == tlCrds[len(tlCrds)-2] && tlCrds[1] == tlCrds[len(tlCrds)-1] {
+		// First coordinate equals last coordinate. This is probably a broken polygon.
+		return nil
+	}
+
+	var (
+		commands = make([]uint32, len(ln)*2+2) // len=number of coordinates + initial move to + size
+		dx, dy   int
+	)
+	commands[0] = encodeCommandInt(cmdMoveTo, 1)
 	commands[3] = encodeCommandInt(cmdLineTo, uint32(len(commands)-4)/2)
+	for i := 0; i < len(tlCrds); i = i + 2 {
+		dx = tlCrds[i] - cur[0]
+		dy = tlCrds[i+1] - cur[1]
+		cur[0] = tlCrds[i]
+		cur[1] = tlCrds[i+1]
+		tlCrds[i] = int(encodeZigZag(dx))
+		tlCrds[i+1] = int(encodeZigZag(dy))
+	}
+	commands[1] = uint32(tlCrds[0])
+	commands[2] = uint32(tlCrds[1])
+
+	for i, tlCrd := range tlCrds[2:] {
+		commands[i+4] = uint32(tlCrd)
+	}
 	return commands
 }
