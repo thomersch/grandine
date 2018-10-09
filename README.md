@@ -8,6 +8,10 @@ The work has been partly funded by the [Prototype Fund](https://prototypefund.de
 
 ![Prototype Fund](https://files.skowron.eu/grandine/logo-prototype.svg) ![Bundesministerium für Bildung und Forschung](https://files.skowron.eu/grandine/logo-bmbf.svg) ![Open Knowledge Foundation Deutschland](https://files.skowron.eu/grandine/logo-okfn.svg)
 
+## Spaten File Format
+
+If you are looking for documentation on the Spaten geo spatial file format, look [here](https://thomas.skowron.eu/spaten/). The Go implementation resides inside [lib/spaten](https://github.com/thomersch/grandine/tree/master/lib).
+
 ## Requirements
 
 * Go ≥ 1.8
