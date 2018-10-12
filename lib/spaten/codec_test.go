@@ -28,18 +28,37 @@ func BenchmarkCodecThroughput(b *testing.B) {
 		})
 	}
 
-	b.Run("Spaten", func(b *testing.B) {
+	var sb, gjb []byte
+
+	b.Run("Spaten Encode", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			buf.Reset()
 			sc.Encode(buf, fc)
 		}
+		sb = buf.Bytes()
 	})
-	b.Run("GeoJSON", func(b *testing.B) {
+	b.Run("Spaten Decode", func(b *testing.B) {
+		b.ReportAllocs()
+		decColl := spatial.FeatureCollection{Features: []spatial.Feature{}}
+		for i := 0; i < b.N; i++ {
+			sc.Decode(bytes.NewBuffer(sb), &decColl)
+		}
+	})
+
+	b.Run("GeoJSON Encode", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			buf.Reset()
 			gjc.Encode(buf, fc)
+		}
+		gjb = buf.Bytes()
+	})
+	b.Run("GeoJSON Decode", func(b *testing.B) {
+		b.ReportAllocs()
+		decColl := spatial.FeatureCollection{Features: []spatial.Feature{}}
+		for i := 0; i < b.N; i++ {
+			gjc.Decode(bytes.NewBuffer(gjb), &decColl)
 		}
 	})
 }
