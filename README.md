@@ -10,7 +10,7 @@ The work has been partly funded by the [Prototype Fund](https://prototypefund.de
 
 ## Spaten File Format
 
-If you are looking for documentation on the Spaten geo spatial file format, look [here](https://thomas.skowron.eu/spaten/). The Go implementation resides inside [lib/spaten](https://github.com/thomersch/grandine/tree/master/lib).
+If you are looking for documentation on the Spaten geo spatial file format, look [here](https://thomas.skowron.eu/spaten/). The Go implementation resides inside [lib/spaten](https://github.com/thomersch/grandine/tree/master/lib/spaten).
 
 ## Requirements
 
