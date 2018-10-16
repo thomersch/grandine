@@ -1,6 +1,7 @@
 package geojson
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -20,4 +21,16 @@ func TestDecode(t *testing.T) {
 	err = c.Decode(f, &fc)
 	assert.Nil(t, err)
 	assert.Equal(t, fc.SRID, "4326")
+}
+
+func TestEncode(t *testing.T) {
+	var (
+		fc  spatial.FeatureCollection
+		c   Codec
+		buf = bytes.NewBuffer(make([]byte, 1000))
+	)
+
+	fc.SRID = "4326"
+	err := c.Encode(buf, &fc)
+	assert.Nil(t, err)
 }
