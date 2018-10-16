@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 
@@ -45,7 +46,7 @@ func ReadFileHeader(r io.Reader) (Header, error) {
 		hd   Header
 	)
 	if _, err := r.Read(ck); err != nil {
-		return hd, err
+		return hd, fmt.Errorf("could not read file header cookie: %s", err)
 	}
 	if string(ck) != cookie {
 		return hd, errors.New("invalid cookie")
