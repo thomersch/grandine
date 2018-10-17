@@ -21,6 +21,18 @@ const (
 	GeomTypeInvalid
 )
 
+func (g GeomType) String() string {
+	switch g {
+	case 1:
+		return "Point"
+	case 2:
+		return "LineString"
+	case 3:
+		return "Polygon"
+	}
+	return "Invalid"
+}
+
 type Geom struct {
 	typ GeomType
 	g   interface{}
