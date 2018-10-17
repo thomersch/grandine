@@ -87,3 +87,12 @@ func TestBlockHeaderEncoding(t *testing.T) {
 	assert.Equal(t, buf.Len()-headerLength, int(binary.LittleEndian.Uint32(buf.Bytes()[:4])))
 	assert.Equal(t, "00000000", fmt.Sprintf("%x", buf.Bytes()[4:8]))
 }
+
+func TestInvalidBlockSize(t *testing.T) {
+	buf, err := hex.DecodeString("FFFFFFFF00000000AAAA")
+	assert.Nil(t, err)
+
+	fc := spatial.NewFeatureCollection()
+	err = readBlock(bytes.NewBuffer(buf), fc)
+	assert.NotNil(t, err)
+}

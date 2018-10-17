@@ -155,8 +155,10 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 		buf       = make([]byte, blockLength)
 		blockBody fileformat.Body
 	)
-	if _, err := r.Read(buf); err != nil {
+	if n, err := r.Read(buf); err != nil {
 		return err
+	} else if n != int(blockLength) {
+		return fmt.Errorf("incomplete block: expected %v bytes, %v available", blockLength, n)
 	}
 	if err := proto.Unmarshal(buf, &blockBody); err != nil {
 		return err
