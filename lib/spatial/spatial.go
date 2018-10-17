@@ -69,6 +69,10 @@ type FeatureCollection struct {
 	SRID     string    `json:"-"`
 } // TODO: consider adding properties field
 
+func NewFeatureCollection() *FeatureCollection {
+	return &FeatureCollection{Features: []Feature{}}
+}
+
 // Deprecated. Please use geojson.Codec.
 func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
 	wfc := struct {
