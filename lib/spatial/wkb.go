@@ -65,7 +65,7 @@ func wkbWritePolygon(w io.Writer, poly Polygon) error {
 	}
 
 	for _, ring := range poly {
-		err = wkbWriteLineString(w, ring)
+		err = wkbWriteLineString(w, append(ring, ring[0])) // wkb closes rings with the first element, the internal implementation doesn't
 		if err != nil {
 			return err
 		}
@@ -121,6 +121,7 @@ func wkbReadPolygon(r io.Reader) ([][]Point, error) {
 		if err != nil {
 			return rings, err
 		}
+		rings[i] = rings[i][:len(rings[i])-1] // wkb closes rings with the first element, the internal implementation doesn't
 	}
 	return rings, err
 }

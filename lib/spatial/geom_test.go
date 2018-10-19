@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -32,6 +33,31 @@ func TestMarshalWKBPoint(t *testing.T) {
 	pt, err := rp.Point()
 	assert.Nil(t, err)
 	assert.Equal(t, spt, pt)
+}
+
+func TestWKBUnmarshal(t *testing.T) {
+	f, err := os.Open("testfiles/polygon.wkb")
+	assert.Nil(t, err)
+
+	buf, err := ioutil.ReadAll(f)
+	assert.Nil(t, err)
+
+	var g Geom
+	err = g.UnmarshalWKB(bytes.NewBuffer(buf))
+	assert.Nil(t, err)
+	assert.Equal(t, g.Typ(), GeomTypePolygon)
+
+	bufOut, err := g.MarshalWKB()
+	assert.Nil(t, err)
+	assert.Equal(t, buf, bufOut)
+
+	gj, err := os.Open("testfiles/polygon.json")
+	assert.Nil(t, err)
+	gjbuf, err := ioutil.ReadAll(gj)
+
+	var g2 Geom
+	g2.UnmarshalJSON(gjbuf)
+	assert.Equal(t, g, g2)
 }
 
 func TestUnmarshalWKBEOF(t *testing.T) {
@@ -94,6 +120,7 @@ func TestMarshalWKBPolygon(t *testing.T) {
 func TestGeoJSON(t *testing.T) {
 	f, err := os.Open("testfiles/featurecollection.geojson")
 	assert.Nil(t, err)
+	defer f.Close()
 
 	fc := FeatureCollection{}
 	err = json.NewDecoder(f).Decode(&fc)
