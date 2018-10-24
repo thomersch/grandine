@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -95,4 +96,30 @@ func TestInvalidBlockSize(t *testing.T) {
 	fc := spatial.NewFeatureCollection()
 	err = readBlock(bytes.NewBuffer(buf), fc)
 	assert.NotNil(t, err)
+}
+
+func TestWeirdFiles(t *testing.T) {
+	var fls = []struct {
+		buf       string
+		shouldErr bool
+	}{
+		{"53504154000000000000000000000a0012171a15010100000000000000002440e523e8ca28c5517c1df8aa9998c44a40", true},
+		{"53504154000000000000000000000000", false},
+	}
+
+	for i, f := range fls {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var c Codec
+			buf, err := hex.DecodeString(f.buf)
+			assert.Nil(t, err)
+
+			fc := spatial.NewFeatureCollection()
+			err = c.Decode(bytes.NewBuffer(buf), fc)
+			if f.shouldErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
 }
