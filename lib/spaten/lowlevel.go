@@ -127,38 +127,45 @@ func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
 	return tags, nil
 }
 
+type blockHeader struct {
+	bodyLen     uint32
+	flags       uint16
+	compression uint8
+	messageType uint8
+}
+
 func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
-	var (
-		blockLength uint32
-		flags       uint16
-		compression uint8
-		messageType uint8
-	)
-	if err := binary.Read(r, binary.LittleEndian, &blockLength); err != nil {
-		return err
+	var hd blockHeader
+
+	headerBuf := make([]byte, 8)
+	n, err := r.Read(headerBuf)
+	if n == 0 {
+		return io.EOF
 	}
-	if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
-		return err
+	if err != nil {
+		return fmt.Errorf("could not read block header: %v", err)
 	}
-	if err := binary.Read(r, binary.LittleEndian, &compression); err != nil {
-		if compression != 0 {
-			return errors.New("compression is not supported")
-		}
+
+	hd.bodyLen = binary.LittleEndian.Uint32(headerBuf[0:4])
+	hd.flags = binary.LittleEndian.Uint16(headerBuf[4:6])
+	hd.compression = uint8(headerBuf[6])
+	if hd.compression != 0 {
+		return errors.New("compression is not supported")
 	}
-	if err := binary.Read(r, binary.LittleEndian, &messageType); err != nil {
-		if messageType != 0 {
-			return errors.New("message type is not supported")
-		}
+
+	hd.messageType = uint8(headerBuf[7])
+	if hd.messageType != 0 {
+		return errors.New("message type is not supported")
 	}
 
 	var (
-		buf       = make([]byte, blockLength)
+		buf       = make([]byte, hd.bodyLen)
 		blockBody fileformat.Body
 	)
 	if n, err := r.Read(buf); err != nil {
 		return err
-	} else if n != int(blockLength) {
-		return fmt.Errorf("incomplete block: expected %v bytes, %v available", blockLength, n)
+	} else if n != int(hd.bodyLen) {
+		return fmt.Errorf("incomplete block: expected %v bytes, %v available", hd.bodyLen, n)
 	}
 	if err := proto.Unmarshal(buf, &blockBody); err != nil {
 		return err

@@ -123,3 +123,21 @@ func TestWeirdFiles(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkReadBlock(b *testing.B) {
+	var (
+		buf = bytes.NewBuffer([]byte{})
+		fs  = spatial.NewFeatureCollection()
+	)
+	err := WriteBlock(buf, fs.Features, nil)
+	assert.Nil(b, err)
+	r := bytes.NewReader(buf.Bytes())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		r.Seek(0, 0)
+		err := readBlock(r, fs)
+		assert.Nil(b, err)
+	}
+}
