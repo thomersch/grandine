@@ -1,6 +1,7 @@
 package spatial
 
 import (
+	"errors"
 	"io"
 	"math"
 )
@@ -96,6 +97,9 @@ func wkbReadLineString(r io.Reader) ([]Point, error) {
 		return nil, err
 	}
 	nop := endianness.Uint32(buf)
+	if nop == 0 {
+		return nil, errors.New("a linestring needs to have at least one point")
+	}
 
 	var ls = make([]Point, nop)
 	for i := 0; i < int(nop); i++ {
@@ -114,6 +118,9 @@ func wkbReadPolygon(r io.Reader) ([][]Point, error) {
 		return nil, err
 	}
 	nor := endianness.Uint32(buf)
+	if nor == 0 {
+		return nil, errors.New("a polygon needs to have at least one ring")
+	}
 
 	var rings = make([][]Point, nor)
 	for i := 0; i < int(nor); i++ {
