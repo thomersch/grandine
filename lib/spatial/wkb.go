@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"math"
 )
@@ -16,6 +17,36 @@ type WKBableWithProps interface {
 }
 
 const wkbRawPointSize = 16
+
+func GeomFromWKB(r io.Reader) (Geom, error) {
+	var (
+		g             Geom
+		wkbEndianness = make([]byte, 1)
+	)
+	_, err := r.Read(wkbEndianness)
+	if err != nil {
+		return g, err
+	}
+	if wkbEndianness[0] != 1 {
+		return g, errors.New("only little endian is supported")
+	}
+
+	g.typ, err = wkbReadHeader(r)
+	if err != nil {
+		return g, err
+	}
+	switch g.typ {
+	case GeomTypePoint:
+		g.g, err = wkbReadPoint(r)
+	case GeomTypeLineString:
+		g.g, err = wkbReadLineString(r)
+	case GeomTypePolygon:
+		g.g, err = wkbReadPolygon(r)
+	default:
+		return g, fmt.Errorf("unsupported GeomType: %v", g.typ)
+	}
+	return g, err
+}
 
 func wkbReadHeader(r io.Reader) (GeomType, error) {
 	var buf = make([]byte, 4)
