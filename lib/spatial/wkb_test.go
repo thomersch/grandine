@@ -27,3 +27,22 @@ func TestGeomFromWKB(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, g.Typ(), GeomTypePolygon)
 }
+
+func BenchmarkUnmarshalWKB(b *testing.B) {
+	buf, _ := hex.DecodeString("03000000000000000000f03f00000000000000400000000000000840000000000000104000000000000014400000000000001040")
+
+	b.Run("old style", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			var g Geom
+			g.UnmarshalWKB(bytes.NewBuffer(buf))
+		}
+	})
+
+	b.Run("new style", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			GeomFromWKB(bytes.NewBuffer(buf))
+		}
+	})
+}

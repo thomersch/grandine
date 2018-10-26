@@ -16,7 +16,10 @@ type WKBableWithProps interface {
 	PropertyRetriever
 }
 
-const wkbRawPointSize = 16
+const (
+	wkbRawPointSize = 16
+	wkbLittleEndian = 1
+)
 
 func GeomFromWKB(r io.Reader) (Geom, error) {
 	var (
@@ -27,7 +30,7 @@ func GeomFromWKB(r io.Reader) (Geom, error) {
 	if err != nil {
 		return g, err
 	}
-	if wkbEndianness[0] != 1 {
+	if wkbEndianness[0] != wkbLittleEndian {
 		return g, errors.New("only little endian is supported")
 	}
 
