@@ -34,7 +34,7 @@ func main() {
 		infiles filelist
 		conds   []mapping.Condition
 	)
-	dest := flag.String("out", "geo.spaten", "")
+	dest := flag.String("out", "", "")
 	mapFilePath := flag.String("mapping", "", "Path to mapping file which will be used to transform data.")
 	csvLatColumn := flag.Int("csv-lat", 1, "If parsing CSV, which column contains the Latitude. Zero-indexed.")
 	csvLonColumn := flag.Int("csv-lon", 2, "If parsing CSV, which column contains the Longitude. Zero-indexed.")
@@ -71,18 +71,33 @@ func main() {
 		},
 	}
 
-	enc, err := guessCodec(*dest, availableCodecs)
-	if err != nil {
-		log.Fatalf("file type of %s is not supported (please check for correct file extension)", *dest)
+	// Determining which codec we will be using.
+	var (
+		enc interface{}
+		err error
+	)
+	if len(*dest) == 0 {
+		enc = &spaten.Codec{}
+	} else {
+		enc, err = guessCodec(*dest, availableCodecs)
+		if err != nil {
+			log.Fatalf("file type of %s is not supported (please check for correct file extension)", *dest)
+		}
 	}
 	encoder, ok := enc.(spatial.Encoder)
 	if !ok {
 		log.Fatalf("%v codec does not support writing", enc)
 	}
 
-	out, err := os.Create(*dest)
-	if err != nil {
-		log.Fatal(err)
+	// Determine wheter we're writing to a stream or file.
+	var out io.WriteCloser
+	if len(*dest) == 0 {
+		out = os.Stdout
+	} else {
+		out, err = os.Create(*dest)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	defer out.Close()
 
