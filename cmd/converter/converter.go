@@ -39,6 +39,7 @@ func main() {
 	csvLatColumn := flag.Int("csv-lat", 1, "If parsing CSV, which column contains the Latitude. Zero-indexed.")
 	csvLonColumn := flag.Int("csv-lon", 2, "If parsing CSV, which column contains the Longitude. Zero-indexed.")
 	csvDelimiter := flag.String("csv-delim", ",", "If parsing CSV, what is the delimiter between values")
+	inCodecName := flag.String("in-codec", "spaten", "Specify codec for in-files. Only used for read from stdin.")
 	flag.Var(&infiles, "in", "infile(s)")
 	flag.Parse()
 
@@ -71,7 +72,7 @@ func main() {
 		},
 	}
 
-	// Determining which codec we will be using.
+	// Determining which codec we will be using for the output.
 	var (
 		enc interface{}
 		err error
@@ -89,7 +90,7 @@ func main() {
 		log.Fatalf("%v codec does not support writing", enc)
 	}
 
-	// Determine wheter we're writing to a stream or file.
+	// Determine whether we're writing to a stream or file.
 	var out io.WriteCloser
 	if len(*dest) == 0 {
 		out = os.Stdout
@@ -101,7 +102,35 @@ func main() {
 	}
 	defer out.Close()
 
-	var fc spatial.FeatureCollection
+	var (
+		fc       spatial.FeatureCollection
+		finished func() error
+	)
+
+	if len(infiles) == 0 {
+		log.Println("No input files specified. Reading from stdin.")
+		incodec, err := guessCodec("."+*inCodecName, availableCodecs)
+		if err != nil {
+			log.Fatalf("could not use incodec: %v", err)
+		}
+		inc, ok := incodec.(spatial.ChunkedDecoder)
+		if !ok {
+			log.Fatal("codec cannot be used for decoding")
+		}
+		icd, err := inc.ChunkedDecode(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for icd.Next() {
+			err = icd.Scan(&fc)
+			if err != nil {
+				log.Fatal(err)
+			}
+			finished, err = write(out, &fc, encoder, conds)
+		}
+		finished()
+	}
+
 	for _, infileName := range infiles {
 		dec, err := guessCodec(infileName, availableCodecs)
 		if err != nil {
