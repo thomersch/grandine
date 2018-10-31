@@ -11,6 +11,7 @@ import (
 
 	"github.com/thomersch/grandine/lib/csv"
 	"github.com/thomersch/grandine/lib/geojson"
+	"github.com/thomersch/grandine/lib/geojsonseq"
 	"github.com/thomersch/grandine/lib/mapping"
 	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
@@ -70,6 +71,7 @@ func main() {
 			LonCol: *csvLonColumn,
 			Delim:  rune((*csvDelimiter)[0]),
 		},
+		&geojsonseq.Codec{},
 	}
 
 	// Determining which codec we will be using for the output.
