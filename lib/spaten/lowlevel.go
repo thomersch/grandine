@@ -171,15 +171,14 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 		return err
 	}
 	for _, f := range blockBody.GetFeature() {
-		var (
-			feature = spatial.Feature{
-				Props: map[string]interface{}{},
-			}
-			geomBuf = bytes.NewBuffer(f.GetGeom())
-		)
-		err := feature.Geometry.UnmarshalWKB(geomBuf)
+		var geomBuf = bytes.NewBuffer(f.GetGeom())
+		geom, err := spatial.GeomFromWKB(geomBuf)
 		if err != nil {
 			return err
+		}
+		feature := spatial.Feature{
+			Props:    map[string]interface{}{},
+			Geometry: geom,
 		}
 
 		for _, tag := range f.Tags {

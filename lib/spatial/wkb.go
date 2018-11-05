@@ -124,7 +124,7 @@ func wkbReadPoint(r io.Reader) (p Point, err error) {
 }
 
 // TODO: evaluate returning Geom instead of Point
-func wkbReadLineString(r io.Reader) ([]Point, error) {
+func wkbReadLineString(r io.Reader) (Line, error) {
 	var buf = make([]byte, 4)
 	_, err := r.Read(buf)
 	if err != nil {
@@ -135,7 +135,7 @@ func wkbReadLineString(r io.Reader) ([]Point, error) {
 		return nil, errors.New("a linestring needs to have at least one point")
 	}
 
-	var ls = make([]Point, nop)
+	var ls = make(Line, nop)
 	for i := 0; i < int(nop); i++ {
 		ls[i], err = wkbReadPoint(r)
 		if err != nil {
@@ -145,7 +145,7 @@ func wkbReadLineString(r io.Reader) ([]Point, error) {
 	return ls, nil
 }
 
-func wkbReadPolygon(r io.Reader) ([][]Point, error) {
+func wkbReadPolygon(r io.Reader) (Polygon, error) {
 	var buf = make([]byte, 4)
 	_, err := r.Read(buf)
 	if err != nil {
@@ -156,7 +156,7 @@ func wkbReadPolygon(r io.Reader) ([][]Point, error) {
 		return nil, errors.New("a polygon needs to have at least one ring")
 	}
 
-	var rings = make([][]Point, nor)
+	var rings = make(Polygon, nor)
 	for i := 0; i < int(nor); i++ {
 		rings[i], err = wkbReadLineString(r)
 		if err != nil {

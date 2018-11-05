@@ -96,6 +96,11 @@ func (fc *FeatureCollection) Filter(bbox BBox) []Feature {
 	return filtered
 }
 
+// Reset removes all features.
+func (fc *FeatureCollection) Reset() {
+	fc.Features = []Feature{}
+}
+
 type rtreeFeat Feature
 
 func (ft rtreeFeat) Bounds() *rtreego.Rect {
