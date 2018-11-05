@@ -25,7 +25,11 @@
 // For further details, consult the description of Polygon.Construct method.
 package polyclip
 
-import "math"
+import (
+	"math"
+
+	"github.com/gonum/floats"
+)
 
 type Point struct {
 	X, Y float64
@@ -34,6 +38,12 @@ type Point struct {
 // Equals returns true if both p1 and p2 describe exactly the same point.
 func (p1 Point) Equals(p2 Point) bool {
 	return p1.X == p2.X && p1.Y == p2.Y
+}
+
+// EqualWithin returns true if p1 is within tol tolerance of p2
+func (p1 Point) EqualWithin(p2 Point, tol float64) bool {
+	return floats.EqualWithinAbsOrRel(p1.X, p2.X, tol, tol) &&
+		floats.EqualWithinAbsOrRel(p1.Y, p2.Y, tol, tol)
 }
 
 // Length returns distance from p to point (0, 0).
@@ -205,6 +215,7 @@ const (
 	INTERSECTION
 	DIFFERENCE
 	XOR
+	CLIPLINE // CLIPLINE assumes that the subject polygon is actually a polygon and clips it
 )
 
 // Construct computes a 2D polygon, which is a result of performing

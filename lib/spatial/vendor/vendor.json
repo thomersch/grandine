@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "RjVSf5TWAnI7Mg9PWMsNE9RoyVw=",
+			"checksumSHA1": "wLIecDZJRNuato14QPni7hMxjVY=",
 			"path": "github.com/ctessum/polyclip-go",
-			"revision": "b21f39a8c20d5c40675eb4460465de71d81a64cc",
-			"revisionTime": "2017-06-12T22:11:17Z"
+			"revision": "6614925d6d7087b7afcd4c55571554f67efd2ec3",
+			"revisionTime": "2018-08-21T20:54:00Z"
 		},
 		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
@@ -19,6 +19,18 @@
 			"path": "github.com/dhconnelly/rtreego",
 			"revision": "1323b09fe8f32430ea7e16ea1df99e106e3e6250",
 			"revisionTime": "2017-03-04T15:04:46Z"
+		},
+		{
+			"checksumSHA1": "a6MDugnjqh9PwQZ04RqyHIO7vqE=",
+			"path": "github.com/gonum/floats",
+			"revision": "7de1f4ea7ab57890bfd427af68c7994cd67975d4",
+			"revisionTime": "2018-01-24T22:57:25Z"
+		},
+		{
+			"checksumSHA1": "Fca9pauhOLfPOTZPdb0aJREycLQ=",
+			"path": "github.com/gonum/internal/asm/f64",
+			"revision": "fda53f8d25717c07e2dac25758075a182bd74235",
+			"revisionTime": "2018-01-24T22:58:08Z"
 		},
 		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",

@@ -7,10 +7,10 @@ import polyclip "github.com/ctessum/polyclip-go"
 func (p Polygon) clipToBBox(b BBox) []Geom {
 	pcp := p.polyclipPolygon()
 	bboxPoly := polyclip.Polygon{polyclip.Contour{
-		polyclip.Point{b.SW.X(), b.SW.Y()},
-		polyclip.Point{b.NE.X(), b.SW.Y()},
-		polyclip.Point{b.NE.X(), b.NE.Y()},
-		polyclip.Point{b.SW.X(), b.NE.Y()},
+		polyclip.Point{b.SW.X, b.SW.Y},
+		polyclip.Point{b.NE.X, b.SW.Y},
+		polyclip.Point{b.NE.X, b.NE.Y},
+		polyclip.Point{b.SW.X, b.NE.Y},
 	}}
 	return []Geom{
 		MustNewGeom(
@@ -25,7 +25,7 @@ func (p Polygon) polyclipPolygon() polyclip.Polygon {
 	for _, ring := range p {
 		var cnt polyclip.Contour
 		for _, pt := range ring {
-			cnt = append(cnt, polyclip.Point{pt.X(), pt.Y()})
+			cnt = append(cnt, polyclip.Point{pt.X, pt.Y})
 		}
 		pcp = append(pcp, cnt)
 	}

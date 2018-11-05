@@ -91,10 +91,10 @@ func (c *clipper) compute(operation Op) Polygon {
 
 	numSegments := 0
 	// Add each segment to the eventQueue, sorted from left to right.
-	numSegments += addPolygonToQueue(&c.eventQueue, c.subject, _SUBJECT)
-	numSegments += addPolygonToQueue(&c.eventQueue, c.clipping, _CLIPPING)
+	numSegments += addPolygonToQueue(&c.eventQueue, c.subject, _SUBJECT, operation != CLIPLINE)
+	numSegments += addPolygonToQueue(&c.eventQueue, c.clipping, _CLIPPING, true)
 
-	connector := connector{} // to connect the edge solutions
+	connector := connector{operation: operation} // to connect the edge solutions
 
 	// This is the sweepline. That is, we go through all the polygon edges
 	// by sweeping from left to right.
@@ -139,29 +139,14 @@ func (c *clipper) compute(operation Op) Polygon {
 
 		// optimization 1
 		switch {
-		case operation == INTERSECTION && e.p.X > MINMAX_X:
+		case (operation == INTERSECTION || operation == CLIPLINE) && e.p.X > MINMAX_X:
 			fallthrough
 		case operation == DIFFERENCE && e.p.X > subjectbb.Max.X:
 			return connector.toPolygon()
-			//case operation == UNION && e.p.X > MINMAX_X:
-			//	_DBG(func() { fmt.Print("\nUNION optimization, fast quit\n") })
-			//	// add all the non-processed line segments to the result
-			//	if !e.left {
-			//		connector.add(e.segment())
-			//	}
-			//
-			//	for !c.eventQueue.IsEmpty() {
-			//		e = c.eventQueue.dequeue()
-			//		if !e.left {
-			//			connector.add(e.segment())
-			//		}
-			//	}
-			//	return connector.toPolygon()
 		}
 
 		if e.left { // the line segment must be inserted into S
 			pos := S.insert(e)
-			//e.PosInS = pos
 
 			prev = nil
 			if pos > 0 {
@@ -218,7 +203,6 @@ func (c *clipper) compute(operation Op) Polygon {
 			// Process a possible intersection between "e" and its previous neighbor in S
 			if prev != nil {
 				c.possibleIntersection(prev, e)
-				//c.possibleIntersection(&e, prev)
 			}
 		} else { // the line segment must be removed from S
 			otherPos := -1
@@ -228,8 +212,6 @@ func (c *clipper) compute(operation Op) Polygon {
 					break
 				}
 			}
-			// otherPos := S.IndexOf(e.other)
-			// [or:] otherPos := e.other.PosInS
 
 			if otherPos != -1 {
 				prev = nil
@@ -243,6 +225,11 @@ func (c *clipper) compute(operation Op) Polygon {
 			}
 
 			// Check if the line segment belongs to the Boolean operation
+			if operation == CLIPLINE {
+				if e.other.inside && e.polygonType == _SUBJECT {
+					connector.add(e.segment())
+				}
+			}
 			switch e.edgeType {
 			case _EDGE_NORMAL:
 				switch operation {
@@ -415,12 +402,13 @@ func (c *clipper) possibleIntersection(e1, e2 *endpoint) {
 		return // the line segments overlap, but they belong to the same polygon
 	}
 
+	const tol = 3e-14
 	if numIntersections == 1 {
-		if !e1.p.Equals(ip1) && !e1.other.p.Equals(ip1) {
+		if !e1.p.EqualWithin(ip1, tol) && !e1.other.p.EqualWithin(ip1, tol) {
 			// if ip1 is not an endpoint of the line segment associated to e1 then divide "e1"
 			c.divideSegment(e1, ip1)
 		}
-		if !e2.p.Equals(ip1) && !e2.other.p.Equals(ip1) {
+		if !e2.p.EqualWithin(ip1, tol) && !e2.other.p.EqualWithin(ip1, tol) {
 			// if ip1 is not an endpoint of the line segment associated to e2 then divide "e2"
 			c.divideSegment(e2, ip1)
 		}
@@ -510,7 +498,6 @@ func (c *clipper) divideSegment(e *endpoint, p Point) {
 	l := &endpoint{p: p, left: true, polygonType: e.polygonType, other: e.other, edgeType: e.other.edgeType}
 
 	if endpointLess(l, e.other) { // avoid a rounding error. The left event would be processed after the right event
-		// println("Oops")
 		e.other.left = true
 		e.left = false
 	}
@@ -563,12 +550,15 @@ func addToGraph(g *polygonGraph, seg segment) {
 }
 
 // addPolygonToQueue	adds p to the event queue, returning the number of
-// segments that were added.
-func addPolygonToQueue(q *eventQueue, p Polygon, polyType polygonType) int {
+// segments that were added. closed indicates whether the shape is a closed
+// polygon or an open linestring.
+func addPolygonToQueue(q *eventQueue, p Polygon, polyType polygonType, closed bool) int {
 	g := make(polygonGraph)
 	for _, cont := range p {
 		for i := range cont {
-			addToGraph(&g, cont.segment(i))
+			if i <= len(cont)-2 || closed {
+				addToGraph(&g, cont.segment(i))
+			}
 		}
 	}
 	numSegments := 0
