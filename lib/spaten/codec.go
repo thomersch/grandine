@@ -6,7 +6,11 @@ import (
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
-type Codec struct{}
+type Codec struct {
+	headerWritten bool
+}
+
+const blockSize = 1000
 
 func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	err := WriteFileHeader(w)
@@ -14,7 +18,7 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 		return err
 	}
 
-	for _, ftBlk := range geomBlocks(100, fc.Features) {
+	for _, ftBlk := range geomBlocks(blockSize, fc.Features) {
 		var meta map[string]interface{}
 		if len(fc.SRID) != 0 {
 			meta = map[string]interface{}{
@@ -28,6 +32,35 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 		}
 	}
 	return nil
+}
+
+func (c *Codec) EncodeChunk(w io.Writer, fc *spatial.FeatureCollection) error {
+	if !c.headerWritten {
+		err := WriteFileHeader(w)
+		if err != nil {
+			return err
+		}
+		c.headerWritten = true
+	}
+	// TODO: consider splitting up incoming chunks into blocks
+	return WriteBlock(w, fc.Features, nil)
+}
+
+func (c *Codec) Close() error {
+	return nil
+}
+
+// ChunkedDecode is the preferred method for reading large datasets. It retrieves a file block
+// at a time, making it possible to traverse the file in a streaming manner without allocating
+// enough memory to fit the whole file.
+func (c *Codec) ChunkedDecode(r io.Reader) (spatial.Chunks, error) {
+	_, err := ReadFileHeader(r)
+	if err != nil {
+		return nil, err
+	}
+	return &Chunks{
+		reader: r,
+	}, nil
 }
 
 func (c *Codec) Decode(r io.Reader, fc *spatial.FeatureCollection) error {

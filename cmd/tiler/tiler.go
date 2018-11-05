@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,8 +21,6 @@ import (
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
 )
-
-const indexThreshold = 100000000
 
 type zmLvl []int
 
@@ -72,7 +71,8 @@ var (
 )
 
 func main() {
-	source := flag.String("in", "geo.geojson", "file to read from, supported format: spaten")
+	source := flag.String("in", "", "file to read from, supported format: spaten")
+	sourceStdIn := flag.Bool("std-in", false, "will read the incoming file from stdin")
 	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
@@ -82,6 +82,13 @@ func main() {
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
+
+	if len(*source) != 0 && *sourceStdIn {
+		log.Fatal("please specify only one input: either by filename or from stdin")
+	}
+	if len(*source) == 0 && !*sourceStdIn {
+		log.Fatal("no input specified")
+	}
 
 	if len(zoomlevels) == 0 {
 		log.Fatal("no zoom levels specified")
@@ -96,11 +103,20 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	f, err := os.Open(*source)
-	if err != nil {
-		log.Fatal(err)
+	var (
+		f   io.Reader
+		err error
+	)
+
+	if len(*source) != 0 {
+		f, err = os.Open(*source)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.(io.Closer).Close()
+	} else {
+		f = os.Stdin
 	}
-	defer f.Close()
 
 	err = os.MkdirAll(*target, 0777)
 	if err != nil {
@@ -118,8 +134,16 @@ func main() {
 
 	log.Printf("read %d features", len(fc.Features))
 
-	var bboxPts []spatial.Point
-	for _, feat := range fc.Features {
+	var (
+		bboxPts []spatial.Point
+		ft      = featureTable(zoomlevels)
+	)
+	for featID, feat := range fc.Features {
+		for _, zl := range zoomlevels {
+			for _, tid := range tile.Coverage(feat.Geometry.BBox(), zl) {
+				ft[zl][tid.X][tid.Y] = append(ft[zl][tid.X][tid.Y], &fc.Features[featID])
+			}
+		}
 		bb := feat.Geometry.BBox()
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
 	}
@@ -130,33 +154,40 @@ func main() {
 		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
 	}
 
-	var fts spatial.Filterable
-	if len(fc.Features)*len(tc) > indexThreshold {
-		log.Println("building index...")
-		fts = spatial.NewRTreeCollection(fc.Features...)
-		log.Println("index complete")
-	} else {
-		fts = &fc
-	}
+	log.Printf("starting to generate %d tiles...", len(tc))
 
-	log.Printf("starting to generate %d tiles...", len(tc)-1)
 	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
+	tileCodec := mvt.Codec{}
+	// TODO: make codec switchable
+	// tileCodec := tile.GeoJSONCodec{}
 
 	var (
 		wg       sync.WaitGroup
 		ws       = workerSlices(tc, *workersNumber)
-		pb, done = progressbar.NewBar(len(tc)-1, len(ws))
+		pb, done = progressbar.NewBar(len(tc), len(ws))
 	)
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], fts, &dtw, &dlm, pb)
+			generateTiles(ws[i], ft, &dtw, &tileCodec, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
 	wg.Wait()
 	done()
+}
+
+func featureTable(zls []int) map[int][][][]*spatial.Feature {
+	r := map[int][][][]*spatial.Feature{}
+	for _, zl := range zls {
+		l := pow(2, zl)
+		r[zl] = make([][][]*spatial.Feature, l)
+		for x := range r[zl] {
+			r[zl][x] = make([][]*spatial.Feature, l)
+		}
+	}
+	return r
 }
 
 func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
@@ -227,19 +258,17 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte) error
 }
 
-func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, lm layerMapper, pb chan<- struct{}) {
+func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
-		// if !*quiet {
-		// 	log.Printf("Generating %s", tID)
-		// }
 		var (
-			layers = map[string][]spatial.Feature{}
-			ln     string
+			layers       = map[string][]spatial.Feature{}
+			ln           string
+			tileClipBBox = tID.BBox()
 		)
-		tileClipBBox := tID.BBox()
 
-		for _, feat := range features.Filter(tileClipBBox) {
-			sf := tile.Resolution(tID.Z, 4096) * 20
+		for _, ft := range features[tID.Z][tID.X][tID.Y] {
+			feat := *ft
+			sf := tile.Resolution(tID.Z, 4096) * 10
 			gm := feat.Geometry.Simplify(sf)
 			for _, geom := range gm.ClipToBBox(tileClipBBox) {
 				feat.Geometry = geom
@@ -257,7 +286,7 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 			pb <- struct{}{}
 			continue
 		}
-		buf, err := mvt.EncodeTile(layers, tID)
+		buf, err := encoder.EncodeTile(layers, tID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -271,10 +300,18 @@ func generateTiles(tIDs []tile.ID, features spatial.Filterable, tw tileWriter, l
 }
 
 func anyFeatures(layers map[string][]spatial.Feature) bool {
-	for _, ly := range layers {
-		if len(ly) > 0 {
+	for i := range layers {
+		if len(layers[i]) > 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func pow(x, y int) int {
+	var res = 1
+	for i := 1; i <= y; i++ {
+		res *= x
+	}
+	return res
 }

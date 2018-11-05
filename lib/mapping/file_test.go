@@ -14,7 +14,7 @@ func TestParseMapping(t *testing.T) {
 	conds, err := ParseMapping(f)
 	assert.Nil(t, err)
 
-	srcKV := map[string]string{
+	srcKV := map[string]interface{}{
 		"building": "yes",
 	}
 	assert.True(t, conds[1].Matches(srcKV))
@@ -23,7 +23,7 @@ func TestParseMapping(t *testing.T) {
 		"@zoom:min": 14,
 	}, conds[1].Map(srcKV))
 
-	srcKV = map[string]string{
+	srcKV = map[string]interface{}{
 		"highway": "primary",
 	}
 	assert.True(t, conds[0].Matches(srcKV))
@@ -32,7 +32,7 @@ func TestParseMapping(t *testing.T) {
 		"class":  "primary",
 	}, conds[0].Map(srcKV))
 
-	srcKV = map[string]string{
+	srcKV = map[string]interface{}{
 		"railway":  "rail",
 		"maxspeed": "300",
 	}

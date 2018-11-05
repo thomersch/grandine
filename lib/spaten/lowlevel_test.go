@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,4 +87,58 @@ func TestBlockHeaderEncoding(t *testing.T) {
 	// Compare buffer size with size written in header.
 	assert.Equal(t, buf.Len()-headerLength, int(binary.LittleEndian.Uint32(buf.Bytes()[:4])))
 	assert.Equal(t, "00000000", fmt.Sprintf("%x", buf.Bytes()[4:8]))
+}
+
+func TestInvalidBlockSize(t *testing.T) {
+	buf, err := hex.DecodeString("FFFFFFFF00000000AAAA")
+	assert.Nil(t, err)
+
+	fc := spatial.NewFeatureCollection()
+	err = readBlock(bytes.NewBuffer(buf), fc)
+	assert.NotNil(t, err)
+}
+
+func TestWeirdFiles(t *testing.T) {
+	var fls = []struct {
+		buf       string
+		shouldErr bool
+	}{
+		{"53504154000000000000000000000a0012171a15010100000000000000002440e523e8ca28c5517c1df8aa9998c44a40", true},
+		{"53504154000000000000000000000000", false},
+		{"53504154000000001b00000030303030303012171a15010300000030303000000000003030303030303030", true},
+	}
+
+	for i, f := range fls {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var c Codec
+			buf, err := hex.DecodeString(f.buf)
+			assert.Nil(t, err)
+
+			fc := spatial.NewFeatureCollection()
+			err = c.Decode(bytes.NewBuffer(buf), fc)
+			if f.shouldErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkReadBlock(b *testing.B) {
+	var (
+		buf = bytes.NewBuffer([]byte{})
+		fs  = spatial.NewFeatureCollection()
+	)
+	err := WriteBlock(buf, fs.Features, nil)
+	assert.Nil(b, err)
+	r := bytes.NewReader(buf.Bytes())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		r.Seek(0, 0)
+		err := readBlock(r, fs)
+		assert.Nil(b, err)
+	}
 }

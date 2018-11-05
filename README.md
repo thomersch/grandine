@@ -4,9 +4,13 @@
 
 This repository contains libraries and command line tools for working with geospatial data. It aims to streamline vector tile generation and provides tooling for standardized geo data serialization.
 
-The work is partly funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany.
+The work has been partly funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany and the German Ministry for Research and Education.
 
 ![Prototype Fund](https://files.skowron.eu/grandine/logo-prototype.svg) ![Bundesministerium für Bildung und Forschung](https://files.skowron.eu/grandine/logo-bmbf.svg) ![Open Knowledge Foundation Deutschland](https://files.skowron.eu/grandine/logo-okfn.svg)
+
+## Spaten File Format
+
+If you are looking for documentation on the Spaten geo spatial file format, look [here](https://thomas.skowron.eu/spaten/). The Go implementation resides inside [lib/spaten](https://github.com/thomersch/grandine/tree/master/lib/spaten).
 
 ## Requirements
 

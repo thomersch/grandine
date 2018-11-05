@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -22,8 +23,8 @@ func TestMarshalWKBPoint(t *testing.T) {
 	// test against third party implementation
 	tpt, err := wkb.Unmarshal(buf)
 	assert.Nil(t, err)
-	assert.Equal(t, tpt.FlatCoords()[0], spt[0])
-	assert.Equal(t, tpt.FlatCoords()[1], spt[1])
+	assert.Equal(t, tpt.FlatCoords()[0], spt.X)
+	assert.Equal(t, tpt.FlatCoords()[1], spt.Y)
 
 	// test against own implementation
 	rp := &Geom{}
@@ -32,6 +33,31 @@ func TestMarshalWKBPoint(t *testing.T) {
 	pt, err := rp.Point()
 	assert.Nil(t, err)
 	assert.Equal(t, spt, pt)
+}
+
+func TestWKBUnmarshal(t *testing.T) {
+	f, err := os.Open("testfiles/polygon.wkb")
+	assert.Nil(t, err)
+
+	buf, err := ioutil.ReadAll(f)
+	assert.Nil(t, err)
+
+	var g Geom
+	err = g.UnmarshalWKB(bytes.NewBuffer(buf))
+	assert.Nil(t, err)
+	assert.Equal(t, g.Typ(), GeomTypePolygon)
+
+	bufOut, err := g.MarshalWKB()
+	assert.Nil(t, err)
+	assert.Equal(t, buf, bufOut)
+
+	gj, err := os.Open("testfiles/polygon.json")
+	assert.Nil(t, err)
+	gjbuf, err := ioutil.ReadAll(gj)
+
+	var g2 Geom
+	g2.UnmarshalJSON(gjbuf)
+	assert.Equal(t, g, g2)
 }
 
 func TestUnmarshalWKBEOF(t *testing.T) {
@@ -51,12 +77,12 @@ func TestMarshalWKBLineString(t *testing.T) {
 
 	tls, err := wkb.Unmarshal(buf)
 	assert.Nil(t, err)
-	assert.Equal(t, tls.FlatCoords()[0], sls[0][0])
-	assert.Equal(t, tls.FlatCoords()[1], sls[0][1])
-	assert.Equal(t, tls.FlatCoords()[2], sls[1][0])
-	assert.Equal(t, tls.FlatCoords()[3], sls[1][1])
-	assert.Equal(t, tls.FlatCoords()[4], sls[2][0])
-	assert.Equal(t, tls.FlatCoords()[5], sls[2][1])
+	assert.Equal(t, tls.FlatCoords()[0], sls[0].X)
+	assert.Equal(t, tls.FlatCoords()[1], sls[0].Y)
+	assert.Equal(t, tls.FlatCoords()[2], sls[1].X)
+	assert.Equal(t, tls.FlatCoords()[3], sls[1].Y)
+	assert.Equal(t, tls.FlatCoords()[4], sls[2].X)
+	assert.Equal(t, tls.FlatCoords()[5], sls[2].Y)
 
 	rp := &Geom{}
 	err = rp.UnmarshalWKB(bytes.NewReader(buf))
@@ -94,6 +120,7 @@ func TestMarshalWKBPolygon(t *testing.T) {
 func TestGeoJSON(t *testing.T) {
 	f, err := os.Open("testfiles/featurecollection.geojson")
 	assert.Nil(t, err)
+	defer f.Close()
 
 	fc := FeatureCollection{}
 	err = json.NewDecoder(f).Decode(&fc)

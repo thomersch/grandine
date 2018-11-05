@@ -1,0 +1,10 @@
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.7819939,53.070685]},"properties":{"name":"Bremen-Neustadt","highway":"motorway_junction","TMC:cid_58:tabcd_1:Class":"Point","TMC:cid_58:tabcd_1:Direction":"negative","TMC:cid_58:tabcd_1:LCLversion":"10.1","TMC:cid_58:tabcd_1:LocationCode":"25041"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8710006,53.0984451]},"properties":{"bicycle":"yes","highway":"traffic_signals","crossing":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8740043,53.101282]},"properties":{"bicycle":"yes","highway":"traffic_signals","crossing":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.87012,53.0971022]},"properties":{"bicycle":"yes","highway":"traffic_signals","crossing":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8698447,53.0971582]},"properties":{"bicycle":"yes","highway":"traffic_signals","crossing":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8858872,53.099723]},"properties":{"highway":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.9026586,53.100125]},"properties":{"highway":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8842552,53.1053179]},"properties":{"crossing":"traffic_signals","highway":"traffic_signals"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.8164368,53.1165751]},"properties":{"created_by":"nope"}}
+{"type":"Feature","geometry":{"type":"Point","coordinates":[8.7429251,53.1395794]},"properties":{"alt_name":"Bremen-Industriehäfen","highway":"motorway_junction","name":"Dreieck Bremen-Industriehäfen","ref":"17","TMC:cid_58:tabcd_1:Class":"Point","TMC:cid_58:tabcd_1:Direction":"positive","TMC:cid_58:tabcd_1:LCLversion":"9.00","TMC:cid_58:tabcd_1:LocationCode":"10715","TMC:cid_58:tabcd_1:NextLocationCode":"29672","TMC:cid_58:tabcd_1:PrevLocationCode":"43210"}}

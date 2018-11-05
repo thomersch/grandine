@@ -4,9 +4,10 @@ import (
 	"flag"
 	"log"
 	"os"
+	"runtime/pprof"
 	"sync"
 
-	"github.com/thomersch/grandine/cmd/spatialize/mapping"
+	"github.com/thomersch/grandine/lib/mapping"
 	"github.com/thomersch/grandine/lib/spaten"
 	"github.com/thomersch/grandine/lib/spatial"
 
@@ -42,12 +43,12 @@ type dataHandler struct {
 
 func (d *dataHandler) ReadNode(n gosmparse.Node) {
 	for _, cond := range d.conds {
-		if cond.Matches(n.Tags) {
+		if cond.Matches(mapping.InterfaceMap(n.Tags)) {
 			d.nodesMtx.Lock()
 			d.nodes = append(d.nodes, nd{
 				Lat:  n.Lat,
 				Lon:  n.Lon,
-				Tags: cond.Map(n.Tags),
+				Tags: cond.Map(mapping.InterfaceMap(n.Tags)),
 			})
 			d.nodesMtx.Unlock()
 		}
@@ -56,7 +57,7 @@ func (d *dataHandler) ReadNode(n gosmparse.Node) {
 
 func (d *dataHandler) ReadWay(w gosmparse.Way) {
 	for _, cond := range d.conds {
-		if cond.Matches(w.Tags) {
+		if cond.Matches(mapping.InterfaceMap(w.Tags)) {
 			d.ec.AddNodes(w.NodeIDs...)
 			d.ec.setMembers(w.ID, w.NodeIDs)
 
@@ -64,7 +65,7 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 			d.ways = append(d.ways, wy{
 				ID:      w.ID,
 				NodeIDs: w.NodeIDs,
-				Tags:    cond.Map(w.Tags),
+				Tags:    cond.Map(mapping.InterfaceMap(w.Tags)),
 			})
 			d.waysMtx.Unlock()
 		}
@@ -73,11 +74,11 @@ func (d *dataHandler) ReadWay(w gosmparse.Way) {
 
 func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 	for _, cond := range d.conds {
-		if cond.Matches(r.Tags) {
+		if cond.Matches(mapping.InterfaceMap(r.Tags)) {
 			d.relsMtx.Lock()
 			d.rels = append(d.rels, rl{
 				Members: r.Members,
-				Tags:    cond.Map(r.Tags),
+				Tags:    cond.Map(mapping.InterfaceMap(r.Tags)),
 			})
 			d.relsMtx.Unlock()
 
@@ -92,7 +93,7 @@ func (d *dataHandler) ReadRelation(r gosmparse.Relation) {
 }
 
 type elemCache struct {
-	nodes    map[int64]spatial.Point
+	nodes    map[int64]*spatial.Point
 	nodesMtx sync.Mutex
 	ways     map[int64][]int64
 	waysMtx  sync.Mutex
@@ -100,7 +101,7 @@ type elemCache struct {
 
 func NewElemCache() *elemCache {
 	return &elemCache{
-		nodes: map[int64]spatial.Point{},
+		nodes: map[int64]*spatial.Point{},
 		ways:  map[int64][]int64{},
 	}
 }
@@ -108,7 +109,7 @@ func NewElemCache() *elemCache {
 func (d *elemCache) AddNodes(nIDs ...int64) {
 	d.nodesMtx.Lock()
 	for _, nID := range nIDs {
-		d.nodes[nID] = spatial.Point{}
+		d.nodes[nID] = &spatial.Point{}
 	}
 	d.nodesMtx.Unlock()
 }
@@ -119,9 +120,12 @@ func (d *elemCache) AddWay(wID int64) {
 	d.waysMtx.Unlock()
 }
 
-func (d *elemCache) SetCoord(nID int64, coord spatial.Point) {
+func (d *elemCache) SetCoord(nID int64, x, y float64) {
 	d.nodesMtx.Lock()
-	d.nodes[nID] = coord
+	if d.nodes[nID] != nil {
+		d.nodes[nID].SetX(x)
+		d.nodes[nID].SetY(y)
+	}
 	d.nodesMtx.Unlock()
 }
 
@@ -150,7 +154,7 @@ func (d *elemCache) Line(wID int64) spatial.Line {
 
 	var l spatial.Line
 	for _, memb := range membs {
-		l = append(l, d.nodes[memb])
+		l = append(l, *d.nodes[memb])
 	}
 	return l
 }
@@ -164,7 +168,7 @@ type nodeCollector struct {
 }
 
 func (d *nodeCollector) ReadNode(n gosmparse.Node) {
-	d.ec.SetCoord(n.ID, spatial.Point{float64(n.Lon), float64(n.Lat)})
+	d.ec.SetCoord(n.ID, n.Lon, n.Lat)
 }
 func (d *nodeCollector) ReadWay(w gosmparse.Way)           {}
 func (d *nodeCollector) ReadRelation(r gosmparse.Relation) {}
@@ -173,6 +177,7 @@ func main() {
 	source := flag.String("in", "osm.pbf", "")
 	outfile := flag.String("out", "osm.spaten", "")
 	mappingPath := flag.String("mapping", "", "path to mapping file. default mapping will be applied if none is specified")
+	memprofile := flag.String("memprofile", "", "write memory profile to this file")
 	flag.Parse()
 
 	var conds []mapping.Condition
@@ -236,6 +241,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if len(*memprofile) != 0 {
+		mp, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.WriteHeapProfile(mp)
+		mp.Close()
+	}
+
 	var fc []spatial.Feature
 
 	log.Println("Parsing completed.")
@@ -286,19 +300,29 @@ func main() {
 	log.Println("Assembling relations...")
 	for _, rl := range dh.rels {
 		if v, ok := rl.Tags["type"]; !ok || v != "multipolygon" {
-			continue
+			if v, ok := rl.Tags["__type"]; !ok || v != "area" {
+				continue
+			}
 		}
 		var poly spatial.Polygon
 
 		for _, memb := range rl.Members {
 			if memb.Role == "outer" || memb.Role == "inner" {
 				ring := ec.Line(memb.ID)
+				if len(ring) < 3 {
+					log.Println("rings with less than 3 points are currently unsupported")
+					continue
+				}
 				if (memb.Role == "outer" && ring.Clockwise()) || (memb.Role == "inner" && !ring.Clockwise()) {
 					ring.Reverse()
 				}
 				poly = append(poly, ring)
 			}
 		}
+		fc = append(fc, spatial.Feature{
+			Props:    rl.Tags,
+			Geometry: spatial.MustNewGeom(poly),
+		})
 	}
 
 	log.Println("Writing out")
@@ -307,7 +331,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var outCodec spaten.Codec
-	err = outCodec.Encode(of, &spatial.FeatureCollection{fc, "4326"})
+	err = outCodec.Encode(of, &spatial.FeatureCollection{Features: fc, SRID: "4326"})
 	if err != nil {
 		log.Fatal(err)
 	}

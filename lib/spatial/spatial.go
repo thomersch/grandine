@@ -49,7 +49,7 @@ func (f Feature) MarshalJSON() ([]byte, error) {
 }
 
 func bboxToRect(bbox BBox) *rtreego.Rect {
-	dist := []float64{bbox.NE.X() - bbox.SW.X(), bbox.NE.Y() - bbox.SW.Y()}
+	dist := []float64{bbox.NE.X - bbox.SW.X, bbox.NE.Y - bbox.SW.Y}
 	// rtreego doesn't allow zero sized bboxes
 	if dist[0] == 0 {
 		dist[0] = math.SmallestNonzeroFloat64
@@ -57,7 +57,7 @@ func bboxToRect(bbox BBox) *rtreego.Rect {
 	if dist[1] == 0 {
 		dist[1] = math.SmallestNonzeroFloat64
 	}
-	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X(), bbox.SW.Y()}, dist)
+	r, err := rtreego.NewRect(rtreego.Point{bbox.SW.X, bbox.SW.Y}, dist)
 	if err != nil {
 		panic(err)
 	}
@@ -68,6 +68,10 @@ type FeatureCollection struct {
 	Features []Feature `json:"features"`
 	SRID     string    `json:"-"`
 } // TODO: consider adding properties field
+
+func NewFeatureCollection() *FeatureCollection {
+	return &FeatureCollection{Features: []Feature{}}
+}
 
 // Deprecated. Please use geojson.Codec.
 func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
@@ -90,6 +94,11 @@ func (fc *FeatureCollection) Filter(bbox BBox) []Feature {
 		}
 	}
 	return filtered
+}
+
+// Reset removes all features.
+func (fc *FeatureCollection) Reset() {
+	fc.Features = []Feature{}
 }
 
 type rtreeFeat Feature

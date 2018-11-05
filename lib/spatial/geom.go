@@ -21,6 +21,18 @@ const (
 	GeomTypeInvalid
 )
 
+func (g GeomType) String() string {
+	switch g {
+	case 1:
+		return "Point"
+	case 2:
+		return "LineString"
+	case 3:
+		return "Polygon"
+	}
+	return "Invalid"
+}
+
 type Geom struct {
 	typ GeomType
 	g   interface{}
@@ -82,11 +94,11 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 	switch strings.ToLower(wg.Type) {
 	case "point":
 		g.typ = GeomTypePoint
-		var p Point
-		if err = json.Unmarshal(wg.Coordinates, &p); err != nil {
+		var pt Point
+		if err = json.Unmarshal(wg.Coordinates, &pt); err != nil {
 			return err
 		}
-		g.g = p
+		g.g = pt
 	case "linestring":
 		g.typ = GeomTypeLineString
 		var ls Line
@@ -138,10 +150,12 @@ func (g Geom) MarshalJSON() ([]byte, error) {
 		}
 	case GeomTypePolygon:
 		wg.Type = "Polygon"
-		// TODO: each ring must end with first point in ring
 		poly, err := g.Polygon()
 		if err != nil {
 			return nil, err
+		}
+		for ringN := range poly {
+			poly[ringN] = append(poly[ringN], poly[ringN][0])
 		}
 		wg.Coordinates, err = json.Marshal(poly)
 		if err != nil {
@@ -259,6 +273,14 @@ func (g *Geom) LineString() (Line, error) {
 		return nil, errors.New("geometry is not a LineString")
 	}
 	return geom, nil
+}
+
+func (g *Geom) MustLineString() Line {
+	l, err := g.LineString()
+	if err != nil {
+		panic(err)
+	}
+	return l
 }
 
 func (g *Geom) Polygon() (Polygon, error) {

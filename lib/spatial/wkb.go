@@ -1,6 +1,8 @@
 package spatial
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"math"
 )
@@ -14,7 +16,40 @@ type WKBableWithProps interface {
 	PropertyRetriever
 }
 
-const wkbRawPointSize = 16
+const (
+	wkbRawPointSize = 16
+	wkbLittleEndian = 1
+)
+
+func GeomFromWKB(r io.Reader) (Geom, error) {
+	var (
+		g             Geom
+		wkbEndianness = make([]byte, 1)
+	)
+	_, err := r.Read(wkbEndianness)
+	if err != nil {
+		return g, err
+	}
+	if wkbEndianness[0] != wkbLittleEndian {
+		return g, errors.New("only little endian is supported")
+	}
+
+	g.typ, err = wkbReadHeader(r)
+	if err != nil {
+		return g, err
+	}
+	switch g.typ {
+	case GeomTypePoint:
+		g.g, err = wkbReadPoint(r)
+	case GeomTypeLineString:
+		g.g, err = wkbReadLineString(r)
+	case GeomTypePolygon:
+		g.g, err = wkbReadPolygon(r)
+	default:
+		return g, fmt.Errorf("unsupported GeomType: %v", g.typ)
+	}
+	return g, err
+}
 
 func wkbReadHeader(r io.Reader) (GeomType, error) {
 	var buf = make([]byte, 4)
@@ -28,8 +63,8 @@ func wkbWritePoint(w io.Writer, p Point) error {
 		err error
 		buf = make([]byte, wkbRawPointSize)
 	)
-	endianness.PutUint64(buf[:8], math.Float64bits(p.X()))
-	endianness.PutUint64(buf[8:16], math.Float64bits(p.Y()))
+	endianness.PutUint64(buf[:8], math.Float64bits(p.X))
+	endianness.PutUint64(buf[8:16], math.Float64bits(p.Y))
 	_, err = w.Write(buf)
 	if err != nil {
 		return err
@@ -65,7 +100,7 @@ func wkbWritePolygon(w io.Writer, poly Polygon) error {
 	}
 
 	for _, ring := range poly {
-		err = wkbWriteLineString(w, ring)
+		err = wkbWriteLineString(w, append(ring, ring[0])) // wkb closes rings with the first element, the internal implementation doesn't
 		if err != nil {
 			return err
 		}
@@ -83,21 +118,24 @@ func wkbReadPoint(r io.Reader) (p Point, err error) {
 	if err != nil {
 		return
 	}
-	p[0] = math.Float64frombits(endianness.Uint64(buf[:8]))
-	p[1] = math.Float64frombits(endianness.Uint64(buf[8:16]))
+	p.X = math.Float64frombits(endianness.Uint64(buf[:8]))
+	p.Y = math.Float64frombits(endianness.Uint64(buf[8:16]))
 	return
 }
 
 // TODO: evaluate returning Geom instead of Point
-func wkbReadLineString(r io.Reader) ([]Point, error) {
+func wkbReadLineString(r io.Reader) (Line, error) {
 	var buf = make([]byte, 4)
 	_, err := r.Read(buf)
 	if err != nil {
 		return nil, err
 	}
 	nop := endianness.Uint32(buf)
+	if nop == 0 {
+		return nil, errors.New("a linestring needs to have at least one point")
+	}
 
-	var ls = make([]Point, nop)
+	var ls = make(Line, nop)
 	for i := 0; i < int(nop); i++ {
 		ls[i], err = wkbReadPoint(r)
 		if err != nil {
@@ -107,20 +145,24 @@ func wkbReadLineString(r io.Reader) ([]Point, error) {
 	return ls, nil
 }
 
-func wkbReadPolygon(r io.Reader) ([][]Point, error) {
+func wkbReadPolygon(r io.Reader) (Polygon, error) {
 	var buf = make([]byte, 4)
 	_, err := r.Read(buf)
 	if err != nil {
 		return nil, err
 	}
 	nor := endianness.Uint32(buf)
+	if nor == 0 {
+		return nil, errors.New("a polygon needs to have at least one ring")
+	}
 
-	var rings = make([][]Point, nor)
+	var rings = make(Polygon, nor)
 	for i := 0; i < int(nor); i++ {
 		rings[i], err = wkbReadLineString(r)
 		if err != nil {
 			return rings, err
 		}
+		rings[i] = rings[i][:len(rings[i])-1] // wkb closes rings with the first element, the internal implementation doesn't
 	}
 	return rings, err
 }

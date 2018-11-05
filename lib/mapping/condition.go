@@ -1,6 +1,6 @@
 package mapping
 
-type tagMapFn func(map[string]string) map[string]interface{}
+type tagMapFn func(map[string]interface{}) map[string]interface{}
 
 type Condition struct {
 	// TODO: make it possible to specify Condition type (node/way/rel)
@@ -9,7 +9,7 @@ type Condition struct {
 	mapper tagMapFn
 }
 
-func (c *Condition) Matches(kv map[string]string) bool {
+func (c *Condition) Matches(kv map[string]interface{}) bool {
 	if v, ok := kv[c.key]; ok {
 		if len(c.value) == 0 || c.value == v {
 			return true
@@ -18,6 +18,6 @@ func (c *Condition) Matches(kv map[string]string) bool {
 	return false
 }
 
-func (c *Condition) Map(kv map[string]string) map[string]interface{} {
+func (c *Condition) Map(kv map[string]interface{}) map[string]interface{} {
 	return c.mapper(kv)
 }

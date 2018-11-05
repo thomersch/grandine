@@ -4,8 +4,8 @@ import "github.com/thomersch/grandine/lib/spatial"
 
 func Coverage(bb spatial.BBox, zoom int) []ID {
 	// Tiles are counted from top-left to bottom-right
-	tl := spatial.Point{bb.SW.X(), bb.NE.Y()}
-	br := spatial.Point{bb.NE.X(), bb.SW.Y()}
+	tl := spatial.Point{bb.SW.X, bb.NE.Y}
+	br := spatial.Point{bb.NE.X, bb.SW.Y}
 
 	p1 := TileName(tl, zoom)
 	p2 := TileName(br, zoom)

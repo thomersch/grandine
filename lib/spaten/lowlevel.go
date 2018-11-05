@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 
@@ -45,7 +46,7 @@ func ReadFileHeader(r io.Reader) (Header, error) {
 		hd   Header
 	)
 	if _, err := r.Read(ck); err != nil {
-		return hd, err
+		return hd, fmt.Errorf("could not read file header cookie: %s", err)
 	}
 	if string(ck) != cookie {
 		return hd, errors.New("invalid cookie")
@@ -126,66 +127,83 @@ func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
 	return tags, nil
 }
 
-// ReadBlocks is an interface for reading all features from a file at once.
-func ReadBlocks(r io.Reader, fs *spatial.FeatureCollection) error {
-	for {
-		var (
-			blockLength uint32
-			flags       uint16
-			compression uint8
-			messageType uint8
-		)
-		if err := binary.Read(r, binary.LittleEndian, &blockLength); err != nil {
-			if err == io.EOF {
-				break
-			}
+type blockHeader struct {
+	bodyLen     uint32
+	flags       uint16
+	compression uint8
+	messageType uint8
+}
+
+func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
+	var hd blockHeader
+
+	headerBuf := make([]byte, 8)
+	n, err := r.Read(headerBuf)
+	if n == 0 {
+		return io.EOF
+	}
+	if err != nil {
+		return fmt.Errorf("could not read block header: %v", err)
+	}
+
+	hd.bodyLen = binary.LittleEndian.Uint32(headerBuf[0:4])
+	hd.flags = binary.LittleEndian.Uint16(headerBuf[4:6])
+	hd.compression = uint8(headerBuf[6])
+	if hd.compression != 0 {
+		return errors.New("compression is not supported")
+	}
+
+	hd.messageType = uint8(headerBuf[7])
+	if hd.messageType != 0 {
+		return errors.New("message type is not supported")
+	}
+
+	var (
+		buf       = make([]byte, hd.bodyLen)
+		blockBody fileformat.Body
+	)
+	if n, err := r.Read(buf); err != nil {
+		return err
+	} else if n != int(hd.bodyLen) {
+		return fmt.Errorf("incomplete block: expected %v bytes, %v available", hd.bodyLen, n)
+	}
+	if err := proto.Unmarshal(buf, &blockBody); err != nil {
+		return err
+	}
+	for _, f := range blockBody.GetFeature() {
+		var geomBuf = bytes.NewBuffer(f.GetGeom())
+		geom, err := spatial.GeomFromWKB(geomBuf)
+		if err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
-			return err
-		}
-		if err := binary.Read(r, binary.LittleEndian, &compression); err != nil {
-			if compression != 0 {
-				return errors.New("compression is not supported")
-			}
-		}
-		if err := binary.Read(r, binary.LittleEndian, &messageType); err != nil {
-			if messageType != 0 {
-				return errors.New("message type is not supported")
-			}
+		feature := spatial.Feature{
+			Props:    map[string]interface{}{},
+			Geometry: geom,
 		}
 
-		var (
-			buf       = make([]byte, blockLength)
-			blockBody fileformat.Body
-		)
-		if _, err := r.Read(buf); err != nil {
-			return err
-		}
-		if err := proto.Unmarshal(buf, &blockBody); err != nil {
-			return err
-		}
-		for _, f := range blockBody.GetFeature() {
-			var (
-				feature = spatial.Feature{
-					Props: map[string]interface{}{},
-				}
-				geomBuf = bytes.NewBuffer(f.GetGeom())
-			)
-			err := feature.Geometry.UnmarshalWKB(geomBuf)
+		for _, tag := range f.Tags {
+			k, v, err := fileformat.KeyValue(tag)
 			if err != nil {
+				// TODO
 				return err
 			}
+			feature.Props[k] = v
+		}
+		fs.Features = append(fs.Features, feature)
+	}
+	return nil
+}
 
-			for _, tag := range f.Tags {
-				k, v, err := fileformat.KeyValue(tag)
-				if err != nil {
-					// TODO
-					return err
-				}
-				feature.Props[k] = v
-			}
-			fs.Features = append(fs.Features, feature)
+// ReadBlocks is a function for reading all features from a file at once.
+func ReadBlocks(r io.Reader, fs *spatial.FeatureCollection) error {
+	var err error
+	for {
+		err = readBlock(r, fs)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil

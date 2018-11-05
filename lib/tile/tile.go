@@ -19,7 +19,7 @@ type ID struct {
 func (t ID) BBox() spatial.BBox {
 	nw := t.NW()
 	se := ID{X: t.X + 1, Y: t.Y + 1, Z: t.Z}.NW()
-	return spatial.BBox{SW: spatial.Point{nw.X(), se.Y()}, NE: spatial.Point{se.X(), nw.Y()}}
+	return spatial.BBox{SW: spatial.Point{nw.X, se.Y}, NE: spatial.Point{se.X, nw.Y}}
 }
 
 func (t ID) NW() spatial.Point {
@@ -37,11 +37,11 @@ func (t ID) String() string {
 func TileName(p spatial.Point, zoom int) ID {
 	var (
 		zf     = float64(zoom)
-		latDeg = float64(floatBetween(-1*wgs84LatMax, wgs84LatMax, p.Y()) * math.Pi / 180)
+		latDeg = float64(floatBetween(-1*wgs84LatMax, wgs84LatMax, p.Y) * math.Pi / 180)
 	)
 	return ID{
 		X: between(0, int(math.Exp2(zf)-1),
-			int(math.Floor((float64(p.X())+180)/360*math.Exp2(zf)))),
+			int(math.Floor((float64(p.X)+180)/360*math.Exp2(zf)))),
 		Y: between(0, int(math.Exp2(zf)-1),
 			int(math.Floor((1-math.Log(math.Tan(latDeg)+1/math.Cos(latDeg))/math.Pi)/2*math.Exp2(zf)))),
 		Z: zoom,

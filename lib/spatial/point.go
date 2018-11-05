@@ -1,23 +1,16 @@
 package spatial
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 )
 
-type Point [2]float64
-
-func (p Point) X() float64 {
-	return p[0]
-}
-
-func (p Point) Y() float64 {
-	return p[1]
-}
+type Point struct{ X, Y float64 }
 
 func (p Point) InBBox(b BBox) bool {
-	return b.SW[0] <= p[0] && b.NE[0] >= p[0] &&
-		b.SW[1] <= p[1] && b.NE[1] >= p[1]
+	return b.SW.X <= p.X && b.NE.X >= p.X &&
+		b.SW.Y <= p.Y && b.NE.Y >= p.Y
 }
 
 func (p Point) ClipToBBox(b BBox) []Geom {
@@ -29,15 +22,37 @@ func (p Point) ClipToBBox(b BBox) []Geom {
 }
 
 func (p Point) String() string {
-	return fmt.Sprintf("(X: %v, Y: %v)", p.X(), p.Y())
+	return fmt.Sprintf("(X: %v, Y: %v)", p.X, p.Y)
+}
+
+func (p Point) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]float64{p.X, p.Y})
+}
+
+func (p *Point) SetX(x float64) {
+	p.X = x
+}
+
+func (p *Point) SetY(y float64) {
+	p.Y = y
+}
+
+func (p *Point) UnmarshalJSON(buf []byte) error {
+	var arrayPt [2]float64
+	if err := json.Unmarshal(buf, &arrayPt); err != nil {
+		return err
+	}
+	p.X = arrayPt[0]
+	p.Y = arrayPt[1]
+	return nil
 }
 
 const pointPrecision = 8
 
 func (p Point) RoundedCoords() Point {
 	return Point{
-		roundWithPrecision(p[0], pointPrecision),
-		roundWithPrecision(p[1], pointPrecision),
+		roundWithPrecision(p.X, pointPrecision),
+		roundWithPrecision(p.Y, pointPrecision),
 	}
 }
 
@@ -47,7 +62,7 @@ func (p Point) InPolygon(poly Polygon) bool {
 		return false
 	}
 
-	outTestPoint := Point{bbox.SW[0] - 1, bbox.SW[1] - 1}
+	outTestPoint := Point{bbox.SW.X - 1, bbox.SW.Y - 1}
 
 	var allsegs []Segment
 	for _, ln := range poly {

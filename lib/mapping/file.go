@@ -13,7 +13,7 @@ import (
 type fileMapKV struct {
 	Key   string      `yaml:"key"`
 	Value interface{} `yaml:"value"`
-	Typ   string      `yaml:"type"`
+	Typ   mapType     `yaml:"type"`
 }
 
 type fileMap struct {
@@ -25,7 +25,7 @@ type fileMappings []fileMap
 
 type typedField struct {
 	Name string
-	Typ  string
+	Typ  mapType
 }
 
 func ParseMapping(r io.Reader) ([]Condition, error) {
@@ -61,6 +61,7 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 				if dv[0:1] != "$" {
 					staticKV[kvm.Key] = dv
 				} else {
+					// TODO: this can probably be optimized by generating more specific methods at parse time
 					dynamicKV[kvm.Key] = typedField{Name: dv[1:], Typ: kvm.Typ}
 				}
 			}
@@ -86,7 +87,7 @@ type staticMapper struct {
 	staticElems map[string]interface{}
 }
 
-func (sm *staticMapper) Map(_ map[string]string) map[string]interface{} {
+func (sm *staticMapper) Map(_ map[string]interface{}) map[string]interface{} {
 	return sm.staticElems
 }
 
@@ -95,24 +96,49 @@ type dynamicMapper struct {
 	dynamicElems map[string]typedField
 }
 
-func (dm *dynamicMapper) Map(src map[string]string) map[string]interface{} {
-	var vals = map[string]interface{}{}
+func (dm *dynamicMapper) Map(src map[string]interface{}) map[string]interface{} {
+	var (
+		vals = map[string]interface{}{}
+		err  error
+	)
 	for k, v := range dm.staticElems {
 		vals[k] = v
 	}
 	for keyName, field := range dm.dynamicElems {
 		if srcV, ok := src[field.Name]; ok {
-			if field.Typ == "int" {
-				v, err := strconv.Atoi(srcV)
-				if err == nil {
-					vals[keyName] = v
-				}
-			} else {
+			switch field.Typ {
+			case mapTypeInt:
+				vals[keyName], err = dm.toInt(srcV)
+			default:
 				vals[keyName] = srcV
 			}
-		} else {
-			log.Printf("field '%s' does not exist", field.Name)
+			if err != nil {
+				log.Println(err) // Not sure if this won't get too verbose. Let's keep it for some time here.
+				vals[keyName] = srcV
+				err = nil
+			}
 		}
 	}
 	return vals
+}
+
+func (dm *dynamicMapper) toInt(i interface{}) (int, error) {
+	switch v := i.(type) {
+	case string:
+		k, err := strconv.Atoi(v)
+		if err == nil {
+			return k, nil
+		}
+		if v == "yes" {
+			return 1, nil
+		}
+		if v == "no" {
+			return 0, nil
+		}
+		return 0, err
+	case int:
+		return v, nil
+	default:
+		return 0, fmt.Errorf("cannot convert %v (type %T) to int", v, v)
+	}
 }

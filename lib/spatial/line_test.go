@@ -340,7 +340,7 @@ func TestLineCenter(t *testing.T) {
 
 	line2 := Line{{0, 0}, {0, 2}, {8, 2}, {8, 8}, {0, 8}, {0, 10}, {10, 10}, {10, 0}}
 	l2ctr := line2.Center()
-	l2ctr[0] = math.Ceil(l2ctr[0])
+	l2ctr.X = math.Ceil(l2ctr.X)
 	assert.Equal(t, Point{6, 5}, l2ctr)
 }
 

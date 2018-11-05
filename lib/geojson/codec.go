@@ -30,9 +30,12 @@ func (c *Codec) Decode(r io.Reader, fc *spatial.FeatureCollection) error {
 
 func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	geojsonFC := featureColl{
-		Type: "FeatureCollection",
-		// TODO: set CRS
+		Type:     "FeatureCollection",
 		Features: fc.Features,
+	}
+	if len(fc.SRID) != 0 {
+		geojsonFC.CRS.Properties.Name, _ = sridOGC[fc.SRID]
+		geojsonFC.CRS.Type = "name"
 	}
 	return json.NewEncoder(w).Encode(&geojsonFC)
 }
@@ -44,10 +47,10 @@ func (c *Codec) Extensions() []string {
 type featureColl struct {
 	Type string `json:"type"`
 	CRS  struct {
-		Type       string
+		Type       string `json:"type"`
 		Properties struct {
-			Name string
-		}
+			Name string `json:"name"`
+		} `json:"properties"`
 	} `json:"crs"`
-	Features []spatial.Feature
+	Features []spatial.Feature `json:"features"`
 }

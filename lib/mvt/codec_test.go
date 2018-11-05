@@ -146,3 +146,36 @@ func TestEncodeTile(t *testing.T) {
 	var b bytes.Buffer
 	b.Write(buf)
 }
+
+func TestEncodeLine(t *testing.T) {
+	var (
+		cur [2]int
+		tp  = tileParams{
+			extent:  10,
+			xScale:  100000,
+			yScale:  100000,
+			xOffset: 0,
+			yOffset: 0,
+		}
+	)
+	ln := encodeLine(spatial.Line{{0, 1}, {3, 4}, {10, 1}}, &cur, tp)
+	assert.Equal(t, []uint32{9, 0, 1, 18, 666, 7, 1560, 8}, ln)
+}
+
+func BenchmarkEncodeLine(b *testing.B) {
+	tp := tileParams{
+		extent:  10,
+		xScale:  100000,
+		yScale:  100000,
+		xOffset: 0,
+		yOffset: 0,
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	ln := spatial.Line{{0, 0}, {3, 5}, {1, 2}, {3, 4}, {10, 9}}
+	for i := 0; i < b.N; i++ {
+		var cur [2]int
+		encodeLine(ln, &cur, tp)
+	}
+}

@@ -29,7 +29,19 @@ var (
 	vtLayerVersion = uint32(2)
 
 	skipAtKeys = true // if enabled keys that start with "@" will be ignored
+
+	errNoGeom = errors.New("no valid geometries")
 )
+
+type Codec struct{}
+
+func (c *Codec) EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, error) {
+	return EncodeTile(features, tid)
+}
+
+func (c *Codec) Extension() string {
+	return "mvt"
+}
 
 func encodeCommandInt(c cmd, count uint32) uint32 {
 	return (uint32(c) & 0x7) | (count << 3)
@@ -48,6 +60,10 @@ func EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
+	if len(vtile.Layers) == 0 {
+		log.Println("no layers")
+		return nil, nil
+	}
 	return proto.Marshal(&vtile)
 }
 
@@ -57,6 +73,10 @@ func assembleTile(features map[string][]spatial.Feature, tid tile.ID) (vt.Tile, 
 		layer, err := assembleLayer(layerFeats, tid)
 		if err != nil {
 			return vtile, err
+		}
+		if len(layer.Features) == 0 {
+			log.Println("no features")
+			continue
 		}
 		var ln = layerName
 		layer.Name = &ln // &layerName can't be used directly, because pointers are reused in for range loops
@@ -123,7 +143,7 @@ func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, erro
 	var (
 		tl   vt.Tile_Layer
 		err  error
-		ext  = uint32(4096)
+		ext  = uint32(extent)
 		keys = tagElems{}
 		vals = tagElems{}
 	)
@@ -141,6 +161,9 @@ func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, erro
 		}
 
 		tileFeat.Geometry, err = encodeGeometry([]spatial.Geom{feat.Geometry}, tid)
+		if len(tileFeat.Geometry) == 0 || err == errNoGeom {
+			continue
+		}
 		if err != nil {
 			return tl, err
 		}
@@ -170,10 +193,13 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 		cur    [2]int
 		dx, dy int
 		// the following four lines might be optimized
-		bbox             = tid.BBox()
-		xScale, yScale   = tileScalingFactor(bbox, extent)
-		xOffset, yOffset = tileOffset(bbox)
+		tp   tileParams
+		bbox = tid.BBox()
 	)
+	tp.xScale, tp.yScale = tileScalingFactor(bbox, extent)
+	tp.xOffset, tp.yOffset = tileOffset(bbox)
+	tp.extent = extent
+
 	var typ spatial.GeomType
 	for _, geom := range geoms {
 		if typ != 0 && typ != geom.Typ() {
@@ -185,7 +211,7 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 		switch geom.Typ() {
 		case spatial.GeomTypePoint:
 			pt, _ := geom.Point()
-			tX, tY := tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
+			tX, tY := tileCoord(pt, tp)
 			if tX > extent || tY > extent {
 				log.Printf("%v is outside of tile", pt)
 			}
@@ -195,13 +221,16 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
 		case spatial.GeomTypeLineString:
 			ln, _ := geom.LineString()
-			commands = append(commands, encodeLine(ln, &cur, extent, xScale, yScale, xOffset, yOffset)...)
+			commands = append(commands, encodeLine(ln, &cur, tp)...)
 		case spatial.GeomTypePolygon:
 			poly, _ := geom.Polygon()
 
 			for _, ring := range poly {
-				// log.Println(encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset))
-				commands = append(commands, encodeLine(ring, &cur, extent, xScale, yScale, xOffset, yOffset)...)
+				l := encodeLine(ring, &cur, tp)
+				if l == nil {
+					return nil, errNoGeom
+				}
+				commands = append(commands, l...)
 				commands = append(commands, encodeCommandInt(cmdClosePath, 1))
 			}
 		}
@@ -209,24 +238,42 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 	return commands, nil
 }
 
-func encodeLine(ln spatial.Line, cur *[2]int, extent int, xScale, yScale, xOffset, yOffset float64) (commands []uint32) {
-	tX, tY := tileCoord(ln[0], extent, xScale, yScale, xOffset, yOffset)
-	dx := tX - int(cur[0])
-	dy := tY - int(cur[1])
-	cur[0] = cur[0] + dx
-	cur[1] = cur[1] + dy
+func encodeLine(ln spatial.Line, cur *[2]int, tp tileParams) []uint32 {
+	tlCrds := lineToTileCoords(ln, tp)
 
-	commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy),
-		encodeCommandInt(cmdLineTo, uint32(len(ln)-1)))
-
-	// TODO: skip points if they're 0/0
-	for _, pt := range ln[1:] {
-		tX, tY = tileCoord(pt, extent, xScale, yScale, xOffset, yOffset)
-		dx = tX - int(cur[0])
-		dy = tY - int(cur[1])
-		commands = append(commands, encodeZigZag(dx), encodeZigZag(dy))
-		cur[0] = cur[0] + dx
-		cur[1] = cur[1] + dy
+	var (
+		commands = make([]uint32, len(ln)*2+2) // len=number of coordinates + initial move to + size
+		dx, dy   int
+	)
+	commands[0] = encodeCommandInt(cmdMoveTo, 1)
+	commands[3] = encodeCommandInt(cmdLineTo, uint32(len(commands)-4)/2)
+	for i, tc := range tlCrds {
+		dx = int(tc.X) - cur[0]
+		dy = int(tc.Y) - cur[1]
+		cur[0] = int(tc.X)
+		cur[1] = int(tc.Y)
+		if i == 0 {
+			commands[1] = encodeZigZag(int(dx))
+			commands[2] = encodeZigZag(int(dy))
+		} else {
+			commands[i+i+2] = encodeZigZag(int(dx))
+			commands[i+i+3] = encodeZigZag(int(dy))
+		}
 	}
 	return commands
+}
+
+func lineToTileCoords(ln spatial.Line, tp tileParams) spatial.Line {
+	var (
+		tlCrds = make(spatial.Line, 0, len(ln))
+		tx, ty int
+	)
+	for _, pt := range ln {
+		tx, ty = tileCoord(pt, tp)
+		tlCrds = append(tlCrds, spatial.Point{float64(tx), float64(ty)})
+	}
+	if tlCrds[0] == tlCrds[len(tlCrds)-1] {
+		return nil
+	}
+	return tlCrds
 }
