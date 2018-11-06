@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/thomersch/grandine/lib/spatial"
 )
@@ -52,5 +53,54 @@ type featureColl struct {
 			Name string `json:"name"`
 		} `json:"properties"`
 	} `json:"crs"`
-	Features []spatial.Feature `json:"features"`
+	Features featList `json:"features"`
+}
+
+type featureProto struct {
+	Geometry struct {
+		Type        string          `json:"type"`
+		Coordinates json.RawMessage `json:"coordinates"`
+	}
+	Properties map[string]interface{} `json:"properties"`
+}
+
+type featList []spatial.Feature
+
+func (fl *featList) UnmarshalJSON(buf []byte) error {
+	var fts []featureProto
+	err := json.Unmarshal(buf, &fts)
+	if err != nil {
+		return err
+	}
+
+	*fl = make([]spatial.Feature, 0, len(fts))
+	for _, inft := range fts {
+		if singularType(inft.Geometry.Type) {
+			var ft spatial.Feature
+			ft.Props = inft.Properties
+			err = ft.Geometry.UnmarshalJSONCoords(inft.Geometry.Type, inft.Geometry.Coordinates)
+			if err != nil {
+				return err
+			}
+			*fl = append(*fl, ft)
+		} else {
+			// Because the lib doesn't have native Multi* types, we split those into single geometries.
+			var singles []json.RawMessage
+			json.Unmarshal(inft.Geometry.Coordinates, &singles)
+			for _, single := range singles {
+				var ft spatial.Feature
+				ft.Props = inft.Properties
+				err = ft.Geometry.UnmarshalJSONCoords(inft.Geometry.Type[5:], single)
+				if err != nil {
+					return err
+				}
+				*fl = append(*fl, ft)
+			}
+		}
+	}
+	return nil
+}
+
+func singularType(typ string) bool {
+	return !strings.HasPrefix(strings.ToLower(typ), "multi")
 }

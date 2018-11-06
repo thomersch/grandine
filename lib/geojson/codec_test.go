@@ -20,7 +20,21 @@ func TestDecode(t *testing.T) {
 	)
 	err = c.Decode(f, &fc)
 	assert.Nil(t, err)
-	assert.Equal(t, fc.SRID, "4326")
+	assert.Equal(t, "4326", fc.SRID)
+	assert.Len(t, fc.Features, 1)
+}
+
+func TestDecodeMultipolygon(t *testing.T) {
+	f, err := os.Open("testdata/multipolygon.geojson")
+	assert.Nil(t, err)
+
+	var (
+		c  = &Codec{}
+		fc = spatial.FeatureCollection{}
+	)
+	err = c.Decode(f, &fc)
+	assert.Nil(t, err)
+	assert.Len(t, fc.Features, 2)
 }
 
 func TestEncode(t *testing.T) {
