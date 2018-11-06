@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/thomersch/grandine/lib/geojson"
 	"github.com/thomersch/grandine/lib/spatial"
 )
 
@@ -58,11 +59,18 @@ func (ch *chunk) Scan(fc *spatial.FeatureCollection) error {
 	if ch.err != nil {
 		return ch.err
 	}
-	var ft spatial.Feature
-	err := json.Unmarshal(ch.buf, &ft)
+	var (
+		fp  geojson.FeatureProto
+		fts geojson.FeatList
+	)
+	err := json.Unmarshal(ch.buf, &fp)
 	if err != nil {
 		return err
 	}
-	fc.Features = append(fc.Features, ft)
+	err = fts.UnmarshalJSONCoords(fp)
+	if err != nil {
+		return err
+	}
+	fc.Features = append(fc.Features, fts...)
 	return nil
 }

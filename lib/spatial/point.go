@@ -15,7 +15,7 @@ func (p Point) InBBox(b BBox) bool {
 
 func (p Point) ClipToBBox(b BBox) []Geom {
 	if p.InBBox(b) {
-		g, _ := NewGeom(p)
+		g := MustNewGeom(p)
 		return []Geom{g}
 	}
 	return []Geom{}

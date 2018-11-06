@@ -53,10 +53,10 @@ type featureColl struct {
 			Name string `json:"name"`
 		} `json:"properties"`
 	} `json:"crs"`
-	Features featList `json:"features"`
+	Features FeatList `json:"features"`
 }
 
-type featureProto struct {
+type FeatureProto struct {
 	Geometry struct {
 		Type        string          `json:"type"`
 		Coordinates json.RawMessage `json:"coordinates"`
@@ -64,10 +64,10 @@ type featureProto struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
-type featList []spatial.Feature
+type FeatList []spatial.Feature
 
-func (fl *featList) UnmarshalJSON(buf []byte) error {
-	var fts []featureProto
+func (fl *FeatList) UnmarshalJSON(buf []byte) error {
+	var fts []FeatureProto
 	err := json.Unmarshal(buf, &fts)
 	if err != nil {
 		return err
@@ -75,27 +75,36 @@ func (fl *featList) UnmarshalJSON(buf []byte) error {
 
 	*fl = make([]spatial.Feature, 0, len(fts))
 	for _, inft := range fts {
-		if singularType(inft.Geometry.Type) {
+		err = fl.UnmarshalJSONCoords(inft)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (fl *FeatList) UnmarshalJSONCoords(fp FeatureProto) error {
+	var err error
+	if singularType(fp.Geometry.Type) {
+		var ft spatial.Feature
+		ft.Props = fp.Properties
+		err = ft.Geometry.UnmarshalJSONCoords(fp.Geometry.Type, fp.Geometry.Coordinates)
+		if err != nil {
+			return err
+		}
+		*fl = append(*fl, ft)
+	} else {
+		// Because the lib doesn't have native Multi* types, we split those into single geometries.
+		var singles []json.RawMessage
+		json.Unmarshal(fp.Geometry.Coordinates, &singles)
+		for _, single := range singles {
 			var ft spatial.Feature
-			ft.Props = inft.Properties
-			err = ft.Geometry.UnmarshalJSONCoords(inft.Geometry.Type, inft.Geometry.Coordinates)
+			ft.Props = fp.Properties
+			err = ft.Geometry.UnmarshalJSONCoords(fp.Geometry.Type[5:], single)
 			if err != nil {
 				return err
 			}
 			*fl = append(*fl, ft)
-		} else {
-			// Because the lib doesn't have native Multi* types, we split those into single geometries.
-			var singles []json.RawMessage
-			json.Unmarshal(inft.Geometry.Coordinates, &singles)
-			for _, single := range singles {
-				var ft spatial.Feature
-				ft.Props = inft.Properties
-				err = ft.Geometry.UnmarshalJSONCoords(inft.Geometry.Type[5:], single)
-				if err != nil {
-					return err
-				}
-				*fl = append(*fl, ft)
-			}
 		}
 	}
 	return nil

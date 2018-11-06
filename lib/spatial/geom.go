@@ -90,26 +90,30 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 	if err != nil {
 		return err
 	}
+	return g.UnmarshalJSONCoords(wg.Type, wg.Coordinates)
+}
 
-	switch strings.ToLower(wg.Type) {
+func (g *Geom) UnmarshalJSONCoords(typ string, inner json.RawMessage) error {
+	var err error
+	switch strings.ToLower(typ) {
 	case "point":
 		g.typ = GeomTypePoint
 		var pt Point
-		if err = json.Unmarshal(wg.Coordinates, &pt); err != nil {
+		if err = json.Unmarshal(inner, &pt); err != nil {
 			return err
 		}
 		g.g = pt
 	case "linestring":
 		g.typ = GeomTypeLineString
 		var ls Line
-		if err = json.Unmarshal(wg.Coordinates, &ls); err != nil {
+		if err = json.Unmarshal(inner, &ls); err != nil {
 			return err
 		}
 		g.g = ls
 	case "polygon":
 		g.typ = GeomTypePolygon
 		var poly Polygon
-		if err = json.Unmarshal(wg.Coordinates, &poly); err != nil {
+		if err = json.Unmarshal(inner, &poly); err != nil {
 			return err
 		}
 		// NOTE: the geojson decoder assumes OGC/RFC 7946 compliant winding order
@@ -119,7 +123,7 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 		}
 		g.g = poly
 	default:
-		return fmt.Errorf("unsupported geometry type: %s", wg.Type)
+		return fmt.Errorf("unsupported geometry type: %s", typ)
 	}
 	return nil
 }
