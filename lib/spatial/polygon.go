@@ -1,16 +1,10 @@
 package spatial
 
-import "fmt"
-
 // Polygon is a data type for storing simple polygons.
 type Polygon []Line
 
 func (p Polygon) String() string {
-	s := "Polygon{"
-	for _, line := range p {
-		s += fmt.Sprintf("%v", line)
-	}
-	return s + "}"
+	return stringPolygon(p)
 }
 
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {

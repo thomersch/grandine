@@ -28,3 +28,22 @@ func BenchmarkClipToBBox(b *testing.B) {
 		poly.ClipToBBox(bbox)
 	}
 }
+
+func BenchmarkStringRepr(b *testing.B) {
+	p := Polygon{
+		Line{
+			Point{1, 2}, Point{3, 4},
+		},
+		Line{
+			Point{1, 2}, Point{3, 4},
+		},
+		Line{
+			Point{1, 2}, Point{3, 4},
+		},
+	} // this is probably not valid, but this is not important for that benchmark
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		p.String()
+	}
+}

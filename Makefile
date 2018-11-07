@@ -6,7 +6,7 @@ BINPATH     := bin
 export CGO_CFLAGS=-I. -I/usr/local/include
 export CGO_LDFLAGS=-L/usr/local/lib
 
-build: build-converter build-spatialize build-tiler
+build: build-converter build-inspect build-spatialize build-tiler
 
 build-converter:
 	$(GO) build $(GOBUILDOPTS) -o "$(BINPATH)/grandine-converter" cmd/converter/*.go

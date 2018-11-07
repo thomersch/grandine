@@ -20,6 +20,10 @@ func NewLinesFromSegments(segs []Segment) []Line {
 	return ls
 }
 
+func (l Line) String() string {
+	return stringLine(l)
+}
+
 func (l Line) Center() Point {
 	var (
 		sum float64
