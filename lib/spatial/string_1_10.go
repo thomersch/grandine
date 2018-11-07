@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func stringPolygon(p Polygon) string {
+func (p Polygon) string() string {
 	var b strings.Builder
 	b.WriteByte('(')
 	for pos, line := range p {
@@ -20,7 +20,7 @@ func stringPolygon(p Polygon) string {
 	return b.String()
 }
 
-func stringLine(l Line) string {
+func (l Line) string() string {
 	var b strings.Builder
 	for pos, point := range l {
 		fmt.Fprintf(&b, "%v", point)

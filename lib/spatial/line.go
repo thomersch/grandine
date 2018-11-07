@@ -21,7 +21,7 @@ func NewLinesFromSegments(segs []Segment) []Line {
 }
 
 func (l Line) String() string {
-	return stringLine(l)
+	return l.string()
 }
 
 func (l Line) Center() Point {

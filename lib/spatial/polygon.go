@@ -4,7 +4,7 @@ package spatial
 type Polygon []Line
 
 func (p Polygon) String() string {
-	return stringPolygon(p)
+	return p.string()
 }
 
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {

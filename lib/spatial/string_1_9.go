@@ -4,7 +4,7 @@ package spatial
 
 import "fmt"
 
-func stringPolygon(p Polygon) string {
+func (p Polygon) string() string {
 	s := "("
 	for _, line := range p {
 		s += fmt.Sprintf("%v, ", line)
@@ -12,7 +12,7 @@ func stringPolygon(p Polygon) string {
 	return s[:len(s)-2] + ")"
 }
 
-func stringLine(l Line) string {
+func (l Line) string() string {
 	s := ""
 	for _, point := range l {
 		s += fmt.Sprintf("%v, ", point)
