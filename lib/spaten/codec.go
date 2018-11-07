@@ -8,6 +8,7 @@ import (
 
 type Codec struct {
 	headerWritten bool
+	writeQueue    []spatial.Feature
 }
 
 const blockSize = 1000
@@ -18,7 +19,7 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 		return err
 	}
 
-	for _, ftBlk := range geomBlocks(blockSize, fc.Features) {
+	for _, ftBlk := range featureBlocks(blockSize, fc.Features) {
 		var meta map[string]interface{}
 		if len(fc.SRID) != 0 {
 			meta = map[string]interface{}{
@@ -42,11 +43,28 @@ func (c *Codec) EncodeChunk(w io.Writer, fc *spatial.FeatureCollection) error {
 		}
 		c.headerWritten = true
 	}
-	// TODO: consider splitting up incoming chunks into blocks
-	return WriteBlock(w, fc.Features, nil)
+
+	var newQueue []spatial.Feature
+	c.writeQueue = append(c.writeQueue, fc.Features...)
+	for _, ftBlk := range featureBlocks(blockSize, c.writeQueue) {
+		if len(ftBlk) < blockSize {
+			// the block is not full, so let's schedule for next write
+			newQueue = append(newQueue, ftBlk...)
+		} else {
+			err := WriteBlock(w, ftBlk, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	c.writeQueue = newQueue
+	return nil
 }
 
-func (c *Codec) Close() error {
+func (c *Codec) Close(w io.Writer) error {
+	if len(c.writeQueue) > 0 {
+		return WriteBlock(w, c.writeQueue, nil)
+	}
 	return nil
 }
 
@@ -76,8 +94,8 @@ func (c *Codec) Extensions() []string {
 	return []string{"spaten"}
 }
 
-// geomBlocks slices a slice of geometries into slices with a max size
-func geomBlocks(size int, src []spatial.Feature) [][]spatial.Feature {
+// featureBlocks slices a slice of geometries into slices with a max size
+func featureBlocks(size int, src []spatial.Feature) [][]spatial.Feature {
 	if len(src) <= size {
 		return [][]spatial.Feature{src}
 	}

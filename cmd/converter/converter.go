@@ -204,7 +204,7 @@ func write(w io.Writer, fs *spatial.FeatureCollection, enc spatial.Encoder, cond
 		if err != nil {
 			return func() error { return nil }, err
 		}
-		return func() error { return e.Close() }, nil
+		return func() error { return e.Close(w) }, nil
 	}
 
 	featBuf = append(featBuf, *fs)

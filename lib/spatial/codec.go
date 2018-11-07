@@ -21,7 +21,7 @@ type Encoder interface {
 
 type ChunkedEncoder interface {
 	EncodeChunk(io.Writer, *FeatureCollection) error
-	Close() error
+	Close(io.Writer) error
 }
 
 // A Codec needs to be able to tell which file extensions (e.g. "geojson")
