@@ -71,8 +71,8 @@ var (
 )
 
 func main() {
+	var sourceStdIn bool
 	source := flag.String("in", "", "file to read from, supported format: spaten")
-	sourceStdIn := flag.Bool("std-in", false, "will read the incoming file from stdin")
 	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
@@ -83,11 +83,9 @@ func main() {
 	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
 	flag.Parse()
 
-	if len(*source) != 0 && *sourceStdIn {
-		log.Fatal("please specify only one input: either by filename or from stdin")
-	}
-	if len(*source) == 0 && !*sourceStdIn {
-		log.Fatal("no input specified")
+	if len(*source) == 0 {
+		log.Print("grandine-tiler: Reading from stdin.")
+		sourceStdIn = true
 	}
 
 	if len(zoomlevels) == 0 {
@@ -108,7 +106,7 @@ func main() {
 		err error
 	)
 
-	if len(*source) != 0 {
+	if !sourceStdIn {
 		f, err = os.Open(*source)
 		if err != nil {
 			log.Fatal(err)
@@ -126,7 +124,10 @@ func main() {
 	log.Println("parsing input...")
 	fc := spatial.FeatureCollection{}
 	codec := spaten.Codec{}
-	codec.Decode(f, &fc)
+	err = codec.Decode(f, &fc)
+	if err != nil {
+		log.Fatalf("could not read incoming file: %v", err)
+	}
 
 	if len(fc.Features) == 0 {
 		log.Fatal("no features in input file")
@@ -162,6 +163,7 @@ func main() {
 	// TODO: make codec switchable
 	// tileCodec := tile.GeoJSONCodec{}
 
+	shuffleWork(tc) // randomize order for better worker saturation
 	var (
 		wg       sync.WaitGroup
 		ws       = workerSlices(tc, *workersNumber)

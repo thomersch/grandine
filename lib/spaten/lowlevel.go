@@ -162,10 +162,12 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 		buf       = make([]byte, hd.bodyLen)
 		blockBody fileformat.Body
 	)
-	if n, err := r.Read(buf); err != nil {
-		return err
-	} else if n != int(hd.bodyLen) {
+	n, err = io.ReadFull(r, buf)
+	if n != int(hd.bodyLen) {
 		return fmt.Errorf("incomplete block: expected %v bytes, %v available", hd.bodyLen, n)
+	}
+	if err != nil {
+		return err
 	}
 	if err := proto.Unmarshal(buf, &blockBody); err != nil {
 		return err
