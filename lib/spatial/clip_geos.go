@@ -76,7 +76,11 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 		p    Polygon
 		ring []Point
 	)
-	crds, err := geos.Must(g.Shell()).Coords()
+	sh, err := g.Shell()
+	if err != nil {
+		return Polygon{}
+	}
+	crds, err := sh.Coords()
 	if err != nil {
 		panic(err)
 	}
