@@ -1,6 +1,8 @@
 package spatial
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,4 +65,20 @@ func TestPointInPolygon(t *testing.T) {
 		pt := Point{5, 5}
 		assert.False(t, pt.InPolygon(squareWithHole))
 	})
+}
+
+func TestPointJSONMarshal(t *testing.T) {
+	p := Point{-12.00000000001, 179.1}
+	buf, err := json.Marshal(p)
+	assert.Nil(t, err)
+	fmt.Printf("%s", buf)
+}
+
+func BenchmarkPointJSONMarshal(b *testing.B) {
+	p := Point{12.00000000001, 13.000000000001}
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		json.Marshal(p)
+	}
 }

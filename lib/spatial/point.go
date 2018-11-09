@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 )
 
 type Point struct{ X, Y float64 }
@@ -26,7 +27,12 @@ func (p Point) String() string {
 }
 
 func (p Point) MarshalJSON() ([]byte, error) {
-	return json.Marshal([2]float64{p.X, p.Y})
+	var b = make([]byte, 1, 30)
+	b[0] = '['
+	b = strconv.AppendFloat(b, p.X, 'f', 8, 64)
+	b = append(b, ',')
+	b = strconv.AppendFloat(b, p.Y, 'f', 8, 64)
+	return append(b, ']'), nil
 }
 
 func (p *Point) SetX(x float64) {
