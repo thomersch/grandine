@@ -8,6 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRewind(t *testing.T) {
+	p := Polygon{
+		{{1, 2}, {8, 9}, {10, 12}, {1, 2}},
+		{{0, 1}, {7, 9}, {0, 1}, {2, 12}, {0, 1}},
+	}
+	p.Rewind()
+	assert.Equal(t, Polygon{
+		{{1, 2}, {10, 12}, {8, 9}, {1, 2}},
+		{{0, 1}, {2, 12}, {0, 1}, {7, 9}, {0, 1}},
+	}, p)
+}
+
 func BenchmarkClipToBBox(b *testing.B) {
 	f, err := os.Open("testfiles/polygon_with_holes.geojson")
 	assert.Nil(b, err)

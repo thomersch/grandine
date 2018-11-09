@@ -10,3 +10,9 @@ func (p Polygon) String() string {
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	return p.clipToBBox(bbox)
 }
+
+func (p Polygon) Rewind() {
+	for _, ring := range p {
+		ring.Reverse()
+	}
+}

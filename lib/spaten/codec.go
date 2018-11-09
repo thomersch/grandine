@@ -35,6 +35,7 @@ func (c *Codec) Encode(w io.Writer, fc *spatial.FeatureCollection) error {
 	return nil
 }
 
+// EncodeChunk enqueues features to be written out. Call Close when done with the stream.
 func (c *Codec) EncodeChunk(w io.Writer, fc *spatial.FeatureCollection) error {
 	if !c.headerWritten {
 		err := WriteFileHeader(w)
