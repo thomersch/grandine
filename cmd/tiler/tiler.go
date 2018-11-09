@@ -71,12 +71,16 @@ var (
 )
 
 func main() {
-	var sourceStdIn bool
+	var (
+		sourceStdIn bool
+		tileCodec   tile.Codec
+	)
 	source := flag.String("in", "", "file to read from, supported format: spaten")
 	target := flag.String("out", "tiles", "path where the tiles will be written")
 	defaultLayer := flag.Bool("default-layer", true, "if no layer name is specified in the feature, whether it will be put into a default layer")
 	workersNumber := flag.Int("workers", runtime.GOMAXPROCS(0), "number of workers")
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
+	geojsonCodec := flag.Bool("geojson", false, "encode tiles into geojson instead of MVT, for debugging purposes")
 	compressTiles := flag.Bool("compress", false, "compress tiles with gzip")
 	quiet = flag.Bool("q", false, "argument to use if program should be run in quiet mode with reduced logging")
 
@@ -99,6 +103,12 @@ func main() {
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *geojsonCodec {
+		tileCodec = &tile.GeoJSONCodec{}
+	} else {
+		tileCodec = &mvt.Codec{}
 	}
 
 	var (
@@ -159,9 +169,6 @@ func main() {
 
 	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
-	tileCodec := mvt.Codec{}
-	// TODO: make codec switchable
-	// tileCodec := tile.GeoJSONCodec{}
 
 	shuffleWork(tc) // randomize order for better worker saturation
 	var (
@@ -172,7 +179,7 @@ func main() {
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], ft, &dtw, &tileCodec, &dlm, pb)
+			generateTiles(ws[i], ft, &dtw, tileCodec, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
