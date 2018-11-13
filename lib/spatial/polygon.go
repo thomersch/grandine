@@ -16,3 +16,30 @@ func (p Polygon) Rewind() {
 		ring.Reverse()
 	}
 }
+
+func (p Polygon) FixWinding() {
+	for n, ring := range p {
+		if n == 0 {
+			// First ring must be outer.
+			if ring.Clockwise() {
+				ring.Reverse()
+			}
+			continue
+		}
+		// Compare in how many rings the point is located.
+		// If the number is odd, it's a hole.
+		var inrings int
+		for ninner, cring := range p {
+			if n == ninner {
+				continue
+			}
+			if ring[0].InPolygon(Polygon{cring}) {
+				inrings++
+			}
+		}
+		if (inrings%2 == 0 && ring.Clockwise()) || (inrings%2 == 1 && !ring.Clockwise()) {
+			// log.Println("rewinding")
+			ring.Reverse()
+		}
+	}
+}

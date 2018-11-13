@@ -179,6 +179,10 @@ func (l Line) Simplify(e float64) Line {
 	return Line{seg[0], seg[1]}
 }
 
+func (l Line) Copy() Line {
+	return append(l[:0:0], l...) // https://github.com/go101/go101/wiki/How-to-efficiently-clone-a-slice%3F
+}
+
 // MergeLines is deprecated.
 func MergeLines(l1, l2 Line) Line {
 	// head to head

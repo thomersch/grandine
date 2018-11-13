@@ -116,11 +116,11 @@ func (g *Geom) UnmarshalJSONCoords(typ string, inner json.RawMessage) error {
 		if err = json.Unmarshal(inner, &poly); err != nil {
 			return err
 		}
-		// NOTE: the geojson decoder assumes OGC/RFC 7946 compliant winding order
-		for pos := range poly {
+		for nring := range poly {
 			// remove last element from every ring as it is unnecessary
-			poly[pos] = poly[pos][:len(poly[pos])-1]
+			poly[nring] = poly[nring][:len(poly[nring])-1]
 		}
+		poly.FixWinding() // GeoJSON winding is not reliable, so let's fix it
 		g.g = poly
 	default:
 		return fmt.Errorf("unsupported geometry type: %s", typ)
@@ -293,6 +293,14 @@ func (g *Geom) Polygon() (Polygon, error) {
 		return nil, errors.New("geometry is not a Polygon")
 	}
 	return geom, nil
+}
+
+func (g *Geom) MustPolygon() Polygon {
+	p, err := g.Polygon()
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func (g *Geom) BBox() BBox {

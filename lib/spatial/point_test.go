@@ -65,6 +65,12 @@ func TestPointInPolygon(t *testing.T) {
 		pt := Point{5, 5}
 		assert.False(t, pt.InPolygon(squareWithHole))
 	})
+
+	t.Run("closing segment", func(t *testing.T) {
+		pt := Point{25.48828125, -18.312810846425432}
+		poly := Polygon{Line{Point{X: 7.3828125, Y: -23.241346102386135}, Point{X: 28.4765625, Y: -8.05922962720018}, Point{X: 55.1953125, Y: -11.178401873711772}, Point{X: 22.148437499999996, Y: -33.137551192346145}}}
+		assert.True(t, pt.InPolygon(poly))
+	})
 }
 
 func TestPointJSONMarshal(t *testing.T) {

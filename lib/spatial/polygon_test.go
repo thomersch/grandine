@@ -20,6 +20,46 @@ func TestRewind(t *testing.T) {
 	}, p)
 }
 
+func TestWinding(t *testing.T) {
+	f, err := os.Open("testfiles/winding_wild.geojson")
+	assert.Nil(t, err)
+	defer f.Close()
+
+	var fc FeatureCollection
+	err = json.NewDecoder(f).Decode(&fc)
+	assert.Nil(t, err)
+
+	var outOrder []bool
+	for _, ring := range fc.Features[0].Geometry.MustPolygon() {
+		outOrder = append(outOrder, ring.Clockwise())
+	}
+	assert.Equal(t, []bool{false, true, false, false, true}, outOrder) // correct order
+}
+
+func TestFixWinding(t *testing.T) {
+	g := Geom{typ: GeomTypePolygon, g: Polygon{
+		Line{Point{X: -2.109375, Y: 11.178401873711785}, Point{X: -16.875, Y: -43.06888777416961}, Point{X: 62.57812500000001, Y: -43.580390855607845}, Point{X: 81.5625, Y: 8.407168163601076}},
+		Line{Point{X: 7.3828125, Y: -23.241346102386135}, Point{X: 28.4765625, Y: -8.05922962720018}, Point{X: 55.1953125, Y: -11.178401873711772}, Point{X: 22.148437499999996, Y: -33.137551192346145}},
+		Line{Point{X: 25.48828125, Y: -18.312810846425432}, Point{X: 33.22265625, Y: -16.720385051693988}, Point{X: 34.013671875, Y: -21.207458730482642}, Point{X: 23.466796875, Y: -24.766784522874428}},
+		Line{Point{X: 27.5537109375, Y: -12.618897304044012}, Point{X: 29.02587890625, Y: -12.146745814539685}, Point{X: 29.377441406249996, Y: -14.604847155053898}, Point{X: 26.3671875, Y: -15.855673509998681}},
+		Line{Point{X: 27.0703125, Y: -20.3034175184893}, Point{X: 27.509765625, Y: -21.616579336740593}, Point{X: 31.113281249999996, Y: -19.559790136497398}}}}
+
+	poly := g.MustPolygon()
+	var inOrder []bool
+	for _, ring := range poly {
+		inOrder = append(inOrder, ring.Clockwise())
+	}
+	assert.Equal(t, []bool{true, false, false, false, true}, inOrder) // wild order
+
+	poly.FixWinding()
+
+	var outOrder []bool
+	for _, ring := range poly {
+		outOrder = append(outOrder, ring.Clockwise())
+	}
+	assert.Equal(t, []bool{false, true, false, false, true}, outOrder) // correct order
+}
+
 func BenchmarkClipToBBox(b *testing.B) {
 	f, err := os.Open("testfiles/polygon_with_holes.geojson")
 	assert.Nil(b, err)

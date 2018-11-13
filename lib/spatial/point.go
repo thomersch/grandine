@@ -73,6 +73,7 @@ func (p Point) InPolygon(poly Polygon) bool {
 	var allsegs []Segment
 	for _, ln := range poly {
 		allsegs = append(allsegs, ln.Segments()...)
+		allsegs = append(allsegs, Segment{ln[len(ln)-1], ln[0]}) // closing segment
 	}
 
 	l := Line{p, outTestPoint}
