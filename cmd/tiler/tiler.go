@@ -151,6 +151,9 @@ func main() {
 	)
 	for featID, feat := range fc.Features {
 		for _, zl := range zoomlevels {
+			if !renderable(feat.Props, zl) {
+				continue
+			}
 			for _, tid := range tile.Coverage(feat.Geometry.BBox(), zl) {
 				ft[zl][tid.X][tid.Y] = append(ft[zl][tid.X][tid.Y], &fc.Features[featID])
 			}
@@ -185,6 +188,22 @@ func main() {
 	}
 	wg.Wait()
 	done()
+}
+
+func renderable(props map[string]interface{}, zl int) bool {
+	var (
+		zmin = 0
+		zmax = 99
+	)
+	v, ok := props["@zoom:min"]
+	if ok {
+		zmin, _ = v.(int)
+	}
+	v, ok = props["@zoom:max"]
+	if ok {
+		zmax, _ = v.(int)
+	}
+	return (zmin <= zl) && (zl <= zmax)
 }
 
 func featureTable(zls []int) map[int][][][]*spatial.Feature {
@@ -228,7 +247,7 @@ func (tw *diskTileWriter) WriteTile(tID tile.ID, buf []byte) error {
 	if err != nil {
 		return err
 	}
-	tf, err := os.Create(filepath.Join(tw.basedir, strconv.Itoa(tID.Z), strconv.Itoa(tID.X), strconv.Itoa(tID.Y)+".mvt"))
+	tf, err := os.Create(filepath.Join(tw.basedir, strconv.Itoa(tID.Z), strconv.Itoa(tID.X), strconv.Itoa(tID.Y)+".mvt")) // TODO: file extension based on codec
 	if err != nil {
 		return err
 	}
