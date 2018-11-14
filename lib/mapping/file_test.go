@@ -42,5 +42,4 @@ func TestParseMapping(t *testing.T) {
 		"class":    "railway",
 		"maxspeed": 300,
 	}, conds[2].Map(srcKV))
-
 }

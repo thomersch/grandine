@@ -190,9 +190,7 @@ func write(w io.Writer, fs *spatial.FeatureCollection, enc spatial.Encoder, cond
 		for _, ft := range fs.Features {
 			for _, cond := range conds {
 				if cond.Matches(ft.Props) {
-					nft := ft
-					nft.Props = cond.Map(ft.Props)
-					filtered = append(filtered, nft)
+					filtered = append(filtered, cond.Transform(ft)...)
 				}
 			}
 		}

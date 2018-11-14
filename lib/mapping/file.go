@@ -19,6 +19,7 @@ type fileMapKV struct {
 type fileMap struct {
 	Src  fileMapKV   `yaml:"src"`
 	Dest []fileMapKV `yaml:"dest"`
+	Op   string      `yaml:"op"`
 }
 
 type fileMappings []fileMap
@@ -66,7 +67,6 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 				}
 			}
 		}
-
 		cond := Condition{
 			key:   fm.Src.Key,
 			value: sv,
@@ -78,6 +78,12 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 			dm := dynamicMapper{staticElems: staticKV, dynamicElems: dynamicKV}
 			cond.mapper = dm.Map
 		}
+
+		switch fm.Op {
+		case "lines":
+			cond.op = polyToLines
+		}
+
 		conds = append(conds, cond)
 	}
 	return conds, nil
@@ -113,7 +119,7 @@ func (dm *dynamicMapper) Map(src map[string]interface{}) map[string]interface{} 
 				vals[keyName] = srcV
 			}
 			if err != nil {
-				log.Println(err) // Not sure if this won't get too verbose. Let's keep it for some time here.
+				log.Println(err) // Not sure if this won't get too verbose. Let's keep it here for some time.
 				vals[keyName] = srcV
 				err = nil
 			}

@@ -19,3 +19,4 @@
     - {key: "@layer", value: "transportation"}
     - {key: "class", value: "railway"}
     - {key: "maxspeed", value: "$maxspeed", type: int}
+  op: lines

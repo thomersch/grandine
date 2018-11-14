@@ -141,6 +141,10 @@ func (l Line) Reverse() {
 }
 
 func (l Line) Clockwise() bool {
+	return l.Area() > 0
+}
+
+func (l Line) Area() float64 {
 	var (
 		area float64
 		n    = len(l)
@@ -148,7 +152,7 @@ func (l Line) Clockwise() bool {
 	for i := range l {
 		area += (l[i].Y + l[(i+1)%n].Y) * (l[i].X - l[(i+1)%n].X)
 	}
-	return area >= 0
+	return area
 }
 
 // Simplify returns a simplified copy of the Line using the Ramer-Douglas-Peucker algorithm.
