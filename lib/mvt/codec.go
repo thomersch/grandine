@@ -223,7 +223,7 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 			ln, _ := geom.LineString()
 			commands = append(commands, encodeLine(ln, &cur, tp)...)
 		case spatial.GeomTypePolygon:
-			poly, _ := geom.Polygon()
+			poly := geom.MustPolygon()
 
 			for _, ring := range poly {
 				l := encodeLine(ring, &cur, tp)
@@ -271,9 +271,6 @@ func lineToTileCoords(ln spatial.Line, tp tileParams) spatial.Line {
 	for _, pt := range ln {
 		tx, ty = tileCoord(pt, tp)
 		tlCrds = append(tlCrds, spatial.Point{float64(tx), float64(ty)})
-	}
-	if tlCrds[0] == tlCrds[len(tlCrds)-1] {
-		return nil
 	}
 	return tlCrds
 }
