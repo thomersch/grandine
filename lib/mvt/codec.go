@@ -61,7 +61,7 @@ func EncodeTile(features map[string][]spatial.Feature, tid tile.ID) ([]byte, err
 		return nil, err
 	}
 	if len(vtile.Layers) == 0 {
-		log.Println("no layers")
+		// log.Println("no layers")
 		return nil, nil
 	}
 	return proto.Marshal(&vtile)
@@ -75,7 +75,7 @@ func assembleTile(features map[string][]spatial.Feature, tid tile.ID) (vt.Tile, 
 			return vtile, err
 		}
 		if len(layer.Features) == 0 {
-			log.Println("no features")
+			// log.Println("no features")
 			continue
 		}
 		var ln = layerName
