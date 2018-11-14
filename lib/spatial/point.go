@@ -68,15 +68,17 @@ func (p Point) InPolygon(poly Polygon) bool {
 		return false
 	}
 
-	outTestPoint := Point{bbox.SW.X - 1, bbox.SW.Y - 1}
-
-	var allsegs []Segment
+	var allsegs = make([]Segment, 0, len(poly)*10) // preallocating for 10 segments per ring
 	for _, ln := range poly {
 		allsegs = append(allsegs, ln.Segments()...)
 		allsegs = append(allsegs, Segment{ln[len(ln)-1], ln[0]}) // closing segment
 	}
 
-	l := Line{p, outTestPoint}
+	var (
+		outTestPoint = Point{bbox.SW.X - 1, bbox.SW.Y - 1}
+		l            = Line{p, outTestPoint}
+	)
+
 	intersections := l.Intersections(allsegs)
 	if len(intersections)%2 == 0 {
 		for _, itsct := range intersections {

@@ -43,7 +43,7 @@ func (l Line) Center() Point {
 
 // Segments splits a Line into Segments (line with two points).
 func (l Line) Segments() []Segment {
-	var segs []Segment
+	var segs = make([]Segment, 0, len(l)-1)
 	for i := range l {
 		if i+1 < len(l) {
 			segs = append(segs, Segment{l[i], l[i+1]})
