@@ -1,6 +1,8 @@
 package spatial
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,4 +50,18 @@ func TestMerge(t *testing.T) {
 			},
 		}, MergeFeatures([]Feature{feat1, feat2}))
 	})
+}
+
+func TestMergeFoo(t *testing.T) {
+	f, err := os.Open("testfiles/mergable_lines.geojson")
+	assert.Nil(t, err)
+
+	var fcoll = NewFeatureCollection()
+	err = json.NewDecoder(f).Decode(fcoll)
+	assert.Nil(t, err)
+
+	fcoll.Features = searchAndMerge(fcoll.Features)
+
+	assert.Len(t, fcoll.Features, 1)
+	assert.True(t, len(fcoll.Features[0].Geometry.MustLineString()) > 7)
 }

@@ -84,6 +84,11 @@ func (g Geom) String() string {
 	return fmt.Sprintf("%v", g.g)
 }
 
+func (g *Geom) set(n interface{}) {
+	// TODO: type check!
+	g.g = n
+}
+
 func (g *Geom) UnmarshalJSON(buf []byte) error {
 	var wg geoJSONGeom
 	err := json.Unmarshal(buf, &wg)
@@ -269,6 +274,14 @@ func (g *Geom) Point() (Point, error) {
 		return Point{}, errors.New("geometry is not a Point")
 	}
 	return geom, nil
+}
+
+func (g *Geom) MustPoint() Point {
+	p, err := g.Point()
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func (g *Geom) LineString() (Line, error) {

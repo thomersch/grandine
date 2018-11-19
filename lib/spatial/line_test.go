@@ -353,7 +353,9 @@ func TestLineClockwise(t *testing.T) {
 }
 
 func TestSimplify(t *testing.T) {
-	l := Line{{0, 0}, {2.5, 0.5}, {5, 0}}
-	assert.Equal(t, l.Simplify(1), Line{{0, 0}, {5, 0}})
-	assert.Equal(t, l.Simplify(0.2), l)
+	t.Run("simple", func(t *testing.T) {
+		l := Line{{0, 0}, {2.5, 0.5}, {5, 0}}
+		assert.Equal(t, l.Simplify(1), Line{{0, 0}, {5, 0}})
+		assert.Equal(t, l.Simplify(0.2), l)
+	})
 }
