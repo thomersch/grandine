@@ -8,34 +8,58 @@ func MergeFeatures(fts []Feature) []Feature {
 		return fts
 	}
 
-	return searchAndMerge(fts)
-	// for {
-	// 	startLen := len(fts)
-	// 	fts = searchAndMerge(fts)
-	// 	log.Println(startLen, len(fts))
-	// 	if startLen == len(fts) {
-	// 		return fts
-	// 	}
-	// }
+	out := fts[:0]
+	buckets := tagBuckets(fts)
+	for bid := range buckets {
+		for {
+			startLen := len(buckets[bid])
+			buckets[bid] = searchAndMerge(buckets[bid])
+			if len(buckets[bid]) == startLen {
+				break
+			}
+		}
+	}
+
+	for _, bucket := range buckets {
+		out = append(out, bucket...)
+	}
+	return out
+}
+
+func tagBuckets(fts []Feature) [][]Feature {
+	var buckets [][]Feature
+
+Outer:
+	for _, ft := range fts {
+		for bID := range buckets {
+			if equalProps(buckets[bID][0].Props, ft.Props) {
+				buckets[bID] = append(buckets[bID], ft)
+				continue Outer
+			}
+		}
+		buckets = append(buckets, []Feature{ft})
+	}
+	return buckets
 }
 
 type ignoreList []int
 
+func (il ignoreList) search(i int) int {
+	return sort.Search(len(il), func(pos int) bool { return il[pos] >= i })
+}
+
 func (il ignoreList) Has(i int) bool {
-	for _, v := range il {
-		if v == i {
-			return true
-		}
-		if v > i {
-			return false
-		}
+	res := il.search(i)
+	if res < len(il) && il[res] == i {
+		return true
 	}
 	return false
 }
 
 func (il *ignoreList) Add(i int) {
-	*il = append(*il, i)
-	sort.Sort(sort.IntSlice(*il))
+	r := il.search(i)
+	iil := *il
+	*il = append(iil[:r], append(ignoreList{i}, iil[r:]...)...)
 }
 
 func searchAndMerge(fts []Feature) []Feature {
@@ -48,15 +72,11 @@ func searchAndMerge(fts []Feature) []Feature {
 		if ignore.Has(refID) {
 			continue
 		}
-
 		for i, ft := range fts {
 			if ignore.Has(i) || i == refID {
 				continue
 			}
 			if ft.Geometry.typ != fts[refID].Geometry.typ {
-				continue
-			}
-			if !equalProps(ft.Props, fts[refID].Props) {
 				continue
 			}
 			switch ft.Geometry.typ {

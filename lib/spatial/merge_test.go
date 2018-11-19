@@ -65,3 +65,22 @@ func TestMergeFoo(t *testing.T) {
 	assert.Len(t, fcoll.Features, 1)
 	assert.True(t, len(fcoll.Features[0].Geometry.MustLineString()) > 7)
 }
+
+func TestBuckets(t *testing.T) {
+	f1 := Feature{Props: map[string]interface{}{"1": 2}}
+	f2 := Feature{Props: map[string]interface{}{"1": 2}}
+	f3 := Feature{Props: map[string]interface{}{"1": 3}}
+
+	bucks := tagBuckets([]Feature{f1, f2, f3})
+	assert.Len(t, bucks, 2)
+}
+
+func TestIgnoreList(t *testing.T) {
+	il := ignoreList{1, 5, 9}
+	il.Add(3)
+	assert.Equal(t, ignoreList{1, 3, 5, 9}, il)
+	il.Add(19)
+	assert.Equal(t, ignoreList{1, 3, 5, 9, 19}, il)
+	assert.True(t, il.Has(1))
+	assert.False(t, il.Has(4))
+}
