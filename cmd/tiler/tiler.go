@@ -289,29 +289,22 @@ type tileWriter interface {
 func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
 		var (
-			layers       = map[string][]spatial.Feature{}
-			ln           string
-			tileClipBBox = tID.BBox()
+			layers = map[string][]spatial.Feature{}
+			ln     string
 		)
-
+		defer func() { pb <- struct{}{} }()
 		for _, ft := range features[tID.Z][tID.X][tID.Y] {
 			feat := *ft
-			sf := tile.Resolution(tID.Z, 4096) * 10
-			gm := feat.Geometry.Simplify(sf)
-			for _, geom := range gm.ClipToBBox(tileClipBBox) {
-				feat.Geometry = geom
-				ln = lm.LayerName(feat.Props)
-				if len(ln) != 0 {
-					if _, ok := layers[ln]; !ok {
-						layers[ln] = []spatial.Feature{feat}
-					} else {
-						layers[ln] = append(layers[ln], feat)
-					}
+			ln = lm.LayerName(feat.Props)
+			if len(ln) != 0 {
+				if _, ok := layers[ln]; !ok {
+					layers[ln] = []spatial.Feature{feat}
+				} else {
+					layers[ln] = append(layers[ln], feat)
 				}
 			}
 		}
 		if !anyFeatures(layers) {
-			pb <- struct{}{}
 			continue
 		}
 		buf, err := encoder.EncodeTile(layers, tID)
@@ -323,7 +316,6 @@ func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw t
 		if err != nil {
 			log.Fatal(err)
 		}
-		pb <- struct{}{}
 	}
 }
 

@@ -4,16 +4,18 @@ import (
 	"math"
 
 	"github.com/thomersch/grandine/lib/spatial"
+	"github.com/thomersch/grandine/lib/tile"
 )
 
 const earthRadius = 6378137
 
 // flip axis
 func flip(v int, extent int) int {
-	if v == 0 {
-		return extent
-	}
-	return (extent - v) % extent
+	return extent - v
+}
+
+func flipFloat(v float64, extent int) float64 {
+	return float64(flip(int(v), extent))
 }
 
 func tileOffset(bb spatial.BBox) (xOffset, yOffset float64) {
@@ -39,9 +41,16 @@ func proj4326To3857(pt spatial.Point) spatial.Point {
 }
 
 func tileCoord(p spatial.Point, tp tileParams) (x, y int) {
+	newPt := tilePoint(p, tp)
+	return int(newPt.X), int(newPt.Y)
+}
+
+func tilePoint(p spatial.Point, tp tileParams) spatial.Point {
 	pt := proj4326To3857(p)
-	return int((pt.X - tp.xOffset) / (tp.xScale / float64(tp.extent)) * float64(tp.extent)),
-		flip(int((pt.Y-tp.yOffset)/(tp.yScale/float64(tp.extent))*float64(tp.extent)), tp.extent)
+	return spatial.Point{
+		X: (pt.X - tp.xOffset) / (tp.xScale / float64(tp.extent)) * float64(tp.extent),
+		Y: flipFloat((pt.Y-tp.yOffset)/(tp.yScale/float64(tp.extent))*float64(tp.extent), tp.extent),
+	}
 }
 
 func degToRad(v float64) float64 {
@@ -56,4 +65,12 @@ type tileParams struct {
 	xScale, yScale   float64
 	xOffset, yOffset float64
 	extent           int
+}
+
+func newTileParams(tid tile.ID, ext int) tileParams {
+	var tp tileParams
+	tp.xScale, tp.yScale = tileScalingFactor(tid.BBox(), ext)
+	tp.xOffset, tp.yOffset = tileOffset(tid.BBox())
+	tp.extent = ext
+	return tp
 }

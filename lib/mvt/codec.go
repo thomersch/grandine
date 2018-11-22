@@ -3,7 +3,6 @@ package mvt
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	vt "github.com/thomersch/grandine/lib/mvt/vector_tile"
 	"github.com/thomersch/grandine/lib/spatial"
@@ -19,7 +18,7 @@ const (
 	cmdLineTo    cmd = 2
 	cmdClosePath cmd = 7
 
-	extent = 4096
+	defaultExtent = 4096
 )
 
 var (
@@ -141,14 +140,27 @@ func (te tagElems) Values() []*vt.Tile_Value {
 
 func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, error) {
 	var (
-		tl   vt.Tile_Layer
-		err  error
-		ext  = uint32(extent)
-		keys = tagElems{}
-		vals = tagElems{}
+		tl       vt.Tile_Layer
+		err      error
+		tp       = newTileParams(tid, defaultExtent)
+		ext      = uint32(defaultExtent)
+		keys     = tagElems{}
+		vals     = tagElems{}
+		clipbbox = spatial.BBox{SW: spatial.Point{0, 0}, NE: spatial.Point{defaultExtent, defaultExtent}} // clipping mask in tile coordinate system
 	)
 
-	for _, feat := range features {
+	var clippedFts = make([]spatial.Feature, 0, len(features))
+	for _, ft := range features {
+		ng := ft.Geometry.Copy()
+		ng.Project(func(pt spatial.Point) spatial.Point {
+			return tilePoint(pt, tp)
+		})
+		for _, geom := range ng.ClipToBBox(clipbbox) {
+			clippedFts = append(clippedFts, spatial.Feature{Props: ft.Props, Geometry: geom})
+		}
+	}
+
+	for _, feat := range spatial.MergeFeatures(clippedFts) {
 		var tileFeat vt.Tile_Feature
 
 		for k, v := range feat.Properties() {
@@ -187,18 +199,13 @@ func assembleLayer(features []spatial.Feature, tid tile.ID) (vt.Tile_Layer, erro
 	return tl, nil
 }
 
-// encodes one or more geometries of the same type into one (multi-)geometry
+// Encodes one or more geometries of the same type into one (multi-)geometry.
+// Geometry coordinates must be in tile coordinate system.
 func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err error) {
 	var (
 		cur    [2]int
 		dx, dy int
-		// the following four lines might be optimized
-		tp   tileParams
-		bbox = tid.BBox()
 	)
-	tp.xScale, tp.yScale = tileScalingFactor(bbox, extent)
-	tp.xOffset, tp.yOffset = tileOffset(bbox)
-	tp.extent = extent
 
 	var typ spatial.GeomType
 	for _, geom := range geoms {
@@ -210,23 +217,16 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 		cur[1] = 0
 		switch geom.Typ() {
 		case spatial.GeomTypePoint:
-			pt, _ := geom.Point()
-			tX, tY := tileCoord(pt, tp)
-			if tX > extent || tY > extent {
-				log.Printf("%v is outside of tile", pt)
-			}
-			dx = tX - int(cur[0])
-			dy = tY - int(cur[1])
+			pt := geom.MustPoint()
+			dx = int(pt.X) - cur[0]
+			dy = int(pt.Y) - cur[1]
 			// TODO: support multipoint
 			commands = append(commands, encodeCommandInt(cmdMoveTo, 1), encodeZigZag(dx), encodeZigZag(dy))
 		case spatial.GeomTypeLineString:
-			ln, _ := geom.LineString()
-			commands = append(commands, encodeLine(ln, &cur, tp)...)
+			commands = append(commands, encodeLine(geom.MustLineString(), &cur)...)
 		case spatial.GeomTypePolygon:
-			poly := geom.MustPolygon()
-
-			for _, ring := range poly {
-				l := encodeLine(ring, &cur, tp)
+			for _, ring := range geom.MustPolygon() {
+				l := encodeLine(ring, &cur)
 				if l == nil {
 					return nil, errNoGeom
 				}
@@ -238,16 +238,15 @@ func encodeGeometry(geoms []spatial.Geom, tid tile.ID) (commands []uint32, err e
 	return commands, nil
 }
 
-func encodeLine(ln spatial.Line, cur *[2]int, tp tileParams) []uint32 {
-	tlCrds := lineToTileCoords(ln, tp)
-
+func encodeLine(ln spatial.Line, cur *[2]int) []uint32 {
 	var (
 		commands = make([]uint32, len(ln)*2+2) // len=number of coordinates + initial move to + size
 		dx, dy   int
 	)
 	commands[0] = encodeCommandInt(cmdMoveTo, 1)
 	commands[3] = encodeCommandInt(cmdLineTo, uint32(len(commands)-4)/2)
-	for i, tc := range tlCrds {
+
+	for i, tc := range ln {
 		dx = int(tc.X) - cur[0]
 		dy = int(tc.Y) - cur[1]
 		cur[0] = int(tc.X)
@@ -261,16 +260,4 @@ func encodeLine(ln spatial.Line, cur *[2]int, tp tileParams) []uint32 {
 		}
 	}
 	return commands
-}
-
-func lineToTileCoords(ln spatial.Line, tp tileParams) spatial.Line {
-	var (
-		tlCrds = make(spatial.Line, 0, len(ln))
-		tx, ty int
-	)
-	for _, pt := range ln {
-		tx, ty = tileCoord(pt, tp)
-		tlCrds = append(tlCrds, spatial.Point{float64(tx), float64(ty)})
-	}
-	return tlCrds
 }
