@@ -191,19 +191,23 @@ func main() {
 }
 
 func renderable(props map[string]interface{}, zl int) bool {
-	var (
-		zmin = 0
-		zmax = 99
-	)
-	v, ok := props["@zoom:min"]
-	if ok {
-		zmin, _ = v.(int)
+	var propInt = func(props map[string]interface{}, name string, defaultVal int) int {
+		v, ok := props[name]
+		if !ok {
+			return defaultVal
+		}
+		i, ok := v.(int)
+		if ok {
+			return i
+		}
+		f, ok := v.(float64)
+		if ok {
+			return int(f)
+		}
+		log.Printf("%v is neither int nor float: %v", props, v)
+		return defaultVal
 	}
-	v, ok = props["@zoom:max"]
-	if ok {
-		zmax, _ = v.(int)
-	}
-	return (zmin <= zl) && (zl <= zmax)
+	return (zl >= propInt(props, "@zoom:min", 0)) && (zl <= propInt(props, "@zoom:max", 99))
 }
 
 func featureTable(zls []int) map[int][][][]*spatial.Feature {
