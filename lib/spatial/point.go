@@ -9,6 +9,10 @@ import (
 
 type Point struct{ X, Y float64 }
 
+func (p Point) Project(proj ConvertFunc) {
+	p = proj(p)
+}
+
 func (p Point) InBBox(b BBox) bool {
 	return b.SW.X <= p.X && b.NE.X >= p.X &&
 		b.SW.Y <= p.Y && b.NE.Y >= p.Y
@@ -91,6 +95,10 @@ func (p Point) InPolygon(poly Polygon) bool {
 		return false
 	}
 	return true
+}
+
+func (p Point) Copy() Projectable {
+	return Point{X: p.X, Y: p.Y}
 }
 
 func round(v float64) float64 {

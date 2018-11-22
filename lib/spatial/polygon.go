@@ -3,6 +3,22 @@ package spatial
 // Polygon is a data type for storing simple polygons.
 type Polygon []Line
 
+func (p Polygon) Project(proj ConvertFunc) {
+	for ri := range p {
+		for i := range p[ri] {
+			p[ri][i] = proj(p[ri][i])
+		}
+	}
+}
+
+func (p Polygon) Copy() Projectable {
+	var np Polygon
+	for _, ring := range p {
+		np = append(np, ring.Copy().(Line))
+	}
+	return np
+}
+
 func (p Polygon) String() string {
 	return p.string()
 }

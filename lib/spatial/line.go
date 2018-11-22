@@ -20,6 +20,12 @@ func NewLinesFromSegments(segs []Segment) []Line {
 	return ls
 }
 
+func (l Line) Project(proj ConvertFunc) {
+	for i := range l {
+		l[i] = proj(l[i])
+	}
+}
+
 func (l Line) String() string {
 	return l.string()
 }
@@ -166,11 +172,14 @@ func (l Line) Simplify(e float64) Line {
 		maxDist float64
 		index   int
 	)
-	for i, pt := range l[1 : len(l)-1] {
+	for i, pt := range l[:len(l)-1] {
+		if i == 0 {
+			continue
+		}
 		dist := seg.DistanceToPt(pt)
 		if dist > maxDist {
 			maxDist = dist
-			index = (i + 1) // starting with the second point
+			index = i
 		}
 	}
 
@@ -183,7 +192,7 @@ func (l Line) Simplify(e float64) Line {
 	return Line{seg[0], seg[1]}
 }
 
-func (l Line) Copy() Line {
+func (l Line) Copy() Projectable {
 	return append(l[:0:0], l...) // https://github.com/go101/go101/wiki/How-to-efficiently-clone-a-slice%3F
 }
 

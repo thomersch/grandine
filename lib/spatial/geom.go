@@ -35,7 +35,7 @@ func (g GeomType) String() string {
 
 type Geom struct {
 	typ GeomType
-	g   interface{}
+	g   Projectable
 }
 
 func MustNewGeom(g interface{}) Geom {
@@ -50,13 +50,13 @@ func NewGeom(g interface{}) (Geom, error) {
 	switch geom := g.(type) {
 	// Point
 	case Point:
-		return Geom{typ: GeomTypePoint, g: g}, nil
+		return Geom{typ: GeomTypePoint, g: g.(Projectable)}, nil
 
 	// Line String
 	case []Point:
 		return Geom{typ: GeomTypeLineString, g: Line(geom)}, nil
 	case Line:
-		return Geom{typ: GeomTypeLineString, g: g}, nil
+		return Geom{typ: GeomTypeLineString, g: g.(Projectable)}, nil
 
 	// Polygon
 	case [][]Point:
@@ -68,7 +68,7 @@ func NewGeom(g interface{}) (Geom, error) {
 	case []Line:
 		return Geom{typ: GeomTypePolygon, g: Polygon(geom)}, nil
 	case Polygon:
-		return Geom{typ: GeomTypePolygon, g: g}, nil
+		return Geom{typ: GeomTypePolygon, g: g.(Projectable)}, nil
 	default:
 		return Geom{}, fmt.Errorf("unknown input geom type: %T", g)
 	}
@@ -84,7 +84,11 @@ func (g Geom) String() string {
 	return fmt.Sprintf("%v", g.g)
 }
 
-func (g *Geom) set(n interface{}) {
+func (g Geom) Project(fn ConvertFunc) {
+	g.g.Project(fn)
+}
+
+func (g *Geom) set(n Projectable) {
 	// TODO: type check!
 	g.g = n
 }
@@ -361,4 +365,11 @@ func (g *Geom) ClipToBBox(bbox BBox) []Geom {
 		return gm.ClipToBBox(bbox)
 	}
 	panic("internal geometry needs to fulfill Clippable interface")
+}
+
+func (g *Geom) Copy() Geom {
+	return Geom{
+		typ: g.typ,
+		g:   g.g.Copy(),
+	}
 }
