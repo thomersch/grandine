@@ -32,7 +32,7 @@ func TestMarshalWKBPoint(t *testing.T) {
 	assert.Nil(t, err)
 	pt, err := rp.Point()
 	assert.Nil(t, err)
-	assert.Equal(t, spt, pt)
+	assert.Equal(t, spt, *pt)
 }
 
 func TestWKBUnmarshal(t *testing.T) {

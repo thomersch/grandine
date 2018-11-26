@@ -9,8 +9,10 @@ import (
 
 type Point struct{ X, Y float64 }
 
-func (p Point) Project(proj ConvertFunc) {
-	p = proj(p)
+func (p *Point) Project(proj ConvertFunc) {
+	np := proj(*p)
+	p.X = np.X
+	p.Y = np.Y
 }
 
 func (p Point) InBBox(b BBox) bool {
@@ -98,7 +100,7 @@ func (p Point) InPolygon(poly Polygon) bool {
 }
 
 func (p Point) Copy() Projectable {
-	return Point{X: p.X, Y: p.Y}
+	return &Point{X: p.X, Y: p.Y}
 }
 
 func round(v float64) float64 {

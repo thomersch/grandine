@@ -50,6 +50,9 @@ func NewGeom(g interface{}) (Geom, error) {
 	switch geom := g.(type) {
 	// Point
 	case Point:
+		pt := g.(Point)
+		return Geom{typ: GeomTypePoint, g: &pt}, nil
+	case *Point:
 		return Geom{typ: GeomTypePoint, g: g.(Projectable)}, nil
 
 	// Line String
@@ -111,7 +114,7 @@ func (g *Geom) UnmarshalJSONCoords(typ string, inner json.RawMessage) error {
 		if err = json.Unmarshal(inner, &pt); err != nil {
 			return err
 		}
-		g.g = pt
+		g.g = &pt
 	case "linestring":
 		g.typ = GeomTypeLineString
 		var ls Line
@@ -240,12 +243,12 @@ func (g Geom) MarshalWKB() ([]byte, error) {
 
 	switch g.Typ() {
 	case GeomTypePoint:
-		var p Point
+		var p *Point
 		p, err = g.Point()
 		if err != nil {
 			return nil, err
 		}
-		err = wkbWritePoint(&buf, p)
+		err = wkbWritePoint(&buf, *p)
 	case GeomTypeLineString:
 		var ls Line
 		ls, err = g.LineString()
@@ -272,15 +275,15 @@ func (g *Geom) Typ() GeomType {
 }
 
 // Point retruns the geometry as a point (check type with Typ()) first.
-func (g *Geom) Point() (Point, error) {
-	geom, ok := g.g.(Point)
+func (g *Geom) Point() (*Point, error) {
+	geom, ok := g.g.(*Point)
 	if !ok {
-		return Point{}, errors.New("geometry is not a Point")
+		return nil, errors.New("geometry is not a Point")
 	}
 	return geom, nil
 }
 
-func (g *Geom) MustPoint() Point {
+func (g *Geom) MustPoint() *Point {
 	p, err := g.Point()
 	if err != nil {
 		panic(err)
@@ -322,8 +325,8 @@ func (g *Geom) MustPolygon() Polygon {
 
 func (g *Geom) BBox() BBox {
 	switch gm := g.g.(type) {
-	case Point:
-		return BBox{gm, gm}
+	case *Point:
+		return BBox{*gm, *gm}
 	case Line:
 		return gm.BBox()
 	case Polygon:

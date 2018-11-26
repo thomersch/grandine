@@ -40,7 +40,9 @@ func GeomFromWKB(r io.Reader) (Geom, error) {
 	}
 	switch g.typ {
 	case GeomTypePoint:
-		g.g, err = wkbReadPoint(r)
+		var pt Point
+		pt, err = wkbReadPoint(r)
+		g.g = &pt
 	case GeomTypeLineString:
 		g.g, err = wkbReadLineString(r)
 	case GeomTypePolygon:
