@@ -14,7 +14,7 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 		return nil
 	}
 
-	var bboxLine []geos.Coord
+	var bboxLine = make([]geos.Coord, 0, 4)
 	for _, pt := range NewLinesFromSegments(BBoxBorders(b.SW, b.NE))[0] {
 		bboxLine = append(bboxLine, geos.NewCoord(pt.X, pt.Y))
 	}
@@ -41,9 +41,9 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 }
 
 func (p Polygon) geos() *geos.Geometry {
-	rings := [][]geos.Coord{}
+	var rings = make([][]geos.Coord, 0, len(p))
 	for _, ring := range p {
-		var rg []geos.Coord
+		var rg = make([]geos.Coord, 0, len(ring))
 		for _, pt := range ring {
 			rg = append(rg, geos.NewCoord(pt.X, pt.Y))
 		}
@@ -67,11 +67,11 @@ func geosToPolygons(g *geos.Geometry) []Polygon {
 	if ty == geos.POLYGON {
 		return []Polygon{geosToPolygon(g)}
 	}
-	var polys []Polygon
 	nmax, err := g.NGeometry()
 	if err != nil {
 		panic(err)
 	}
+	var polys = make([]Polygon, 0, nmax)
 	for n := 0; n < nmax; n++ {
 		polys = append(polys, geosToPolygon(geos.Must(g.Geometry(n))))
 	}
@@ -79,10 +79,6 @@ func geosToPolygons(g *geos.Geometry) []Polygon {
 }
 
 func geosToPolygon(g *geos.Geometry) Polygon {
-	var (
-		p    Polygon
-		ring []Point
-	)
 	sh, err := g.Shell()
 	if err != nil {
 		return Polygon{}
@@ -91,6 +87,10 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 	if err != nil {
 		panic(err)
 	}
+	var (
+		p    = make(Polygon, 0, 8)
+		ring = make([]Point, 0, len(crds))
+	)
 	for _, crd := range crds {
 		ring = append(ring, Point{crd.X, crd.Y})
 	}
@@ -102,7 +102,7 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 		if err != nil {
 			panic(err)
 		}
-		ring = []Point{}
+		ring = make([]Point, 0, len(crds))
 		for _, crd := range crds {
 			ring = append(ring, Point{crd.X, crd.Y})
 		}
