@@ -376,3 +376,11 @@ func (g *Geom) Copy() Geom {
 		g:   g.g.Copy(),
 	}
 }
+
+func (g *Geom) ValidTopology() bool {
+	validatable, ok := g.g.(Validatable)
+	if ok {
+		return validatable.ValidTopology()
+	}
+	return true
+}

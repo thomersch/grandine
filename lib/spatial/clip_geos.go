@@ -22,8 +22,15 @@ func (p Polygon) clipToBBox(b BBox) []Geom {
 	bboxPoly := geos.Must(geos.NewPolygon(bboxLine))
 	res, err := bboxPoly.Intersection(gpoly)
 	if err != nil {
-		log.Printf("clipping failed: %v", err)
-		return nil
+		// Sometimes there is a minor topology problem, a zero buffer helps often.
+		gpolyBuffed, err := gpoly.Buffer(0)
+		if err != nil {
+			panic(err)
+		}
+		res, err = bboxPoly.Intersection(gpolyBuffed)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	var resGeoms []Geom

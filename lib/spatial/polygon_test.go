@@ -111,3 +111,11 @@ func BenchmarkFixWinding(b *testing.B) {
 			Line{Point{X: 27.0703125, Y: -20.3034175184893}, Point{X: 27.509765625, Y: -21.616579336740593}, Point{X: 31.113281249999996, Y: -19.559790136497398}}}.FixWinding()
 	}
 }
+
+func TestPolygonValidTopology(t *testing.T) {
+	p := Polygon{Line{{3, 4}, {2, 9}, {1, 4}}}
+	assert.True(t, p.ValidTopology())
+
+	p = Polygon{Line{{3, 4}, {2, 9}, {1, 4}, {1, 5}}}
+	assert.False(t, p.ValidTopology())
+}

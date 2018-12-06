@@ -54,8 +54,33 @@ func (p Polygon) FixWinding() {
 			}
 		}
 		if (inrings%2 == 0 && ring.Clockwise()) || (inrings%2 == 1 && !ring.Clockwise()) {
-			// log.Println("rewinding")
 			ring.Reverse()
 		}
 	}
+}
+
+func (p Polygon) ValidTopology() bool {
+	return len(p.topologyErrors()) == 0
+}
+
+type segErr struct {
+	Ring int
+	Seg  int
+}
+
+func (p Polygon) topologyErrors() (errSegments []segErr) {
+	for nRing, ring := range p {
+		for nSeg, seg := range ring.SegmentsWithClosing() {
+			for nSegCmp, segCmp := range ring.SegmentsWithClosing() {
+				if nSeg == nSegCmp {
+					continue
+				}
+				ipt, has := seg.Intersection(segCmp)
+				if has && (ipt != seg[0] && ipt != seg[1]) {
+					errSegments = append(errSegments, segErr{Ring: nRing, Seg: nSeg})
+				}
+			}
+		}
+	}
+	return
 }

@@ -58,6 +58,11 @@ func (l Line) Segments() []Segment {
 	return segs
 }
 
+func (l Line) SegmentsWithClosing() []Segment {
+	lc := append(l, l[0])
+	return lc.Segments()
+}
+
 func (l Line) Intersections(segments []Segment) []Point {
 	var intersectionSet = map[Point]struct{}{} // set
 	for _, seg := range l.Segments() {
