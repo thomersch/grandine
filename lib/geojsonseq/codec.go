@@ -3,7 +3,7 @@ package geojsonseq
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 
 	"github.com/thomersch/grandine/lib/geojson"
@@ -22,9 +22,8 @@ func (c *Codec) ChunkedDecode(r io.Reader) (spatial.Chunks, error) {
 	var rs = make([]byte, 1)
 	_, err := r.Read(rs)
 	if rs[0] != resourceSep || err != nil {
-		return nil, errors.New("a geojson sequence must start with a resource separator")
+		return nil, fmt.Errorf("a geojson sequence must start with a resource separator, got: %v", rs[0])
 	}
-
 	return &chunk{reader: bufio.NewReader(r)}, nil
 }
 
