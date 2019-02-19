@@ -10,7 +10,11 @@ import (
 	"strings"
 )
 
-var endianness = binary.LittleEndian
+var (
+	ErrorEmptyGeomType = errors.New("empty geometry type")
+
+	endianness = binary.LittleEndian
+)
 
 type GeomType uint32
 
@@ -108,6 +112,8 @@ func (g *Geom) UnmarshalJSON(buf []byte) error {
 func (g *Geom) UnmarshalJSONCoords(typ string, inner json.RawMessage) error {
 	var err error
 	switch strings.ToLower(typ) {
+	case "":
+		return ErrorEmptyGeomType
 	case "point":
 		g.typ = GeomTypePoint
 		var pt Point
@@ -349,12 +355,12 @@ type simplifiable interface {
 	Simplify(e float64) interface{}
 }
 
-func (g *Geom) Simplify(e float64) Geom {
+func (g Geom) Simplify(e float64) Geom {
 	switch gm := g.g.(type) {
 	case Line:
 		return Geom{typ: g.typ, g: gm.Simplify(e)}
 	}
-	return *g
+	return g
 }
 
 type Clippable interface {

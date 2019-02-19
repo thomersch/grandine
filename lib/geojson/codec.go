@@ -89,6 +89,10 @@ func (fl *FeatList) UnmarshalJSONCoords(fp FeatureProto) error {
 		var ft spatial.Feature
 		ft.Props = fp.Properties
 		err = ft.Geometry.UnmarshalJSONCoords(fp.Geometry.Type, fp.Geometry.Coordinates)
+		if err == spatial.ErrorEmptyGeomType {
+			// TODO: Shall we warn here somehow?
+			return nil
+		}
 		if err != nil {
 			return err
 		}
