@@ -30,7 +30,11 @@ func (zm *zmLvl) String() string {
 
 func (zm *zmLvl) Set(value string) error {
 	for _, s := range strings.Split(value, ",") {
-		v, err := strconv.Atoi(strings.TrimSpace(s))
+		zs := strings.TrimSpace(s)
+		if zs == "" {
+			continue
+		}
+		v, err := strconv.Atoi(zs)
 		if err != nil {
 			return fmt.Errorf("%s (only integer values are allowed)", value)
 		}
@@ -84,7 +88,7 @@ func main() {
 	compressTiles := flag.Bool("compress", false, "compress tiles with gzip")
 	quiet = flag.Bool("q", false, "argument to use if program should be run in quiet mode with reduced logging")
 
-	flag.Var(&zoomlevels, "zoom", "one or more zoom level of which the tiles will be rendered")
+	flag.Var(&zoomlevels, "zoom", "one or more zoom levels (comma separated) of which the tiles will be rendered")
 	flag.Parse()
 
 	if len(*source) == 0 {
