@@ -21,10 +21,26 @@ If you are looking for documentation on the Spaten geo spatial file format, look
 
 If you have built a Go project before, you probably already know what to do. If not:
 
-* Make sure you have Go installed. Preferably version 1.8 or higher.
+* Make sure you have Go installed. Preferably version 1.9 or higher. (If you can, use 1.10 or newer as it allows for some impactful performance improvements)
 * Execute `go get -u github.com/thomersch/grandine`. This will checkout a current version of the code into `~/go/src/github.com/thomersch/grandine`
 * Go to the checkout directory. Execute `make build`, this will put all executables into the `bin` directory.
 * All the executables can be called with the `-help` flag which will print out basic usage info.
+
+## Tips
+
+### How to concatinate/merge multiple spaten files into one
+
+	grandine-converter -in fileA,fileB,fileC -out outfile
+
+Alternatively, if you want to use a pipe:
+
+	grandine-converter -in fileA,fileB,fileC | your-app-here
+
+### How to render a tile set from a spaten file
+
+	grandine-tiler -in some_geodata.spaten -zoom 9,10,11 -out tiles/
+
+By default, all data will be on the `default` layer.
 
 ## Structure
 
