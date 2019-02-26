@@ -58,15 +58,8 @@ func (ch *chunk) Scan(fc *spatial.FeatureCollection) error {
 	if ch.err != nil {
 		return ch.err
 	}
-	var (
-		fp  geojson.FeatureProto
-		fts geojson.FeatList
-	)
-	err := json.Unmarshal(ch.buf, &fp)
-	if err != nil {
-		return err
-	}
-	err = fts.UnmarshalJSONCoords(fp)
+	var fts geojson.FeatList
+	err := json.Unmarshal(append(append([]byte(`[`), ch.buf...), ']'), &fts)
 	if err != nil {
 		return err
 	}
