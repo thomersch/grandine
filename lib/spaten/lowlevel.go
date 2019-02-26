@@ -75,14 +75,7 @@ func WriteBlock(w io.Writer, fs []spatial.Feature, meta map[string]interface{}) 
 	}
 
 	for _, f := range fs {
-		var nf fileformat.Feature
-		nf.Tags, err = propertiesToTags(f.Properties())
-		if err != nil {
-			return err
-		}
-
-		// TODO: make encoder configurable
-		nf.Geom, err = f.MarshalWKB()
+		nf, err := PackFeature(f)
 		if err != nil {
 			return err
 		}
@@ -106,6 +99,26 @@ func WriteBlock(w io.Writer, fs []spatial.Feature, meta map[string]interface{}) 
 
 	w.Write(append(blockHeaderBuf, bodyBuf...))
 	return nil
+}
+
+// PackFeature encapusaltes a spatial feature into an encodable Spaten feature.
+// This is a low level interface and not guaranteed to be stable.
+func PackFeature(f spatial.Feature) (fileformat.Feature, error) {
+	var (
+		nf  fileformat.Feature
+		err error
+	)
+	nf.Tags, err = propertiesToTags(f.Properties())
+	if err != nil {
+		return nf, err
+	}
+
+	// TODO: make encoder configurable
+	nf.Geom, err = f.MarshalWKB()
+	if err != nil {
+		return nf, err
+	}
+	return nf, nil
 }
 
 func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
