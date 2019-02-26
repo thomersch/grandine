@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "asdf",
+      "properties": {},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.546875,
+          51.39920565355378
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.546875,
+          51.39920565355378
+        ]
+      }
+    }
+  ]
+}
