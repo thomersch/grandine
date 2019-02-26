@@ -24,6 +24,21 @@ func TestDecode(t *testing.T) {
 	assert.Len(t, fc.Features, 1)
 }
 
+func TestDecodeID(t *testing.T) {
+	f, err := os.Open("testdata/id.geojson")
+	assert.Nil(t, err)
+
+	var (
+		c  = &Codec{}
+		fc = spatial.FeatureCollection{}
+	)
+	err = c.Decode(f, &fc)
+	assert.Nil(t, err)
+	assert.Len(t, fc.Features, 2)
+	assert.Equal(t, fc.Features[0].Properties()["id"], "asdf")
+	assert.NotContains(t, fc.Features[1].Properties(), "id")
+}
+
 func TestDecodeMultipolygon(t *testing.T) {
 	f, err := os.Open("testdata/multipolygon.geojson")
 	assert.Nil(t, err)

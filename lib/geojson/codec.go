@@ -61,6 +61,7 @@ type FeatureProto struct {
 		Type        string          `json:"type"`
 		Coordinates json.RawMessage `json:"coordinates"`
 	}
+	ID         string
 	Properties map[string]interface{} `json:"properties"`
 }
 
@@ -75,6 +76,10 @@ func (fl *FeatList) UnmarshalJSON(buf []byte) error {
 
 	*fl = make([]spatial.Feature, 0, len(fts))
 	for _, inft := range fts {
+		if inft.ID != "" {
+			inft.Properties["id"] = inft.ID
+		}
+
 		err = fl.UnmarshalJSONCoords(inft)
 		if err != nil {
 			return err
