@@ -121,6 +121,30 @@ func PackFeature(f spatial.Feature) (fileformat.Feature, error) {
 	return nf, nil
 }
 
+// UnpackFeature unpacks a Spaten feature into a usable spatial feature.
+// This is a low level interface and not guaranteed to be stable.
+func UnpackFeature(pf *fileformat.Feature) (spatial.Feature, error) {
+	var geomBuf = bytes.NewBuffer(pf.GetGeom())
+	geom, err := spatial.GeomFromWKB(geomBuf)
+	if err != nil {
+		return spatial.Feature{}, err
+	}
+	feature := spatial.Feature{
+		Props:    map[string]interface{}{},
+		Geometry: geom,
+	}
+
+	for _, tag := range pf.Tags {
+		k, v, err := fileformat.KeyValue(tag)
+		if err != nil {
+			// TODO
+			return feature, err
+		}
+		feature.Props[k] = v
+	}
+	return feature, nil
+}
+
 func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
 	var tags []*fileformat.Tag
 	if props == nil {
@@ -186,23 +210,9 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 		return err
 	}
 	for _, f := range blockBody.GetFeature() {
-		var geomBuf = bytes.NewBuffer(f.GetGeom())
-		geom, err := spatial.GeomFromWKB(geomBuf)
+		feature, err := UnpackFeature(f)
 		if err != nil {
 			return err
-		}
-		feature := spatial.Feature{
-			Props:    map[string]interface{}{},
-			Geometry: geom,
-		}
-
-		for _, tag := range f.Tags {
-			k, v, err := fileformat.KeyValue(tag)
-			if err != nil {
-				// TODO
-				return err
-			}
-			feature.Props[k] = v
 		}
 		fs.Features = append(fs.Features, feature)
 	}

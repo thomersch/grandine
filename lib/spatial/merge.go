@@ -13,6 +13,9 @@ func MergeFeatures(fts []Feature) []Feature {
 	for bid := range buckets {
 		for {
 			startLen := len(buckets[bid])
+			if startLen == 1 {
+				break
+			}
 			buckets[bid] = searchAndMerge(buckets[bid])
 			if len(buckets[bid]) == startLen {
 				break
