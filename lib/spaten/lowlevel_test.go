@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/thomersch/grandine/lib/spatial"
@@ -142,4 +143,43 @@ func BenchmarkReadBlock(b *testing.B) {
 		err := readBlock(r, fs)
 		assert.Nil(b, err)
 	}
+}
+
+func BenchmarkReadBlockThroughput(b *testing.B) {
+	var (
+		wBuf = bytes.NewBuffer([]byte{})
+		fs   = spatial.NewFeatureCollection()
+	)
+
+	err := WriteBlock(wBuf, []spatial.Feature{
+		{
+			Geometry: spatial.MustNewGeom(spatial.Point{2, 3}),
+			Props: map[string]interface{}{
+				"highway": "primary",
+				"number":  1,
+			},
+		},
+	}, nil)
+	assert.Nil(b, err)
+
+	var (
+		ptBuf   = wBuf.Bytes()[8:]
+		fullBuf = make([]byte, 8)
+	)
+	for n := 0; n < 100000; n++ {
+		fullBuf = append(fullBuf, ptBuf...)
+	}
+	binary.LittleEndian.PutUint32(fullBuf[:4], uint32(len(fullBuf)-8))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	t := time.Now()
+	for n := 0; n < b.N; n++ {
+		r := bytes.NewBuffer(fullBuf)
+		err = readBlock(r, fs)
+		assert.Nil(b, err)
+		fs.Features = []spatial.Feature{}
+	}
+	b.Logf("%v bytes read, in %v blocks,		throughput: %v B/s", len(fullBuf)*b.N, b.N, int(float64(len(fullBuf)*b.N)/time.Since(t).Seconds()))
 }

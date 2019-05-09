@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"sync"
 
 	"github.com/thomersch/grandine/lib/spaten/fileformat"
 	"github.com/thomersch/grandine/lib/spatial"
@@ -84,7 +84,7 @@ func WriteBlock(w io.Writer, fs []spatial.Feature, meta map[string]interface{}) 
 	}
 	bodyBuf, err := proto.Marshal(blockBody)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	blockHeaderBuf := make([]byte, 8)
@@ -171,6 +171,12 @@ type blockHeader struct {
 	messageType uint8
 }
 
+var blockBodyPool = sync.Pool{
+	New: func() interface{} {
+		return &fileformat.Body{}
+	},
+}
+
 func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 	var hd blockHeader
 
@@ -197,8 +203,9 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 
 	var (
 		buf       = make([]byte, hd.bodyLen)
-		blockBody fileformat.Body
+		blockBody = blockBodyPool.Get().(*fileformat.Body)
 	)
+	blockBody.Reset()
 	n, err = io.ReadFull(r, buf)
 	if n != int(hd.bodyLen) {
 		return fmt.Errorf("incomplete block: expected %v bytes, %v available", hd.bodyLen, n)
@@ -206,8 +213,12 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 	if err != nil {
 		return err
 	}
-	if err := proto.Unmarshal(buf, &blockBody); err != nil {
+	if err := blockBody.Unmarshal(buf); err != nil {
 		return err
+	}
+	if len(fs.Features) == 0 {
+		// only prealloc if empty, so no user data gets truncated
+		fs.Features = make([]spatial.Feature, 0, len(blockBody.GetFeature()))
 	}
 	for _, f := range blockBody.GetFeature() {
 		feature, err := UnpackFeature(f)
@@ -216,6 +227,7 @@ func readBlock(r io.Reader, fs *spatial.FeatureCollection) error {
 		}
 		fs.Features = append(fs.Features, feature)
 	}
+	blockBodyPool.Put(blockBody)
 	return nil
 }
 
