@@ -121,14 +121,23 @@ func PackFeature(f spatial.Feature) (fileformat.Feature, error) {
 	return nf, nil
 }
 
+var featureBufPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, 16))
+	},
+}
+
 // UnpackFeature unpacks a Spaten feature into a usable spatial feature.
 // This is a low level interface and not guaranteed to be stable.
 func UnpackFeature(pf *fileformat.Feature) (spatial.Feature, error) {
-	var geomBuf = bytes.NewBuffer(pf.GetGeom())
+	var geomBuf = featureBufPool.Get().(*bytes.Buffer)
+	geomBuf.Reset()
+	geomBuf.Write(pf.GetGeom())
 	geom, err := spatial.GeomFromWKB(geomBuf)
 	if err != nil {
 		return spatial.Feature{}, err
 	}
+	featureBufPool.Put(geomBuf)
 	feature := spatial.Feature{
 		Props:    map[string]interface{}{},
 		Geometry: geom,
