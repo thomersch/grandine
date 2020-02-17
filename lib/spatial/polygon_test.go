@@ -119,3 +119,41 @@ func TestPolygonValidTopology(t *testing.T) {
 	p = Polygon{Line{{3, 4}, {2, 9}, {1, 4}, {1, 5}}}
 	assert.False(t, p.ValidTopology())
 }
+
+func TestPolygonClipBBoxShortCircuit(t *testing.T) {
+	t.Run("completely inside bbox", func(t *testing.T) {
+		p := Polygon{Line{{1, 1}, {2, 1}, {2, 2}, {1, 2}}}
+		bbox := BBox{SW: Point{0, 0}, NE: Point{3, 3}}
+
+		assert.Equal(t,
+			[]Geom{MustNewGeom(Polygon{Line{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2},
+			}})},
+			p.ClipToBBox(bbox),
+		)
+	})
+
+	t.Run("fit to bbox", func(t *testing.T) {
+		p := Polygon{Line{{0, 0}, {3, 0}, {3, 3}, {0, 3}}}
+		bbox := BBox{SW: Point{1, 1}, NE: Point{2, 2}}
+
+		assert.Equal(t,
+			[]Geom{MustNewGeom(Polygon{Line{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2},
+			}})},
+			p.ClipToBBox(bbox),
+		)
+	})
+
+	t.Run("no speedup", func(t *testing.T) {
+		p := Polygon{Line{{0, 0}, {3, 0}, {0, 3}}}
+		bbox := BBox{SW: Point{1, 1}, NE: Point{2, 2}}
+
+		assert.Equal(t,
+			[]Geom{MustNewGeom(Polygon{Line{
+				{1, 1}, {1, 2}, {2, 1},
+			}})},
+			p.ClipToBBox(bbox),
+		)
+	})
+}

@@ -51,6 +51,9 @@ func (p Polygon) geos() *geos.Geometry {
 		rings = append(rings, rg)
 	}
 	var gpoly *geos.Geometry
+	if len(rings) == 0 {
+		return nil
+	}
 	if len(rings) > 1 {
 		return geos.Must(geos.NewPolygon(rings[0], rings[1:]...))
 	}

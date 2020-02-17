@@ -19,6 +19,7 @@ var (
 type GeomType uint32
 
 const (
+	GeomTypeEmpty      GeomType = 0
 	GeomTypePoint      GeomType = 1
 	GeomTypeLineString GeomType = 2
 	GeomTypePolygon    GeomType = 3
@@ -27,6 +28,8 @@ const (
 
 func (g GeomType) String() string {
 	switch g {
+	case 0:
+		return "Empty"
 	case 1:
 		return "Point"
 	case 2:
@@ -113,7 +116,7 @@ func (g *Geom) UnmarshalJSONCoords(typ string, inner json.RawMessage) error {
 	var err error
 	switch strings.ToLower(typ) {
 	case "":
-		return ErrorEmptyGeomType
+		g.typ = GeomTypeEmpty
 	case "point":
 		g.typ = GeomTypePoint
 		var pt Point

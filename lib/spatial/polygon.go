@@ -24,6 +24,18 @@ func (p Polygon) String() string {
 }
 
 func (p Polygon) ClipToBBox(bbox BBox) []Geom {
+	// Speed-ups for common cases to eliminate the need for calling geos.
+	if len(p) == 1 && len(p[0].Intersections(bbox.Segments())) == 0 {
+		if bbox.FullyIn(p[0].BBox()) {
+			return []Geom{MustNewGeom(Polygon{Line{
+				bbox.SW, {bbox.NE.X, bbox.SW.Y}, bbox.NE, {bbox.SW.Y, bbox.NE.Y},
+			}})}
+		}
+		if p[0].BBox().FullyIn(bbox) {
+			return []Geom{MustNewGeom(p)}
+		}
+	}
+
 	return p.clipToBBox(bbox)
 }
 
