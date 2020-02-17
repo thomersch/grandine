@@ -87,6 +87,9 @@ func geosToPolygon(g *geos.Geometry) Polygon {
 	if err != nil {
 		panic(err)
 	}
+	if len(crds) == 0 { // we got an empty polygon
+		return Polygon{}
+	}
 	var (
 		p    = make(Polygon, 0, 8)
 		ring = make([]Point, 0, len(crds))
