@@ -60,7 +60,15 @@ func TestBBoxIn(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%v", n), func(t *testing.T) {
-			assert.Equal(t, tc.in, tc.inner.In(tc.outer))
+			assert.Equal(t, tc.in, tc.inner.Overlaps(tc.outer))
 		})
 	}
+}
+
+func TestBBoxFullyIn(t *testing.T) {
+	b1 := BBox{SW: Point{1, 1}, NE: Point{2, 2}}
+	b2 := BBox{SW: Point{0, 0}, NE: Point{3, 3}}
+
+	assert.True(t, b1.FullyIn(b2))
+	assert.False(t, b2.FullyIn(b1))
 }

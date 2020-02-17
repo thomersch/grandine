@@ -347,8 +347,8 @@ func (g *Geom) BBox() BBox {
 	}
 }
 
-func (g *Geom) In(bbox BBox) bool {
-	return g.BBox().In(bbox)
+func (g *Geom) Overlaps(bbox BBox) bool {
+	return g.BBox().Overlaps(bbox)
 }
 
 type simplifiable interface {

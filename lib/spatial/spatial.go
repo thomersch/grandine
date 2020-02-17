@@ -89,7 +89,7 @@ func (fc *FeatureCollection) Filter(bbox BBox) []Feature {
 	var filtered []Feature
 
 	for _, feat := range fc.Features {
-		if feat.Geometry.In(bbox) {
+		if feat.Geometry.Overlaps(bbox) {
 			filtered = append(filtered, feat)
 		}
 	}
