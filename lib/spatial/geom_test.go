@@ -262,3 +262,11 @@ func TestClipPoint(t *testing.T) {
 		assert.Equal(t, []Geom{p}, p.ClipToBBox(BBox{Point{1, 1}, Point{2, 2}}))
 	})
 }
+
+func TestMarshalJSONMutation(t *testing.T) {
+	original := Polygon{Line{{1, 2}, {3, 5}, {4, 9}}}
+	g := MustNewGeom(original)
+	g.MarshalJSON()
+
+	assert.Equal(t, 3, len(original[0]))
+}

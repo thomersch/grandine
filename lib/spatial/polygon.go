@@ -28,7 +28,7 @@ func (p Polygon) ClipToBBox(bbox BBox) []Geom {
 	if len(p) == 1 && len(p[0].Intersections(bbox.Segments())) == 0 {
 		if bbox.FullyIn(p[0].BBox()) {
 			return []Geom{MustNewGeom(Polygon{Line{
-				bbox.SW, {bbox.NE.X, bbox.SW.Y}, bbox.NE, {bbox.SW.Y, bbox.NE.Y},
+				bbox.SW, {bbox.NE.X, bbox.SW.Y}, bbox.NE, {bbox.SW.X, bbox.NE.Y},
 			}})}
 		}
 		if p[0].BBox().FullyIn(bbox) {
@@ -73,6 +73,15 @@ func (p Polygon) FixWinding() {
 
 func (p Polygon) ValidTopology() bool {
 	return len(p.topologyErrors()) == 0
+}
+
+func (p Polygon) MustJSON() []byte {
+	g := MustNewGeom(p)
+	j, err := g.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
+	return j
 }
 
 type segErr struct {

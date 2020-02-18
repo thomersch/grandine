@@ -176,13 +176,15 @@ func (g Geom) MarshalJSON() ([]byte, error) {
 	case GeomTypePolygon:
 		wg.Type = "Polygon"
 		poly, err := g.Polygon()
+		pCopy := make([]Line, len(poly))
+		copy(pCopy, poly)
 		if err != nil {
 			return nil, err
 		}
-		for ringN := range poly {
-			poly[ringN] = append(poly[ringN], poly[ringN][0])
+		for ringN := range pCopy {
+			pCopy[ringN] = append(pCopy[ringN], pCopy[ringN][0])
 		}
-		wg.Coordinates, err = json.Marshal(poly)
+		wg.Coordinates, err = json.Marshal(pCopy)
 		if err != nil {
 			return nil, err
 		}
