@@ -33,7 +33,7 @@ func TestWinding(t *testing.T) {
 	for _, ring := range fc.Features[0].Geometry.MustPolygon() {
 		outOrder = append(outOrder, ring.Clockwise())
 	}
-	assert.Equal(t, []bool{false, true, false, false, true}, outOrder) // correct order
+	assert.Equal(t, []bool{true, false, true, true, false}, outOrder) // correct order
 }
 
 func TestFixWinding(t *testing.T) {
@@ -57,7 +57,7 @@ func TestFixWinding(t *testing.T) {
 	for _, ring := range poly {
 		outOrder = append(outOrder, ring.Clockwise())
 	}
-	assert.Equal(t, []bool{false, true, false, false, true}, outOrder) // correct order
+	assert.Equal(t, []bool{true, false, true, true, false}, outOrder) // correct order
 }
 
 func BenchmarkClipToBBox(b *testing.B) {

@@ -48,8 +48,8 @@ func (p Polygon) Rewind() {
 func (p Polygon) FixWinding() {
 	for n, ring := range p {
 		if n == 0 {
-			// First ring must be outer.
-			if ring.Clockwise() {
+			// First ring must be outer and therefore clockwise.
+			if !ring.Clockwise() {
 				ring.Reverse()
 			}
 			continue
@@ -65,7 +65,7 @@ func (p Polygon) FixWinding() {
 				inrings++
 			}
 		}
-		if (inrings%2 == 0 && ring.Clockwise()) || (inrings%2 == 1 && !ring.Clockwise()) {
+		if (inrings%2 == 0 && !ring.Clockwise()) || (inrings%2 == 1 && ring.Clockwise()) {
 			ring.Reverse()
 		}
 	}
