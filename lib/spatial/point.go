@@ -35,9 +35,10 @@ func (p Point) String() string {
 func (p Point) MarshalJSON() ([]byte, error) {
 	var b = make([]byte, 1, 30)
 	b[0] = '['
-	b = strconv.AppendFloat(b, p.X, 'f', 8, 64)
+	// TODO: Have a possibility to reduce precision to a limited number of decimals.
+	b = strconv.AppendFloat(b, p.X, 'f', -1, 64)
 	b = append(b, ',')
-	b = strconv.AppendFloat(b, p.Y, 'f', 8, 64)
+	b = strconv.AppendFloat(b, p.Y, 'f', -1, 64)
 	return append(b, ']'), nil
 }
 

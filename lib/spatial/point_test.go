@@ -2,7 +2,6 @@ package spatial
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -77,7 +76,7 @@ func TestPointJSONMarshal(t *testing.T) {
 	p := Point{-12.00000000001, 179.1}
 	buf, err := json.Marshal(p)
 	assert.Nil(t, err)
-	fmt.Printf("%s", buf)
+	assert.Equal(t, []byte("179.1]"), buf[len(buf)-6:])
 }
 
 func BenchmarkPointJSONMarshal(b *testing.B) {
