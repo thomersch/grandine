@@ -250,12 +250,12 @@ type diskTileWriter struct {
 	compressTiles bool
 }
 
-func (tw *diskTileWriter) WriteTile(tID tile.ID, buf []byte) error {
+func (tw *diskTileWriter) WriteTile(tID tile.ID, buf []byte, ext string) error {
 	err := os.MkdirAll(filepath.Join(tw.basedir, strconv.Itoa(tID.Z), strconv.Itoa(tID.X)), 0777)
 	if err != nil {
 		return err
 	}
-	tf, err := os.Create(filepath.Join(tw.basedir, strconv.Itoa(tID.Z), strconv.Itoa(tID.X), strconv.Itoa(tID.Y)+".mvt")) // TODO: file extension based on codec
+	tf, err := os.Create(filepath.Join(tw.basedir, strconv.Itoa(tID.Z), strconv.Itoa(tID.X), strconv.Itoa(tID.Y)+"."+ext))
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ type layerMapper interface {
 }
 
 type tileWriter interface {
-	WriteTile(tile.ID, []byte) error
+	WriteTile(tile.ID, []byte, string) error
 }
 
 func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
@@ -320,7 +320,7 @@ func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw t
 			log.Fatal(err)
 		}
 
-		err = tw.WriteTile(tID, buf)
+		err = tw.WriteTile(tID, buf, encoder.Extension())
 		if err != nil {
 			log.Fatal(err)
 		}
