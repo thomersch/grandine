@@ -7,6 +7,8 @@ CMDPREFIX   := github.com/thomersch/grandine/cmd
 export CGO_CFLAGS=-I. -I/usr/local/include
 export CGO_LDFLAGS=-L/usr/local/lib
 
+export GO111MODULE=on
+
 build: build-converter build-inspect build-spatialize build-tiler
 
 build-converter:
