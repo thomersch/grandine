@@ -1,6 +1,8 @@
 package spatial
 
-import "math"
+import (
+	"math"
+)
 
 type Line []Point
 
@@ -336,12 +338,46 @@ func (s *Segment) Intersection(s2 Segment) (Point, bool) {
 
 // DistanceToPt determines the Segment's perpendicular distance to the point.
 func (s Segment) DistanceToPt(p Point) float64 {
-	if s[0].X == s[1].X {
-		return math.Abs(p.X - s[0].X)
+	// See https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+	var (
+		a      = p.X - s[0].X
+		b      = p.Y - s[0].Y
+		c      = s[1].X - s[0].X
+		d      = s[1].Y - s[0].Y
+		dot    = a*c + b*d
+		lenSq  = c*c + d*d
+		param  float64
+		xx, yy float64
+	)
+	if lenSq != 0 {
+		param = dot / lenSq
 	}
-	slope := s[1].Y - s[0].Y/s[1].X - s[0].X
-	ict := s[0].Y - slope*s[0].X
-	return math.Abs(slope*p.X-p.Y+ict) / math.Sqrt(math.Pow(slope, 2)+1)
+
+	if param < 0 {
+		xx = s[0].X
+		yy = s[0].Y
+	} else if param > 1 {
+		xx = s[1].X
+		yy = s[1].Y
+	} else {
+		xx = s[0].X + param*c
+		yy = s[0].Y + param*d
+	}
+	var dx = p.X - xx
+	var dy = p.Y - yy
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
+// Bearing returns the heading direction between the first and the second point in degrees.
+func (s Segment) Bearing() float64 {
+	dLon := (s[1].X - s[0].X) * math.Pi / 180.0
+	lat1 := s[0].Y * math.Pi / 180.0
+	lat2 := s[1].Y * math.Pi / 180.0
+
+	y := math.Sin(dLon) * math.Cos(lat2)
+	x := math.Cos(lat1)*math.Sin(lat2) - math.Sin(lat1)*math.Cos(lat2)*math.Cos(dLon)
+	brng := math.Atan2(y, x) * 180.0 / math.Pi
+	return math.Mod(brng+360, 360)
 }
 
 // BBoxBorders returns the lines which describe the rectangle of the BBox.

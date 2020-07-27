@@ -6,6 +6,7 @@ require (
 	github.com/ctessum/polyclip-go v1.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhconnelly/rtreego v1.0.0
+	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c
 	github.com/golang/protobuf v1.4.2
 	github.com/paulsmith/gogeos v0.1.2 // indirect

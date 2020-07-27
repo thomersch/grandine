@@ -1,6 +1,7 @@
 package spatial
 
 import (
+	"log"
 	"math"
 	"testing"
 
@@ -358,4 +359,27 @@ func TestSimplify(t *testing.T) {
 		assert.Equal(t, l.Simplify(1), Line{{0, 0}, {5, 0}})
 		assert.Equal(t, l.Simplify(0.2), l)
 	})
+}
+
+func TestSegmentBearing(t *testing.T) {
+	s := Segment{Point{-10, 0}, Point{0, 0}}
+	assert.Equal(t, 90.0, s.Bearing())
+
+	s = Segment{Point{0, 0}, Point{-10, 0}}
+	assert.Equal(t, 270.0, s.Bearing())
+
+	s = Segment{Point{-106.0255285, 36.1114469}, Point{-106.0224177, 36.1139782}}
+	log.Println(s.Bearing())
+}
+
+func BenchmarkSegmentDistance(b *testing.B) {
+	seg := Segment{Point{1, 1}, Point{5, 6}}
+	pt := Point{0, 3}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		seg.DistanceToPt(pt)
+	}
 }
