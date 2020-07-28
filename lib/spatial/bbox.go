@@ -1,7 +1,14 @@
 package spatial
 
+import "math"
+
 type BBox struct {
 	SW, NE Point
+}
+
+func (b1 *BBox) ExtendWith(b2 BBox) {
+	b1.SW = Point{math.Min(b1.SW.X, b2.SW.X), math.Min(b1.SW.Y, b2.SW.Y)}
+	b1.NE = Point{math.Max(b1.NE.X, b2.NE.X), math.Max(b1.NE.Y, b2.NE.Y)}
 }
 
 // In determines if the bboxes overlap.

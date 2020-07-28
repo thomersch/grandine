@@ -170,30 +170,19 @@ func main() {
 	showMemStats()
 
 	log.Println("Preparing feature table...")
-	var (
-		bboxPts []spatial.Point
-		ft      = featureTable(zoomlevels)
-	)
+	var ft = NewFeatureTable(zoomlevels)
 	showMemStats()
 
-	for featID, feat := range fc.Features {
-		for _, zl := range zoomlevels {
-			if !renderable(feat.Props, zl) {
-				continue
-			}
-			for _, tid := range tile.Coverage(feat.Geometry.BBox(), zl) {
-				ft[zl][tid.X][tid.Y] = append(ft[zl][tid.X][tid.Y], &fc.Features[featID])
-			}
-		}
-		bb := feat.Geometry.BBox()
-		bboxPts = append(bboxPts, bb.SW, bb.NE)
+	for _, feat := range fc.Features {
+		ft.AddFeature(feat)
 	}
+	log.Printf("%v feature are in-cache", ft.Count())
 	showMemStats()
 
 	log.Println("Determining which tiles need to be generated")
 	var tc []tile.ID
 	for _, zoomlevel := range zoomlevels {
-		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
+		tc = append(tc, tile.Coverage(ft.BBox(), zoomlevel)...)
 	}
 
 	log.Printf("Starting to generate %d tiles...", len(tc))
@@ -215,6 +204,9 @@ func main() {
 	}
 	wg.Wait()
 	done()
+
+	showMemStats()
+	log.Println("Done.")
 }
 
 func renderable(props map[string]interface{}, zl int) bool {
@@ -235,18 +227,6 @@ func renderable(props map[string]interface{}, zl int) bool {
 		return defaultVal
 	}
 	return (zl >= propInt(props, "@zoom:min", 0)) && (zl <= propInt(props, "@zoom:max", 99))
-}
-
-func featureTable(zls []int) map[int][][][]*spatial.Feature {
-	r := map[int][][][]*spatial.Feature{}
-	for _, zl := range zls {
-		l := pow(2, zl)
-		r[zl] = make([][][]*spatial.Feature, l)
-		for x := range r[zl] {
-			r[zl][x] = make([][]*spatial.Feature, l)
-		}
-	}
-	return r
 }
 
 func workerSlices(tiles []tile.ID, wrkNum int) [][]tile.ID {
@@ -317,15 +297,15 @@ type tileWriter interface {
 	WriteTile(tile.ID, []byte, string) error
 }
 
-func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
+func generateTiles(tIDs []tile.ID, fts FeatureCache, tw tileWriter, encoder tile.Codec, lm layerMapper, pb chan<- struct{}) {
 	for _, tID := range tIDs {
 		var (
 			layers = map[string][]spatial.Feature{}
 			ln     string
 		)
 		defer func() { pb <- struct{}{} }()
-		for _, ft := range features[tID.Z][tID.X][tID.Y] {
-			feat := *ft
+
+		for _, feat := range fts.GetFeatures(tID) {
 			ln = lm.LayerName(feat.Props)
 			if len(ln) != 0 {
 				if _, ok := layers[ln]; !ok {
@@ -335,6 +315,7 @@ func generateTiles(tIDs []tile.ID, features map[int][][][]*spatial.Feature, tw t
 				}
 			}
 		}
+
 		if !anyFeatures(layers) {
 			continue
 		}

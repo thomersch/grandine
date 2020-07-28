@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"log"
 
 	"github.com/thomersch/grandine/lib/tile"
 
@@ -23,7 +22,6 @@ type S3TileWriter struct {
 }
 
 func NewS3TileWriter(endpoint, bucket, accessKeyID, secretAccessKey string) (*S3TileWriter, error) {
-	log.Println(endpoint, bucket, accessKeyID, secretAccessKey)
 	s3tw := &S3TileWriter{}
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds: credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
