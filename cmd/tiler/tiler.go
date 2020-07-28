@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/thomersch/grandine/lib/mvt"
 	"github.com/thomersch/grandine/lib/progressbar"
 	"github.com/thomersch/grandine/lib/spaten"
@@ -130,29 +132,50 @@ func main() {
 		f = os.Stdin
 	}
 
-	err = os.MkdirAll(*target, 0777)
-	if err != nil {
-		log.Fatal(err)
+	var tw tileWriter
+
+	if strings.HasPrefix(*target, S3ProtoPrefix) {
+		u, err := url.Parse(*target)
+		if err != nil {
+			log.Fatalf("Assumed target path is S3 URL, but encoutered error while parsing: %s", err)
+		}
+
+		s3key := os.Getenv("S3KEY")
+		s3secret := os.Getenv("S3SECRET")
+		tw, err = NewS3TileWriter(u.Host, strings.TrimPrefix(u.Path, "/"), s3key, s3secret)
+		if err != nil {
+			log.Fatalf("Could not create S3 Client: %s", err)
+		}
+	} else {
+		err = os.MkdirAll(*target, 0777)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tw = &diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	}
 
-	log.Println("parsing input...")
+	log.Println("Parsing input...")
 	fc := spatial.FeatureCollection{}
 	codec := spaten.Codec{}
 	err = codec.Decode(f, &fc)
 	if err != nil {
-		log.Fatalf("could not read incoming file: %v", err)
+		log.Fatalf("Could not read incoming file: %v", err)
 	}
 
 	if len(fc.Features) == 0 {
-		log.Fatal("no features in input file")
+		log.Fatal("No features in input file")
 	}
 
-	log.Printf("read %d features", len(fc.Features))
+	log.Printf("Read %d features", len(fc.Features))
+	showMemStats()
 
+	log.Println("Preparing feature table...")
 	var (
 		bboxPts []spatial.Point
 		ft      = featureTable(zoomlevels)
 	)
+	showMemStats()
+
 	for featID, feat := range fc.Features {
 		for _, zl := range zoomlevels {
 			if !renderable(feat.Props, zl) {
@@ -165,28 +188,28 @@ func main() {
 		bb := feat.Geometry.BBox()
 		bboxPts = append(bboxPts, bb.SW, bb.NE)
 	}
+	showMemStats()
 
-	log.Println("determining which tiles need to be generated")
+	log.Println("Determining which tiles need to be generated")
 	var tc []tile.ID
 	for _, zoomlevel := range zoomlevels {
 		tc = append(tc, tile.Coverage(spatial.Line(bboxPts).BBox(), zoomlevel)...)
 	}
 
-	log.Printf("starting to generate %d tiles...", len(tc))
+	log.Printf("Starting to generate %d tiles...", len(tc))
 
-	dtw := diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	dlm := defaultLayerMapper{defaultLayer: *defaultLayer}
 
 	shuffleWork(tc) // randomize order for better worker saturation
 	var (
 		wg       sync.WaitGroup
 		ws       = workerSlices(tc, *workersNumber)
-		pb, done = progressbar.NewBar(len(tc), len(ws))
+		pb, done = progressbar.NewBar(len(tc), len(ws)) // TODO: respect quiet setting
 	)
 	for wrk := 0; wrk < len(ws); wrk++ {
 		wg.Add(1)
 		go func(i int) {
-			generateTiles(ws[i], ft, &dtw, tileCodec, &dlm, pb)
+			generateTiles(ws[i], ft, tw, tileCodec, &dlm, pb)
 			wg.Done()
 		}(wrk)
 	}
@@ -342,4 +365,14 @@ func pow(x, y int) int {
 		res *= x
 	}
 	return res
+}
+
+func showMemStats() {
+	if *quiet {
+		return
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.Printf("Memory in use: %s", humanize.Bytes(m.Alloc))
 }

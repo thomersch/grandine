@@ -9,6 +9,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c
 	github.com/golang/protobuf v1.4.2
+	github.com/minio/minio-go/v7 v7.0.2
 	github.com/paulsmith/gogeos v0.1.2 // indirect
 	github.com/pmezard/gogeos v0.1.2
 	github.com/stretchr/testify v1.4.0

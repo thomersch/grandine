@@ -4,7 +4,7 @@
 
 This repository contains libraries and command line tools for working with geospatial data. It aims to streamline vector tile generation and provides tooling for standardized geo data serialization.
 
-The work has been partly funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany and the German Ministry for Research and Education.
+Initial work has been funded by the [Prototype Fund](https://prototypefund.de), powered by Open Knowledge Foundation Germany and the German Ministry for Research and Education.
 
 ![Prototype Fund](https://files.skowron.eu/grandine/logo-prototype.svg) ![Bundesministerium für Bildung und Forschung](https://files.skowron.eu/grandine/logo-bmbf.svg) ![Open Knowledge Foundation Deutschland](https://files.skowron.eu/grandine/logo-okfn.svg)
 
