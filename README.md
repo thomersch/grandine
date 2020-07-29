@@ -14,7 +14,7 @@ If you are looking for documentation on the Spaten geo spatial file format, look
 
 ## Requirements
 
-* Go ≥ 1.11
+* Go ≥ 1.11, Go 1.14 recommended
 * GEOS
 
 ## Quickstart

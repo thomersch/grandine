@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/facebookgo/ensure"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +18,7 @@ func TestGeosConversion(t *testing.T) {
 
 func TestGeosSelfIntersect(t *testing.T) {
 	f, err := os.Open("testfiles/self_intersect.geojson")
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	defer f.Close()
 
 	fc := NewFeatureCollection()
