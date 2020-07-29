@@ -303,7 +303,6 @@ func generateTiles(tIDs []tile.ID, fts FeatureCache, tw tileWriter, encoder tile
 			layers = map[string][]spatial.Feature{}
 			ln     string
 		)
-		defer func() { pb <- struct{}{} }()
 
 		for _, feat := range fts.GetFeatures(tID) {
 			ln = lm.LayerName(feat.Props)
@@ -315,6 +314,8 @@ func generateTiles(tIDs []tile.ID, fts FeatureCache, tw tileWriter, encoder tile
 				}
 			}
 		}
+
+		pb <- struct{}{}
 
 		if !anyFeatures(layers) {
 			continue

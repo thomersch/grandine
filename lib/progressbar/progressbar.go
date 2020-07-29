@@ -18,7 +18,7 @@ type bar struct {
 const line = "                                                            "
 
 func NewBar(taskCount int, workers int) (chan<- struct{}, func()) {
-	var ch = make(chan struct{})
+	var ch = make(chan struct{}, 5000)
 	b := &bar{
 		taskCount: taskCount,
 		workers:   workers,
