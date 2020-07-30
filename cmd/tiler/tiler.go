@@ -154,21 +154,6 @@ func main() {
 		tw = &diskTileWriter{basedir: *target, compressTiles: *compressTiles}
 	}
 
-	log.Println("Parsing input...")
-	fc := spatial.FeatureCollection{}
-	codec := spaten.Codec{}
-	err = codec.Decode(f, &fc)
-	if err != nil {
-		log.Fatalf("Could not read incoming file: %v", err)
-	}
-
-	if len(fc.Features) == 0 {
-		log.Fatal("No features in input file")
-	}
-
-	log.Printf("Read %d features", len(fc.Features))
-	showMemStats()
-
 	log.Println("Preparing feature table...")
 
 	// TODO: introduce flag for choosing
@@ -177,8 +162,21 @@ func main() {
 	var ft = NewFeatureMap(zoomlevels)
 	showMemStats()
 
-	for _, feat := range fc.Features {
-		ft.AddFeature(feat)
+	log.Println("Parsing input...")
+
+	var codec spaten.Codec
+	cd, err := codec.ChunkedDecode(f)
+	if err != nil {
+		log.Fatalf("Could not read inscoming file: %v", err)
+	}
+
+	var fc spatial.FeatureCollection
+	for cd.Next() {
+		cd.Scan(&fc)
+		for _, feat := range fc.Features {
+			ft.AddFeature(feat)
+		}
+		fc.Reset()
 	}
 	log.Printf("%v feature are in-cache", ft.Count())
 	showMemStats()
