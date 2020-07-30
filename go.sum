@@ -74,6 +74,7 @@ github.com/opencontainers/runc v0.1.1/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59P
 github.com/ory/dockertest v3.3.4+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnhNrne+V0E6LAcBILJdPs=
 github.com/paulsmith/gogeos v0.1.2 h1:PASLPRO7sjXZLERnQ98EKqY4l9zjQW+irDD5FFRms8I=
 github.com/paulsmith/gogeos v0.1.2/go.mod h1:7GN4vaVO09zFKjDPYsAoeA1j+8GuSicOlnbKo+A0AZM=
+github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
@@ -91,8 +92,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
-github.com/thomersch/gosmparse v0.0.0-20190428115224-6be706b995b9 h1:jtkAx3oSBZq9w+Fwxf6uNRIa0443mK/PMEMm945rgiE=
-github.com/thomersch/gosmparse v0.0.0-20190428115224-6be706b995b9/go.mod h1:xky9OF0k+L2w3YbuxbARnxs8AxsxOJp4G0Z8ZEUqkSA=
+github.com/thomersch/gosmparse v1.0.0 h1:3O82y+bTOxPlxxKo5BAwQOrrJIFHP9vne2MrD+oOVfI=
+github.com/thomersch/gosmparse v1.0.0/go.mod h1:xky9OF0k+L2w3YbuxbARnxs8AxsxOJp4G0Z8ZEUqkSA=
 github.com/twpayne/go-geom v1.0.5 h1:XZBfc3Wx0dj4p17ZfmzqxnU9fTTa3pY4YG5RngKsVNI=
 github.com/twpayne/go-geom v1.0.5/go.mod h1:gO3i8BeAvZuihwwXcw8dIOWXebCzTmy3uvXj9dZG2RA=
 github.com/twpayne/go-kml v1.0.0/go.mod h1:LlvLIQSfMqYk2O7Nx8vYAbSLv4K9rjMvLlEdUKWdjq0=
