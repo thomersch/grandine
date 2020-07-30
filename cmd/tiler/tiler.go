@@ -170,7 +170,11 @@ func main() {
 	showMemStats()
 
 	log.Println("Preparing feature table...")
-	var ft = NewFeatureTable(zoomlevels)
+
+	// TODO: introduce flag for choosing
+	// var ft = NewFeatureTable(zoomlevels)
+
+	var ft = NewFeatureMap(zoomlevels)
 	showMemStats()
 
 	for _, feat := range fc.Features {

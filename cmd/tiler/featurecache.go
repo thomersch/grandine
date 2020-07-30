@@ -68,3 +68,53 @@ func (ftab *FeatureTable) BBox() spatial.BBox {
 	}
 	return *ftab.bbox
 }
+
+type FeatureMap struct {
+	Zoomlevels []int
+
+	bbox  *spatial.BBox
+	count int
+	m     map[tile.ID][]spatial.Feature
+}
+
+func NewFeatureMap(zl []int) *FeatureMap {
+	return &FeatureMap{
+		Zoomlevels: zl,
+		m:          map[tile.ID][]spatial.Feature{},
+	}
+}
+
+func (fm *FeatureMap) AddFeature(ft spatial.Feature) {
+	for _, zl := range fm.Zoomlevels {
+		if !renderable(ft.Props, zl) {
+			continue
+		}
+		for _, tid := range tile.Coverage(ft.Geometry.BBox(), zl) {
+			_, ok := fm.m[tid]
+			if !ok {
+				fm.m[tid] = make([]spatial.Feature, 0, 1)
+			}
+			fm.m[tid] = append(fm.m[tid], ft)
+		}
+	}
+	if fm.bbox == nil {
+		var bb = ft.Geometry.BBox()
+		fm.bbox = &bb
+	} else {
+		fm.bbox.ExtendWith(ft.Geometry.BBox())
+	}
+
+	fm.count++
+}
+
+func (fm *FeatureMap) GetFeatures(tid tile.ID) []spatial.Feature {
+	return fm.m[tid]
+}
+
+func (fm *FeatureMap) BBox() spatial.BBox {
+	return *fm.bbox
+}
+
+func (fm *FeatureMap) Count() int {
+	return fm.count
+}
