@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	humanize "github.com/dustin/go-humanize"
+
 	"github.com/thomersch/grandine/lib/mvt"
 	"github.com/thomersch/grandine/lib/progressbar"
 	"github.com/thomersch/grandine/lib/spaten"
@@ -158,8 +159,13 @@ func main() {
 
 	// TODO: introduce flag for choosing
 	// var ft = NewFeatureTable(zoomlevels)
+	// var ft = NewFeatureMap(zoomlevels)
+	ft, err := NewLevelDBCache(zoomlevels)
 
-	var ft = NewFeatureMap(zoomlevels)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ft.Close()
 	showMemStats()
 
 	log.Println("Parsing input...")

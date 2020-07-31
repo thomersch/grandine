@@ -118,3 +118,11 @@ func (fm *FeatureMap) BBox() spatial.BBox {
 func (fm *FeatureMap) Count() int {
 	return fm.count
 }
+
+func (fm *FeatureMap) Dump() map[tile.ID][]spatial.Feature {
+	return fm.m
+}
+
+func (fm *FeatureMap) Clear() {
+	fm.m = map[tile.ID][]spatial.Feature{}
+}
