@@ -1,3 +1,5 @@
+// +build !noleveldb
+
 package main
 
 import (
@@ -5,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jmhodges/levigo"
 
@@ -22,8 +25,10 @@ type LevelDBCache struct {
 
 	cache *FeatureMap
 
-	count int
-	bbox  *spatial.BBox
+	count          int
+	lastCheckpoint time.Time
+
+	bbox *spatial.BBox
 }
 
 func NewLevelDBCache(zl []int) (*LevelDBCache, error) {
@@ -43,11 +48,12 @@ func NewLevelDBCache(zl []int) (*LevelDBCache, error) {
 	}
 
 	return &LevelDBCache{
-		Zoomlevels: zl,
-		CacheSize:  100000,
-		db:         leveldb,
-		dbpath:     dbpath,
-		cache:      NewFeatureMap(zl),
+		Zoomlevels:     zl,
+		CacheSize:      1000000,
+		db:             leveldb,
+		dbpath:         dbpath,
+		cache:          NewFeatureMap(zl),
+		lastCheckpoint: time.Now(),
 	}, nil
 }
 
@@ -107,11 +113,13 @@ func (ldb *LevelDBCache) AddFeature(ft spatial.Feature) {
 	ldb.count++
 
 	if ldb.count%ldb.CacheSize == 0 {
+		showMemStats()
 		err := ldb.flush()
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Written %v features to disk", ldb.count)
+
+		log.Printf("Written %v features to disk (%.0f/s)", ldb.count, float64(ldb.CacheSize)/time.Since(ldb.lastCheckpoint).Seconds())
 	}
 
 	ldb.cache.AddFeature(ft)
