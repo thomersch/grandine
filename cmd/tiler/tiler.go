@@ -89,6 +89,7 @@ func main() {
 	cpuProfile := flag.String("cpuprof", "", "writes CPU profiling data into a file")
 	geojsonCodec := flag.Bool("geojson", false, "encode tiles into geojson instead of MVT, for debugging purposes")
 	compressTiles := flag.Bool("compress", false, "compress tiles with gzip")
+	cacheStrategy := flag.String("cache", "leveldb", fmt.Sprintf("cache strategy, possible values: %v", availableCaches()))
 	quiet = flag.Bool("q", false, "argument to use if program should be run in quiet mode with reduced logging")
 
 	flag.Var(&zoomlevels, "zoom", "one or more zoom levels (comma separated) of which the tiles will be rendered")
@@ -157,16 +158,24 @@ func main() {
 
 	log.Println("Preparing feature table...")
 
-	// TODO: introduce flag for choosing
-	// var ft = NewFeatureTable(zoomlevels)
-	// var ft = NewFeatureMap(zoomlevels)
-	// ft, err := NewLevelDBCache(zoomlevels)
-	ft, err := NewFileSystemCache(zoomlevels)
-
+	cinit, ok := caches[*cacheStrategy]
+	if !ok {
+		log.Fatalf("invalid cache strategy name '%s', available: %v", *cacheStrategy, availableCaches())
+	} else if !*quiet {
+		log.Printf("Using %s cache", *cacheStrategy)
+	}
+	ft, err := cinit(zoomlevels)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer ft.Close()
+
+	defer func(ft FeatureCache) {
+		clsr, ok := ft.(io.Closer)
+		if ok {
+			log.Println("Cleaning up cache.")
+			clsr.Close()
+		}
+	}(ft)
 	showMemStats()
 
 	log.Println("Parsing input...")

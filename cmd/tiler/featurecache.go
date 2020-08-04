@@ -1,9 +1,44 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/thomersch/grandine/lib/spatial"
 	"github.com/thomersch/grandine/lib/tile"
 )
+
+type cacheInitFunc func([]int) (FeatureCache, error)
+
+var (
+	caches    map[string]cacheInitFunc
+	cacheinit sync.Once
+)
+
+func init() {
+	registerCache("table", func(zl []int) (FeatureCache, error) {
+		nt, err := NewFeatureTable(zl)
+		return nt, err
+	})
+	registerCache("map", func(zl []int) (FeatureCache, error) {
+		nm, err := NewFeatureMap(zl)
+		return nm, err
+	})
+}
+
+func registerCache(name string, c cacheInitFunc) {
+	cacheinit.Do(func() {
+		caches = make(map[string]cacheInitFunc)
+	})
+	caches[name] = c
+}
+
+func availableCaches() []string {
+	var cc []string
+	for k := range caches {
+		cc = append(cc, k)
+	}
+	return cc
+}
 
 type FeatureCache interface {
 	AddFeature(spatial.Feature)
@@ -21,7 +56,7 @@ type FeatureTable struct {
 	bbox  *spatial.BBox
 }
 
-func NewFeatureTable(zoomlevels []int) *FeatureTable {
+func NewFeatureTable(zoomlevels []int) (*FeatureTable, error) {
 	ftab := FeatureTable{Zoomlevels: zoomlevels}
 
 	ftab.table = map[int][][][]spatial.Feature{}
@@ -32,7 +67,7 @@ func NewFeatureTable(zoomlevels []int) *FeatureTable {
 			ftab.table[zl][x] = make([][]spatial.Feature, l)
 		}
 	}
-	return &ftab
+	return &ftab, nil
 }
 
 func (ftab *FeatureTable) AddFeature(ft spatial.Feature) {
@@ -77,11 +112,11 @@ type FeatureMap struct {
 	m     map[tile.ID][]spatial.Feature
 }
 
-func NewFeatureMap(zl []int) *FeatureMap {
+func NewFeatureMap(zl []int) (*FeatureMap, error) {
 	return &FeatureMap{
 		Zoomlevels: zl,
 		m:          map[tile.ID][]spatial.Feature{},
-	}
+	}, nil
 }
 
 func (fm *FeatureMap) AddFeature(ft spatial.Feature) {

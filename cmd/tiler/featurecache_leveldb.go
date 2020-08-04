@@ -16,6 +16,10 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
+func init() {
+	registerCache("leveldb", NewLevelDBCache)
+}
+
 type LevelDBCache struct {
 	Zoomlevels []int
 	CacheSize  int
@@ -31,7 +35,7 @@ type LevelDBCache struct {
 	bbox *spatial.BBox
 }
 
-func NewLevelDBCache(zl []int) (*LevelDBCache, error) {
+func NewLevelDBCache(zl []int) (FeatureCache, error) {
 	ldbopt := levigo.NewOptions()
 	ldbopt.SetCreateIfMissing(true)
 	ldbopt.SetWriteBufferSize(100000000)
@@ -47,12 +51,17 @@ func NewLevelDBCache(zl []int) (*LevelDBCache, error) {
 		return nil, err
 	}
 
+	fm, err := NewFeatureMap(zl)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LevelDBCache{
 		Zoomlevels:     zl,
 		CacheSize:      1000000,
 		db:             leveldb,
 		dbpath:         dbpath,
-		cache:          NewFeatureMap(zl),
+		cache:          fm,
 		lastCheckpoint: time.Now(),
 	}, nil
 }

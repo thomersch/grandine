@@ -14,6 +14,10 @@ import (
 	"github.com/thomersch/grandine/lib/tile"
 )
 
+func init() {
+	registerCache("filesystem", NewFileSystemCache)
+}
+
 type FileSystemCache struct {
 	Zoomlevels []int
 	CacheSize  int
@@ -29,8 +33,13 @@ type FileSystemCache struct {
 	bbox *spatial.BBox
 }
 
-func NewFileSystemCache(zl []int) (*FileSystemCache, error) {
+func NewFileSystemCache(zl []int) (FeatureCache, error) {
 	basePath, err := ioutil.TempDir("", "tiler-fscache")
+	if err != nil {
+		return nil, err
+	}
+
+	fm, err := NewFeatureMap(zl)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +50,7 @@ func NewFileSystemCache(zl []int) (*FileSystemCache, error) {
 		basePath:   basePath,
 		fp:         make(map[tile.ID]*os.File),
 
-		cache:          NewFeatureMap(zl),
+		cache:          fm,
 		lastCheckpoint: time.Now(),
 	}, nil
 }
