@@ -160,7 +160,8 @@ func main() {
 	// TODO: introduce flag for choosing
 	// var ft = NewFeatureTable(zoomlevels)
 	// var ft = NewFeatureMap(zoomlevels)
-	ft, err := NewLevelDBCache(zoomlevels)
+	// ft, err := NewLevelDBCache(zoomlevels)
+	ft, err := NewFileSystemCache(zoomlevels)
 
 	if err != nil {
 		log.Fatal(err)

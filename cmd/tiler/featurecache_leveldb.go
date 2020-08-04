@@ -120,6 +120,7 @@ func (ldb *LevelDBCache) AddFeature(ft spatial.Feature) {
 		}
 
 		log.Printf("Written %v features to disk (%.0f/s)", ldb.count, float64(ldb.CacheSize)/time.Since(ldb.lastCheckpoint).Seconds())
+		ldb.lastCheckpoint = time.Now()
 	}
 
 	ldb.cache.AddFeature(ft)
