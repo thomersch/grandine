@@ -183,7 +183,7 @@ func main() {
 	var codec spaten.Codec
 	cd, err := codec.ChunkedDecode(f)
 	if err != nil {
-		log.Fatalf("Could not read inscoming file: %v", err)
+		log.Fatalf("Could not read incoming file: %v", err)
 	}
 
 	var fc spatial.FeatureCollection

@@ -147,6 +147,10 @@ func (ldb *LevelDBCache) GetFeatures(tid tile.ID) []spatial.Feature {
 		c  spaten.Codec
 		fc spatial.FeatureCollection
 	)
+	if ldb.cache.Count() != 0 {
+		ldb.flush()
+	}
+
 	tidb := []byte(tid.String())
 
 	buf, err := ldb.db.Get(levigo.NewReadOptions(), tidb)
