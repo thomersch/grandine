@@ -20,3 +20,9 @@
     - {key: "class", value: "railway"}
     - {key: "maxspeed", value: "$maxspeed", type: int}
   op: lines
+
+- src:
+    key: foo
+    value: [a, b]
+  dest:
+    - {key: "bar", value: "baz"}
