@@ -155,7 +155,7 @@ func UnpackFeature(pf *fileformat.Feature) (spatial.Feature, error) {
 }
 
 func propertiesToTags(props map[string]interface{}) ([]*fileformat.Tag, error) {
-	var tags []*fileformat.Tag
+	var tags []*fileformat.Tag = make([]*fileformat.Tag, 0, len(props))
 	if props == nil {
 		return tags, nil
 	}
