@@ -104,6 +104,28 @@ func (p Point) Copy() Projectable {
 	return &Point{X: p.X, Y: p.Y}
 }
 
+const earthRadiusMeters = 6371000 // WGS84, optimized for minimal square relative error
+
+// DistanceTo returns the distance in meters between the points.
+func (p *Point) HaversineDistance(p2 *Point) float64 {
+	lat1 := degToRad(p.Y)
+	lon1 := degToRad(p.X)
+	lat2 := degToRad(p2.Y)
+	lon2 := degToRad(p2.X)
+
+	dLat := lat2 - lat1
+	dLon := lon2 - lon1
+
+	a := math.Pow(math.Sin(dLat/2), 2) + math.Cos(lat1)*math.Cos(lat2)*
+		math.Pow(math.Sin(dLon/2), 2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return c * earthRadiusMeters
+}
+
+func degToRad(deg float64) float64 {
+	return deg * math.Pi / 180
+}
+
 func round(v float64) float64 {
 	if v < 0 {
 		return math.Ceil(v - 0.5)

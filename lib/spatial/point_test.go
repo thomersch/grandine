@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,4 +87,10 @@ func BenchmarkPointJSONMarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		json.Marshal(p)
 	}
+}
+
+func TestHaversineDistance(t *testing.T) {
+	p1 := &Point{X: 7.06659, Y: 50.88354}
+	p2 := &Point{X: 6.96299, Y: 50.93846}
+	assert.Equal(t, 9490.0, math.Round(p1.HaversineDistance(p2)))
 }
