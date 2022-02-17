@@ -12,7 +12,6 @@ type Codec interface {
 	Extension() string
 }
 
-// GeoJSONCodec for debugging purposes. Probably not suitable for any real-world use.
 type GeoJSONCodec struct{}
 
 func (g *GeoJSONCodec) EncodeTile(features map[string][]spatial.Feature, tid ID) ([]byte, error) {
