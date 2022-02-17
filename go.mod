@@ -8,6 +8,7 @@ require (
 	github.com/dhconnelly/rtreego v1.0.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
+	github.com/jmhodges/levigo v1.0.0
 	github.com/minio/minio-go/v7 v7.0.2
 	github.com/paulsmith/gogeos v0.1.2 // indirect
 	github.com/pkg/errors v0.8.1

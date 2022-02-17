@@ -43,12 +43,28 @@ func ParseMapping(r io.Reader) ([]Condition, error) {
 
 	var conds []Condition
 	for _, fm := range fms {
-		sv, ok := fm.Src.Value.(string)
-		if !ok {
-			return nil, fmt.Errorf("source key %s must be of type string (has: %v)", fm.Src.Key, fm.Src.Value)
-		}
-		if sv == "*" {
-			sv = ""
+		var sv []string
+
+		svi, ok := fm.Src.Value.([]interface{})
+		if ok {
+			// List of strings
+			for _, svii := range svi {
+				if s, ok := svii.(string); ok {
+					sv = append(sv, s)
+				} else {
+					return nil, fmt.Errorf("source key %s must be of type string (has: %v)", fm.Src.Key, fm.Src.Value)
+				}
+			}
+		} else {
+			svs, ok := fm.Src.Value.(string)
+			if !ok {
+				return nil, fmt.Errorf("source key %s must be of type string (has: %v)", fm.Src.Key, fm.Src.Value)
+			}
+			if svs == "*" {
+				sv = []string{}
+			} else {
+				sv = []string{svs}
+			}
 		}
 
 		var (

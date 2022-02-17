@@ -8,15 +8,20 @@ type geomOp func(spatial.Geom) []spatial.Geom
 type Condition struct {
 	// TODO: make it possible to specify Condition type (node/way/rel)
 	key    string
-	value  string
+	value  []string
 	mapper tagMapFn
 	op     geomOp
 }
 
 func (c *Condition) Matches(kv map[string]interface{}) bool {
 	if v, ok := kv[c.key]; ok {
-		if len(c.value) == 0 || c.value == v {
+		if len(c.value) == 0 || (len(c.value) == 0 && c.value[0] == v) {
 			return true
+		}
+		for _, pv := range c.value {
+			if pv == v {
+				return true
+			}
 		}
 	}
 	return false

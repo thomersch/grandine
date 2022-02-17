@@ -42,4 +42,24 @@ func TestParseMapping(t *testing.T) {
 		"class":    "railway",
 		"maxspeed": 300,
 	}, conds[2].Map(srcKV))
+
+	srcKV = map[string]interface{}{
+		"foo": "c",
+	}
+	assert.False(t, conds[3].Matches(srcKV))
+
+	srcKV = map[string]interface{}{
+		"foo": "b",
+	}
+	assert.True(t, conds[3].Matches(srcKV))
+
+	srcKV = map[string]interface{}{
+		"foo": "c",
+	}
+	assert.False(t, conds[3].Matches(srcKV))
+
+	srcKV = map[string]interface{}{
+		"foo": "a",
+	}
+	assert.True(t, conds[3].Matches(srcKV))
 }

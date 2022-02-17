@@ -89,7 +89,7 @@ func main() {
 	}
 	encoder, ok := enc.(spatial.Encoder)
 	if !ok {
-		log.Fatalf("%v codec does not support writing", enc)
+		log.Fatalf("%T codec does not support writing", enc)
 	}
 
 	// Determine whether we're writing to a stream or file.
@@ -129,6 +129,7 @@ func main() {
 				log.Fatal(err)
 			}
 			finished, err = write(out, &fc, encoder, conds)
+			fc.Reset()
 		}
 		finished()
 	}
