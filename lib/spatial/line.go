@@ -8,7 +8,7 @@ type Line []Point
 
 // NewLinesFromSegments creates a line from continous segments.
 func NewLinesFromSegments(segs []Segment) []Line {
-	ls := []Line{Line{}}
+	ls := []Line{{}}
 	for i, seg := range segs {
 		// if start of current segment isn't the end of the last one, create a new line
 		if i != 0 && seg[0] != segs[i-1][1] {
@@ -250,6 +250,17 @@ func (s *Segment) HasPoint(pt Point) bool {
 		return true
 	}
 	return false
+}
+
+func (s *Segment) JSON() []byte {
+	var buf []byte = []byte(`{"geometry": {"type": "LineString", "coordinates": [`)
+	p1, _ := s[0].MarshalJSON()
+	p2, _ := s[1].MarshalJSON()
+	buf = append(buf, p1...)
+	buf = append(buf, byte(','))
+	buf = append(buf, p2...)
+	buf = append(buf, []byte(`]}}`)...)
+	return buf
 }
 
 func (s *Segment) SplitAt(p Point) (Segment, Segment) {
